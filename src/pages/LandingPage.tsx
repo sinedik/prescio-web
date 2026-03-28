@@ -732,7 +732,7 @@ export default function LandingPage() {
   const { theme, setTheme } = useTheme()
 
   if (!loading && user) {
-    return <Navigate to={profile?.onboarding_done ? '/markets' : '/onboarding'} replace />
+    return <Navigate to="/markets" replace />
   }
   if (loading) {
     return (

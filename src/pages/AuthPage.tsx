@@ -191,7 +191,7 @@ export default function AuthPage() {
         navigate('/markets', { replace: true })
       } else {
         await signUp(email, password)
-        navigate('/onboarding', { replace: true })
+        navigate('/markets', { replace: true })
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Authentication failed')

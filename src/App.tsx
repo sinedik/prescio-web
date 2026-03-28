@@ -31,8 +31,6 @@ function ProtectedLayout() {
   // so we never unmount Layout and cause a visible "reload".
   if (loading && !user) return <Loader />
   if (!user) return <Navigate to="/" replace />
-  // New user hasn't done onboarding yet
-  if (profile && !profile.onboarding_done) return <Navigate to="/onboarding" replace />
   return <Layout />
 }
 
