@@ -1,7 +1,7 @@
 import type { FeedResponse, Market, MarketOpportunity, SortField } from './types'
 import { supabase } from './lib/supabase'
 
-const BASE = '/api'
+const BASE = (import.meta.env.VITE_API_URL ?? '') + '/api'
 
 async function getAuthHeaders(): Promise<Record<string, string>> {
   const { data: { session } } = await supabase.auth.getSession()
