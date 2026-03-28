@@ -37,7 +37,7 @@ export default function AuthForm({ initialMode = 'signin', onClose }: AuthFormPr
         navigate('/markets', { replace: true })
       } else {
         await signUp(email, password)
-        navigate('/markets', { replace: true })
+        navigate('/onboarding', { replace: true })
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Authentication failed')

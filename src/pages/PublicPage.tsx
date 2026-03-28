@@ -46,7 +46,12 @@ export default function PublicPage() {
 
   // Redirect logged-in users
   if (!loading && user) {
-    return <Navigate to="/markets" replace />
+    if (!profile) return (
+      <div className="min-h-screen bg-bg-base flex items-center justify-center">
+        <span className="text-text-muted font-mono text-sm animate-pulse">LOADING...</span>
+      </div>
+    )
+    return <Navigate to={profile.onboarding_done ? '/markets' : '/onboarding'} replace />
   }
 
   if (loading) {
