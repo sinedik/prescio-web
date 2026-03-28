@@ -3,7 +3,7 @@ import { initializePaddle, Paddle, CheckoutEventsData } from '@paddle/paddle-js'
 
 const CLIENT_TOKEN = import.meta.env.VITE_PADDLE_CLIENT_TOKEN as string
 const PRICE_ID = import.meta.env.VITE_PADDLE_PRICE_ID as string
-const IS_SANDBOX = !import.meta.env.PROD
+const IS_SANDBOX = CLIENT_TOKEN?.startsWith('test_') ?? true
 
 let paddleInstance: Paddle | null = null
 // Module-level callback — always points to the latest registered handler
