@@ -239,7 +239,7 @@ export default function ProfilePage() {
                 <button
                   onClick={async () => {
                     setUpgradeLoading(true)
-                    try { await openCheckout(user.email) } catch { /* */ } finally { setUpgradeLoading(false) }
+                    try { await openCheckout(user.email, 'alpha') } catch { /* */ } finally { setUpgradeLoading(false) }
                   }}
                   disabled={upgradeLoading}
                   className="flex items-center justify-center gap-1.5 w-full py-2 text-xs font-mono font-bold rounded-lg border transition-colors disabled:opacity-50"
