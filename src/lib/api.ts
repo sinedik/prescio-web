@@ -48,6 +48,8 @@ export const api = {
     apiFetch(`/api/markets/${id}`),
   analyzeMarket: (id: string) =>
     apiFetch(`/api/markets/${id}/analyze`, { method: 'POST' }),
+  analyzeEvent: (id: string) =>
+    apiFetch(`/api/events/${id}/analyze`, { method: 'POST' }),
 
   // Watchlist
   getWatchlist: () =>

@@ -68,11 +68,32 @@ export default function EventDetailPage() {
   const { isPro, isAlpha } = useAuthContext()
   const [paywallVariant, setPaywallVariant] = useState<'pro' | 'alpha' | null>(null)
   const [watchAdded, setWatchAdded] = useState(false)
+  const [analyzing, setAnalyzing] = useState(false)
+  const [analyzeError, setAnalyzeError] = useState<string | null>(null)
 
   const { data: event, loading } = usePolling<EventDetail>(
     () => api.getEvent(id!) as Promise<EventDetail>,
     5 * 60 * 1000,
   )
+
+  async function handleAnalyze() {
+    if (!id) return
+    setAnalyzing(true)
+    setAnalyzeError(null)
+    try {
+      await api.analyzeEvent(id)
+      window.location.reload()
+    } catch (err: unknown) {
+      const e = err as { type?: string; limit?: number }
+      if (e?.type === 'limit_reached') {
+        setAnalyzeError(`Daily limit reached (${e.limit ?? 3} analyses/day). Upgrade to Pro for unlimited.`)
+      } else {
+        setAnalyzeError(err instanceof Error ? err.message : 'Analysis failed')
+      }
+    } finally {
+      setAnalyzing(false)
+    }
+  }
 
   async function handleWatch() {
     if (!id) return
@@ -192,7 +213,17 @@ export default function EventDetailPage() {
       ) : isPro && !aiSummary ? (
         <div className="bg-bg-surface border border-bg-border rounded-xl p-5 mb-6">
           <p className="text-[10px] font-mono font-bold text-text-muted tracking-widest mb-2">AI ANALYSIS</p>
-          <p className="text-xs font-mono text-text-muted">AI analysis is being generated. Check back soon.</p>
+          <p className="text-xs font-mono text-text-muted mb-4">No analysis yet.</p>
+          {analyzeError && (
+            <p className="text-xs font-mono text-danger mb-3">{analyzeError}</p>
+          )}
+          <button
+            onClick={handleAnalyze}
+            disabled={analyzing}
+            className="px-4 py-2 bg-accent text-bg-base text-xs font-mono font-bold rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-50"
+          >
+            {analyzing ? 'Analyzing...' : 'Analyze with AI'}
+          </button>
         </div>
       ) : !isPro ? (
         <div className="bg-bg-surface border border-bg-border rounded-xl p-5 mb-6 relative overflow-hidden">

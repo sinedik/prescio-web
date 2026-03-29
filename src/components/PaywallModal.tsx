@@ -60,7 +60,7 @@ export default function PaywallModal({ onClose, variant = 'pro', analysesToday =
     setLoading(true)
     setError(null)
     try {
-      await openCheckout(user?.email)
+      await openCheckout(user?.email, variant)
       setLoading(false)
     } catch {
       setError('Failed to start checkout. Please try again.')

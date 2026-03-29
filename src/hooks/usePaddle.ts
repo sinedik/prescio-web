@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { initializePaddle, Paddle, CheckoutEventsData } from '@paddle/paddle-js'
 
-const CLIENT_TOKEN = import.meta.env.VITE_PADDLE_CLIENT_TOKEN as string
-const PRICE_ID = import.meta.env.VITE_PADDLE_PRICE_ID as string
+const CLIENT_TOKEN   = import.meta.env.VITE_PADDLE_CLIENT_TOKEN as string
+const PRICE_ID_PRO   = import.meta.env.VITE_PADDLE_PRICE_ID as string
+const PRICE_ID_ALPHA = import.meta.env.VITE_PADDLE_PRICE_ID_ALPHA as string
 const IS_SANDBOX = CLIENT_TOKEN?.startsWith('test_') ?? true
 
 let paddleInstance: Paddle | null = null
@@ -44,12 +45,13 @@ export function usePaddle(onComplete?: (transactionId: string) => void) {
     }
   }, [])
 
-  async function openCheckout(customerEmail?: string) {
+  async function openCheckout(customerEmail?: string, plan: 'pro' | 'alpha' = 'pro') {
     const p = paddle ?? (await ensurePaddle())
     if (!p) throw new Error('Paddle not initialized')
 
+    const priceId = plan === 'alpha' ? PRICE_ID_ALPHA : PRICE_ID_PRO
     p.Checkout.open({
-      items: [{ priceId: PRICE_ID, quantity: 1 }],
+      items: [{ priceId, quantity: 1 }],
       customer: customerEmail ? { email: customerEmail } : undefined,
     })
   }

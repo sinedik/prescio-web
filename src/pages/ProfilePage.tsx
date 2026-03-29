@@ -273,7 +273,7 @@ export default function ProfilePage() {
                 <button
                   onClick={async () => {
                     setUpgradeLoading(true)
-                    try { await openCheckout(user.email) } catch { /* */ } finally { setUpgradeLoading(false) }
+                    try { await openCheckout(user.email, 'pro') } catch { /* */ } finally { setUpgradeLoading(false) }
                   }}
                   disabled={upgradeLoading}
                   className="w-full py-2.5 bg-accent text-bg-base text-sm font-mono font-bold rounded-lg
@@ -284,7 +284,7 @@ export default function ProfilePage() {
                 <button
                   onClick={async () => {
                     setUpgradeLoading(true)
-                    try { await openCheckout(user.email) } catch { /* */ } finally { setUpgradeLoading(false) }
+                    try { await openCheckout(user.email, 'alpha') } catch { /* */ } finally { setUpgradeLoading(false) }
                   }}
                   disabled={upgradeLoading}
                   className="w-full py-2.5 border text-xs font-mono font-bold rounded-lg transition-colors disabled:opacity-50"

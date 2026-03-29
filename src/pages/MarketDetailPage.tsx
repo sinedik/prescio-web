@@ -8,7 +8,6 @@ import {
 import AddPositionModal from '../components/AddPositionModal'
 import PaywallModal from '../components/PaywallModal'
 import { usePortfolio } from '../hooks/usePortfolio'
-import { analyzeMarket } from '../api'
 import { api } from '../lib/api'
 import { useAuthContext } from '../contexts/AuthContext'
 
@@ -351,7 +350,7 @@ export default function MarketDetailPage() {
     setAnalyzing(true)
     setAnalyzeError(null)
     try {
-      const result = await analyzeMarket(market.question)
+      const result = await api.analyzeMarket(market.id)
       setAnalysis(result.analysis)
       setNews(result.news)
       setMetaculusMatch(result.metaculusMatch ?? undefined)
