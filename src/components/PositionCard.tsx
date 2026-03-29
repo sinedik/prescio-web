@@ -86,7 +86,7 @@ export default function PositionCard({ position: p, onUpdateStatus, onDelete }: 
 
           {/* PnL / amount block */}
           <div className="shrink-0 text-right">
-            {resolvedPnl !== null ? (
+            {resolvedPnl != null ? (
               <div>
                 <p className={`text-lg font-mono font-bold ${resolvedPnl >= 0 ? 'text-accent' : 'text-danger'}`}>
                   {resolvedPnl >= 0 ? '+' : ''}${resolvedPnl.toFixed(0)}
@@ -115,13 +115,13 @@ export default function PositionCard({ position: p, onUpdateStatus, onDelete }: 
           <div>
             <span className="text-text-muted">EDGE </span>
             <span className={edge >= 5 ? 'text-accent' : edge >= 0 ? 'text-watch' : 'text-danger'}>
-              {edge > 0 ? '+' : ''}{edge.toFixed(1)}pp
+              {isFinite(edge) ? `${edge > 0 ? '+' : ''}${edge.toFixed(1)}pp` : '—'}
             </span>
           </div>
           <div className="hidden sm:block">
             <span className="text-text-muted">EV </span>
             <span className={expectedValue >= 0 ? 'text-accent' : 'text-danger'}>
-              {expectedValue >= 0 ? '+' : ''}${expectedValue.toFixed(1)}
+              {isFinite(expectedValue) ? `${expectedValue >= 0 ? '+' : ''}$${expectedValue.toFixed(1)}` : '—'}
             </span>
           </div>
           {days !== null && isOpen && (

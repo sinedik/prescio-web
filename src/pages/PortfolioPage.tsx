@@ -245,7 +245,7 @@ export default function PortfolioPage() {
         />
         <StatCard
           label="WIN RATE"
-          value={stats.winRate !== null ? `${stats.winRate.toFixed(0)}%` : '—'}
+          value={stats.winRate != null ? `${stats.winRate.toFixed(0)}%` : '—'}
           sub={stats.closed > 0 ? `${stats.won}/${stats.closed} closed` : 'no closed bets'}
           highlight={stats.winRate !== null && stats.winRate >= 55}
         />
@@ -263,10 +263,10 @@ export default function PortfolioPage() {
           positive={stats.roi > 0}
           negative={stats.roi < 0}
         />
-        {isAlpha && aiAccuracy && (
+        {isAlpha && aiAccuracy && aiAccuracy.accuracy != null && (
           <StatCard
             label="AI ACCURACY"
-            value={`${aiAccuracy.accuracy.toFixed(0)}%`}
+            value={`${Number(aiAccuracy.accuracy).toFixed(0)}%`}
             sub={`${aiAccuracy.total} resolved`}
             highlight={aiAccuracy.accuracy >= 60}
           />

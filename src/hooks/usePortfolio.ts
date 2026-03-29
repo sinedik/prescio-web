@@ -17,7 +17,13 @@ function saveLocal(positions: Position[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(positions))
 }
 
+function toNum(v: unknown, fallback = 0): number {
+  const n = Number(v)
+  return isFinite(n) ? n : fallback
+}
+
 function apiRowToPosition(row: Record<string, unknown>): Position {
+  const closePriceRaw = row.closePrice ?? row.close_price
   return {
     id: row.id as string,
     question: row.question as string,
@@ -26,14 +32,15 @@ function apiRowToPosition(row: Record<string, unknown>): Position {
     url: row.url as string | undefined,
     resolutionDate: ((row.resolutionDate ?? row.resolution_date) as string) ?? undefined,
     direction: (row.direction as 'YES' | 'NO') ?? 'YES',
-    entryPrice: ((row.entryPrice ?? row.entry_price) as number),
-    myFairProb: ((row.myFairProb ?? row.my_fair_prob) as number),
-    amount: row.amount as number,
+    entryPrice: toNum(row.entryPrice ?? row.entry_price),
+    myFairProb: toNum(row.myFairProb ?? row.my_fair_prob),
+    amount: toNum(row.amount),
     thesis: (row.thesis as string) ?? '',
     status: (row.status as PositionStatus) ?? 'open',
     createdAt: ((row.createdAt ?? row.created_at) as string),
     closedAt: ((row.closedAt ?? row.closed_at) as string) ?? undefined,
-    closePrice: ((row.closePrice ?? row.close_price) as number) ?? undefined,
+    closePrice: closePriceRaw != null ? toNum(closePriceRaw) : undefined,
+    ai_edge_at_entry: row.ai_edge_at_entry != null ? toNum(row.ai_edge_at_entry) : undefined,
   }
 }
 
@@ -152,13 +159,12 @@ export function calcKelly(
   edge: number
 } {
   if (direction === 'NO') {
-    // Convert to NO perspective: price of NO = 100 - entryPrice, fair prob of NO = 100 - fairProb
     const noEntry = 100 - entryPrice
     const noFair = 100 - fairProb
     const p = noFair / 100
     const q = 1 - p
-    const b = (100 - noEntry) / noEntry  // net odds for NO position
-    const kelly = (b * p - q) / b
+    const b = noEntry > 0 ? (100 - noEntry) / noEntry : 0
+    const kelly = b > 0 ? (b * p - q) / b : 0
     return {
       kellyFull: Math.max(0, kelly * 100),
       kellyHalf: Math.max(0, kelly * 50),
@@ -168,8 +174,8 @@ export function calcKelly(
   // YES direction
   const p = fairProb / 100
   const q = 1 - p
-  const b = (100 - entryPrice) / entryPrice
-  const kelly = (b * p - q) / b
+  const b = entryPrice > 0 ? (100 - entryPrice) / entryPrice : 0
+  const kelly = b > 0 ? (b * p - q) / b : 0
   return {
     kellyFull: Math.max(0, kelly * 100),
     kellyHalf: Math.max(0, kelly * 50),
@@ -188,7 +194,7 @@ export function calcPositionPnl(p: Position): {
   if (direction === 'NO') {
     const noEntry = 100 - p.entryPrice
     const noFair = 100 - p.myFairProb
-    const winMultiple = (100 - noEntry) / noEntry
+    const winMultiple = noEntry > 0 ? (100 - noEntry) / noEntry : 0
     const fairP = noFair / 100
     const potentialWin = p.amount * winMultiple
     const potentialLoss = p.amount
@@ -200,7 +206,7 @@ export function calcPositionPnl(p: Position): {
   }
   // YES direction
   const fairP = p.myFairProb / 100
-  const winMultiple = (100 - p.entryPrice) / p.entryPrice
+  const winMultiple = p.entryPrice > 0 ? (100 - p.entryPrice) / p.entryPrice : 0
   const potentialWin = p.amount * winMultiple
   const potentialLoss = p.amount
   const expectedValue = fairP * potentialWin - (1 - fairP) * potentialLoss
