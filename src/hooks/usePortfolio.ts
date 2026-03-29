@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import type { Position, PositionStatus } from '../types'
-import { supabase } from '../lib/supabase'
+import { api } from '../lib/api'
 
 const STORAGE_KEY = 'pi_portfolio_v1'
 
@@ -17,23 +17,23 @@ function saveLocal(positions: Position[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(positions))
 }
 
-function dbRowToPosition(row: Record<string, unknown>): Position {
+function apiRowToPosition(row: Record<string, unknown>): Position {
   return {
     id: row.id as string,
     question: row.question as string,
     platform: row.platform as string,
     topic: (row.topic as string) ?? '',
     url: row.url as string | undefined,
-    resolutionDate: row.resolution_date as string | undefined,
+    resolutionDate: ((row.resolutionDate ?? row.resolution_date) as string) ?? undefined,
     direction: (row.direction as 'YES' | 'NO') ?? 'YES',
-    entryPrice: row.entry_price as number,
-    myFairProb: row.my_fair_prob as number,
+    entryPrice: ((row.entryPrice ?? row.entry_price) as number),
+    myFairProb: ((row.myFairProb ?? row.my_fair_prob) as number),
     amount: row.amount as number,
     thesis: (row.thesis as string) ?? '',
     status: (row.status as PositionStatus) ?? 'open',
-    createdAt: row.created_at as string,
-    closedAt: row.closed_at as string | undefined,
-    closePrice: row.close_price as number | undefined,
+    createdAt: ((row.createdAt ?? row.created_at) as string),
+    closedAt: ((row.closedAt ?? row.closed_at) as string) ?? undefined,
+    closePrice: ((row.closePrice ?? row.close_price) as number) ?? undefined,
   }
 }
 
@@ -41,34 +41,27 @@ export function usePortfolio() {
   const [positions, setPositions] = useState<Position[]>(loadLocal)
   const [synced, setSynced] = useState(false)
 
-  // Sync from Supabase on mount (after auth is ready)
+  // Sync from backend API on mount
   useEffect(() => {
     let cancelled = false
 
-    async function syncFromDb() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user || cancelled) return
-
-      const { data, error } = await supabase
-        .from('positions')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (error || cancelled) return
-
-      const remote = (data ?? []).map(dbRowToPosition)
-      setPositions(remote)
-      saveLocal(remote)
-      setSynced(true)
+    async function syncFromApi() {
+      try {
+        const data = await api.getPortfolio() as Position[] | { positions: Position[] }
+        if (cancelled) return
+        const rows = (Array.isArray(data) ? data : ((data as { positions: Position[] }).positions ?? [])) as Record<string, unknown>[]
+        const remote = rows.map(apiRowToPosition)
+        setPositions(remote)
+        saveLocal(remote)
+      } catch { /* use local fallback */ }
+      if (!cancelled) setSynced(true)
     }
 
-    syncFromDb()
+    syncFromApi()
     return () => { cancelled = true }
   }, [])
 
   const addPosition = useCallback(async (p: Omit<Position, 'id' | 'createdAt' | 'status'>) => {
-    const { data: { user } } = await supabase.auth.getUser()
-
     const next: Position = {
       ...p,
       id: crypto.randomUUID(),
@@ -83,10 +76,9 @@ export function usePortfolio() {
       return updated
     })
 
-    if (user) {
-      await supabase.from('positions').insert({
+    try {
+      const created = await api.addPosition({
         id: next.id,
-        user_id: user.id,
         question: next.question,
         platform: next.platform,
         topic: next.topic ?? '',
@@ -99,10 +91,18 @@ export function usePortfolio() {
         thesis: next.thesis ?? '',
         status: next.status,
         created_at: next.createdAt,
+      }) as Record<string, unknown>
+      // Replace optimistic entry with server response (may include ai_edge_at_entry)
+      const serverPos = apiRowToPosition(created)
+      setPositions((prev) => {
+        const updated = prev.map((pos) => pos.id === next.id ? serverPos : pos)
+        saveLocal(updated)
+        return updated
       })
+      return serverPos
+    } catch {
+      return next
     }
-
-    return next
   }, [])
 
   const updateStatus = useCallback(async (id: string, status: PositionStatus, closePrice?: number) => {
@@ -116,13 +116,9 @@ export function usePortfolio() {
       return updated
     })
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      await supabase
-        .from('positions')
-        .update({ status, close_price: closePrice ?? null, closed_at: closedAt })
-        .eq('id', id)
-    }
+    try {
+      await api.updatePosition(id, { status, close_price: closePrice ?? null, closed_at: closedAt })
+    } catch { /* optimistic update already applied */ }
   }, [])
 
   const deletePosition = useCallback(async (id: string) => {
@@ -132,10 +128,9 @@ export function usePortfolio() {
       return updated
     })
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      await supabase.from('positions').delete().eq('id', id)
-    }
+    try {
+      await api.deletePosition(id)
+    } catch { /* optimistic update already applied */ }
   }, [])
 
   return { positions, addPosition, updateStatus, deletePosition, synced }

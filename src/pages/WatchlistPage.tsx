@@ -59,6 +59,8 @@ export default function WatchlistPage() {
   const { isAlpha } = useAuthContext()
   const [tab, setTab] = useState<WatchlistTab>('events')
   const [removing, setRemoving] = useState<string | null>(null)
+  const [removedIds, setRemovedIds] = useState<Set<string>>(new Set())
+  const [removeError, setRemoveError] = useState<string | null>(null)
 
   const fetcher = useCallback(
     () => api.getWatchlist() as Promise<{ items: WatchlistItem[] }>,
@@ -66,7 +68,9 @@ export default function WatchlistPage() {
   )
   const { data, loading, lastUpdated } = usePolling(fetcher, 5 * 60 * 1000)
 
-  const allItems: WatchlistItem[] = (data as { items?: WatchlistItem[] })?.items ?? []
+  const allItems: WatchlistItem[] = ((data as { items?: WatchlistItem[] })?.items ?? []).filter(
+    (item) => !removedIds.has(item.id)
+  )
   const items = allItems.filter((item) => item.type === tab.slice(0, -1) as 'event' | 'market')
 
   const updatedLabel = lastUpdated
@@ -75,8 +79,13 @@ export default function WatchlistPage() {
 
   async function handleRemove(id: string) {
     setRemoving(id)
+    setRemoveError(null)
+    setRemovedIds((prev) => new Set([...prev, id]))
     try {
       await api.removeFromWatchlist(id)
+    } catch {
+      setRemovedIds((prev) => { const next = new Set(prev); next.delete(id); return next })
+      setRemoveError('Failed to remove from watchlist')
     } finally {
       setRemoving(null)
     }
@@ -93,6 +102,15 @@ export default function WatchlistPage() {
           )}
         </div>
       </div>
+
+      {removeError && (
+        <div
+          className="mb-4 px-3 py-2 rounded-lg text-xs font-mono"
+          style={{ color: 'rgb(var(--danger))', background: 'rgb(var(--danger) / 0.06)', border: '1px solid rgb(var(--danger) / 0.2)' }}
+        >
+          {removeError}
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex items-center gap-0.5 bg-bg-surface border border-bg-border rounded p-1 w-fit mb-5">

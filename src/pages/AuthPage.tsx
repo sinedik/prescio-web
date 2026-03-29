@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useAuthContext } from '../contexts/AuthContext'
 import Logo from '../components/Logo'
+import { api } from '../lib/api'
 
 // ── Feature bullets ────────────────────────────────────────────────────────────
 const FEATURES = [
@@ -164,9 +165,17 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false)
 
   const [mounted, setMounted] = useState(false)
+  const [analysesCount, setAnalysesCount] = useState<number | null>(null)
+
   useEffect(() => {
     const id = requestAnimationFrame(() => setMounted(true))
     return () => cancelAnimationFrame(id)
+  }, [])
+
+  useEffect(() => {
+    api.getAccuracy()
+      .then(data => { if (data.total > 0) setAnalysesCount(data.total) })
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -282,7 +291,7 @@ export default function AuthPage() {
         >
           {[
             { value: '3', label: 'Platforms' },
-            { value: '247', label: 'Analyses today' },
+            { value: String(analysesCount ?? 247), label: 'Analyses today' },
             { value: '$500M+', label: 'Volume tracked' },
           ].map(({ value, label }, i) => (
             <div key={label} className="relative">

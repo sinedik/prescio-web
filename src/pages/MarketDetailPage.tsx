@@ -8,7 +8,8 @@ import {
 import AddPositionModal from '../components/AddPositionModal'
 import PaywallModal from '../components/PaywallModal'
 import { usePortfolio } from '../hooks/usePortfolio'
-import { getMarketBySlug, getMarketHistory, analyzeMarket } from '../api'
+import { analyzeMarket } from '../api'
+import { api } from '../lib/api'
 import { useAuthContext } from '../contexts/AuthContext'
 
 // ---- Interactive SVG Price Chart ----
@@ -242,6 +243,15 @@ function slugify(q: string) {
   return q.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 60).replace(/(^-|-$)/g, '')
 }
 
+function filterHistory(pts: HistoryPoint[], interval: '1w' | '1m' | '6m' | 'max'): HistoryPoint[] {
+  if (interval === 'max' || !pts.length) return pts
+  const now = Date.now() / 1000
+  const days = interval === '1w' ? 7 : interval === '1m' ? 30 : 180
+  const cutoff = now - days * 86400
+  const filtered = pts.filter(p => p.t >= cutoff)
+  return filtered.length > 1 ? filtered : pts
+}
+
 const CACHE_PREFIX = 'pi_market_'
 
 export default function MarketDetailPage() {
@@ -257,7 +267,7 @@ export default function MarketDetailPage() {
   const [metaculusMatch, setMetaculusMatch] = useState<MetaculusMatch | undefined>(location.state?.item?.metaculusMatch)
 
   const [marketLoading, setMarketLoading] = useState(!market)
-  const [historyLoading, setHistoryLoading] = useState(false)
+  const historyLoading = false
   const [historyInterval, setHistoryInterval] = useState<'1w' | '1m' | '6m' | 'max'>('max')
   const [analyzing, setAnalyzing] = useState(false)
   const [analyzeError, setAnalyzeError] = useState<string | null>(null)
@@ -300,29 +310,41 @@ export default function MarketDetailPage() {
       } catch { /* ignore */ }
     }
 
-    // Fetch from backend
+    // Fetch from backend: try by id first, then search by slug
+    let cancelled = false
     setMarketLoading(true)
-    getMarketBySlug(slug)
-      .then(m => { if (m) setMarket(m) })
-      .finally(() => setMarketLoading(false))
+    ;(async () => {
+      try {
+        const m = await api.getMarket(slug) as Market & { price_history?: HistoryPoint[] }
+        if (!cancelled && m) {
+          setMarket(m)
+          if (m.price_history?.length) { setHistory(m.price_history); setHistoryReal(true) }
+          return
+        }
+      } catch { /* not a valid id — fall through to search */ }
+
+      try {
+        const results = await api.getMarkets({ search: slug, limit: 1 }) as Market[] | { markets: Market[] }
+        const list = Array.isArray(results) ? results : ((results as { markets: Market[] }).markets ?? [])
+        const m = list[0] as (Market & { price_history?: HistoryPoint[] }) | undefined
+        if (!cancelled && m) {
+          setMarket(m)
+          if (m.price_history?.length) { setHistory(m.price_history); setHistoryReal(true) }
+        }
+      } catch { /* ignore */ }
+    })().finally(() => { if (!cancelled) setMarketLoading(false) })
+
+    return () => { cancelled = true }
   }, [slug, market])
 
-  // Fetch real price history for Polymarket
+  // Filter price history from market object by selected interval
   useEffect(() => {
-    if (!market?.slug || market.platform !== 'polymarket') return
-    setHistoryLoading(true)
-    setHistory([])
-    getMarketHistory(market.slug, historyInterval)
-      .then(h => {
-        if (h && h.length > 1) {
-          setHistory(h)
-          setHistoryReal(true)
-        } else {
-          setHistoryReal(false)
-        }
-      })
-      .finally(() => setHistoryLoading(false))
-  }, [market?.slug, market?.platform, historyInterval])
+    const fullHistory = (market as (Market & { price_history?: HistoryPoint[] }) | undefined)?.price_history
+    if (!fullHistory?.length) return
+    const filtered = filterHistory(fullHistory, historyInterval)
+    setHistory(filtered)
+    setHistoryReal(filtered.length > 1)
+  }, [market, historyInterval])
 
   async function handleAnalyze() {
     if (!market) return

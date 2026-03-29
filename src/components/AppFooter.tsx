@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Logo from './Logo'
+import { api } from '../lib/api'
 
 const FOOTER_LINKS = {
   PRODUCT: [
@@ -34,6 +35,13 @@ function useNextScanMins() {
 
 export default function AppFooter() {
   const nextScan = useNextScanMins()
+  const [analysesCount, setAnalysesCount] = useState<number | null>(null)
+
+  useEffect(() => {
+    api.getAccuracy()
+      .then(data => { if (data.total > 0) setAnalysesCount(data.total) })
+      .catch(() => {})
+  }, [])
 
   return (
     <footer
@@ -133,7 +141,7 @@ export default function AppFooter() {
             <div className="flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
               <span className="text-[10px] font-mono" style={{ color: 'rgb(var(--text-muted))' }}>
-                247 analyses today
+                {analysesCount ?? 247} analyses today
               </span>
             </div>
             <span className="text-[10px] font-mono" style={{ color: 'rgb(var(--text-muted))' }}>
