@@ -8,6 +8,7 @@ type WatchlistTab = 'events' | 'markets'
 
 interface WatchlistItem {
   id: string
+  watchlist_id: string
   type: 'event' | 'market'
   title: string
   updated_at: string
@@ -77,14 +78,14 @@ export default function WatchlistPage() {
     ? `Updated ${Math.floor((Date.now() - lastUpdated.getTime()) / 60000)}m ago`
     : null
 
-  async function handleRemove(id: string) {
-    setRemoving(id)
+  async function handleRemove(item: WatchlistItem) {
+    setRemoving(item.id)
     setRemoveError(null)
-    setRemovedIds((prev) => new Set([...prev, id]))
+    setRemovedIds((prev) => new Set([...prev, item.id]))
     try {
-      await api.removeFromWatchlist(id)
+      await api.removeFromWatchlist(item.watchlist_id)
     } catch {
-      setRemovedIds((prev) => { const next = new Set(prev); next.delete(id); return next })
+      setRemovedIds((prev) => { const next = new Set(prev); next.delete(item.id); return next })
       setRemoveError('Failed to remove from watchlist')
     } finally {
       setRemoving(null)
@@ -198,7 +199,7 @@ export default function WatchlistPage() {
                 )}
 
                 <button
-                  onClick={(e) => { e.stopPropagation(); handleRemove(item.id) }}
+                  onClick={(e) => { e.stopPropagation(); handleRemove(item) }}
                   disabled={removing === item.id}
                   className="text-text-muted/50 hover:text-danger transition-colors disabled:opacity-30"
                   title="Remove"
