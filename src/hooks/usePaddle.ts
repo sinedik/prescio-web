@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { initializePaddle, Paddle, CheckoutEventsData } from '@paddle/paddle-js'
 
 const CLIENT_TOKEN   = import.meta.env.VITE_PADDLE_CLIENT_TOKEN as string
-const PRICE_ID_PRO   = import.meta.env.VITE_PADDLE_PRICE_ID as string
+const PRICE_ID_PRO   = import.meta.env.VITE_PADDLE_PRICE_ID_PRO as string
 const PRICE_ID_ALPHA = import.meta.env.VITE_PADDLE_PRICE_ID_ALPHA as string
 const IS_SANDBOX = CLIENT_TOKEN?.startsWith('test_') ?? true
 
