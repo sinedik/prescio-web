@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState } from 'react'
+import { usePageTitle } from '../hooks/usePageTitle'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { useAuthContext } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
@@ -727,6 +728,7 @@ function CtaSection({ onSignup }: { onSignup: () => void }) {
 
 // ── Main ─────────────────────────────────────────────────────────────────────
 export default function LandingPage() {
+  usePageTitle('')
   const navigate = useNavigate()
   const { user, profile, loading } = useAuthContext()
   const { theme, setTheme } = useTheme()

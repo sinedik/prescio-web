@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { usePageTitle } from '../hooks/usePageTitle'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import type { Market, Analysis, MarketOpportunity, NewsItem, MetaculusMatch } from '../types'
 import {
@@ -261,6 +262,8 @@ export default function MarketDetailPage() {
   const { addPosition } = usePortfolio()
 
   const [market, setMarket] = useState<Market | undefined>(location.state?.item?.market)
+
+  usePageTitle(market?.question ?? '')
   const [analysis, setAnalysis] = useState<Analysis | undefined>(location.state?.item?.analysis)
   const [news, setNews] = useState<NewsItem[] | undefined>(location.state?.item?.news)
   const [metaculusMatch, setMetaculusMatch] = useState<MetaculusMatch | undefined>(location.state?.item?.metaculusMatch)

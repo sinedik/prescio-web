@@ -1,22 +1,12 @@
 {
   "name": "Prescio",
   "short_name": "Prescio",
-  "description": "Spot mispricings in prediction markets before the crowd does",
+  "description": "Prediction Market Intelligence",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0d0d0d",
-  "theme_color": "#0d0d0d",
+  "background_color": "#080808",
+  "theme_color": "#080808",
   "icons": [
-    {
-      "src": "/apple-touch-icon.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml"
-    }
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
   ]
 }

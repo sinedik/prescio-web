@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import { usePageTitle } from '../hooks/usePageTitle'
 import { useNavigate } from 'react-router-dom'
 import { usePolling } from '../hooks/usePolling'
 import { api } from '../lib/api'
@@ -56,6 +57,7 @@ function EmptyState({ tab }: { tab: WatchlistTab }) {
 }
 
 export default function WatchlistPage() {
+  usePageTitle('Watchlist')
   const navigate = useNavigate()
   const { isAlpha } = useAuthContext()
   const [tab, setTab] = useState<WatchlistTab>('events')

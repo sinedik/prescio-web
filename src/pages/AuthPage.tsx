@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { usePageTitle } from '../hooks/usePageTitle'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useAuthContext } from '../contexts/AuthContext'
 import Logo from '../components/Logo'
@@ -150,6 +151,7 @@ function SocialBtn({ icon, label, onClick }: { icon: React.ReactNode; label: str
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function AuthPage() {
+  usePageTitle('Sign In')
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { user, signIn, signUp, signInWithGoogle, signInWithTwitter } = useAuthContext()

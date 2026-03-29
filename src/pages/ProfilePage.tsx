@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { usePageTitle } from '../hooks/usePageTitle'
 import { useNavigate } from 'react-router-dom'
 import { useAuthContext } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
@@ -61,6 +62,7 @@ function Divider() {
 }
 
 export default function ProfilePage() {
+  usePageTitle('Profile')
   const navigate = useNavigate()
   const { user, profile, signOut, refreshProfile, updateProfile } = useAuthContext()
   const { theme, setTheme } = useTheme()

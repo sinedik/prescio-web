@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
+import { usePageTitle } from '../hooks/usePageTitle'
 import { usePortfolio, calcPortfolioStats, calcPositionPnl } from '../hooks/usePortfolio'
 import PositionCard from '../components/PositionCard'
 import AddPositionModal from '../components/AddPositionModal'
@@ -171,6 +172,7 @@ function ResolutionReminders({ positions }: { positions: Position[] }) {
 }
 
 export default function PortfolioPage() {
+  usePageTitle('Portfolio')
   const { isPro, isAlpha } = useAuthContext()
   const [showPaywall, setShowPaywall] = useState(false)
   const [paywallVariant, setPaywallVariant] = useState<'pro' | 'alpha'>('pro')

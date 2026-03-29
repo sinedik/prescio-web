@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { usePageTitle } from '../hooks/usePageTitle'
 import { useNavigate } from 'react-router-dom'
 import EdgeCard from '../components/EdgeCard'
 import MarketCard from '../components/MarketCard'
@@ -51,6 +52,7 @@ const moduleCache = {
 }
 
 export default function FeedPage() {
+  usePageTitle('Markets')
   const navigate = useNavigate()
   const { profile } = useAuthContext()
   const isPro = profile?.is_pro ?? false

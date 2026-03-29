@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { usePageTitle } from '../hooks/usePageTitle'
 import { useParams, useNavigate } from 'react-router-dom'
 import { usePolling } from '../hooks/usePolling'
 import { api } from '../lib/api'
@@ -75,6 +76,8 @@ export default function EventDetailPage() {
     () => api.getEvent(id!) as Promise<EventDetail>,
     5 * 60 * 1000,
   )
+
+  usePageTitle(event?.title ?? '')
 
   async function handleAnalyze() {
     if (!id) return

@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useRef } from 'react'
+import { usePageTitle } from '../hooks/usePageTitle'
 import { useNavigate } from 'react-router-dom'
 import { usePolling } from '../hooks/usePolling'
 import { api } from '../lib/api'
@@ -226,6 +227,7 @@ function SkeletonCard({ index }: { index: number }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function EventsFeedPage() {
+  usePageTitle('Feed')
   const navigate = useNavigate()
   const { isPro, isAlpha } = useAuthContext()
   const [activeCategory, setActiveCategory] = useState('ALL')
