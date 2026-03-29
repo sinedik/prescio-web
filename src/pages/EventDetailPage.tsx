@@ -189,6 +189,11 @@ export default function EventDetailPage() {
             )}
           </div>
         </div>
+      ) : isPro && !aiSummary ? (
+        <div className="bg-bg-surface border border-bg-border rounded-xl p-5 mb-6">
+          <p className="text-[10px] font-mono font-bold text-text-muted tracking-widest mb-2">AI ANALYSIS</p>
+          <p className="text-xs font-mono text-text-muted">AI analysis is being generated. Check back soon.</p>
+        </div>
       ) : !isPro ? (
         <div className="bg-bg-surface border border-bg-border rounded-xl p-5 mb-6 relative overflow-hidden">
           <p className="text-[10px] font-mono font-bold text-text-muted tracking-widest mb-3">AI ANALYSIS</p>

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePolling } from '../hooks/usePolling'
 import { api } from '../lib/api'
@@ -230,6 +230,16 @@ export default function EventsFeedPage() {
   const { isPro, isAlpha } = useAuthContext()
   const [activeCategory, setActiveCategory] = useState('ALL')
   const [paywallVariant, setPaywallVariant] = useState<'pro' | 'alpha' | null>(null)
+  const [search, setSearch] = useState('')
+  const [searchInput, setSearchInput] = useState('')
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value
+    setSearchInput(val)
+    if (searchTimer.current) clearTimeout(searchTimer.current)
+    searchTimer.current = setTimeout(() => setSearch(val), 300)
+  }, [])
 
   const { data, loading, lastUpdated } = usePolling<{ events?: FeedEvent[]; items?: unknown[] }>(
     () => api.getFeed() as Promise<{ events?: FeedEvent[]; items?: unknown[] }>,
@@ -243,12 +253,23 @@ export default function EventsFeedPage() {
   }, [data])
 
   const filtered = useMemo(() => {
-    if (activeCategory === 'ALL') return events
-    return events.filter((e) =>
-      e.category.toUpperCase() === activeCategory.replace(' & ', '_').toUpperCase() ||
-      e.category.toUpperCase() === activeCategory.toUpperCase()
-    )
-  }, [events, activeCategory])
+    let result = events
+    if (activeCategory !== 'ALL') {
+      result = result.filter((e) =>
+        e.category.toUpperCase() === activeCategory.replace(' & ', '_').toUpperCase() ||
+        e.category.toUpperCase() === activeCategory.toUpperCase()
+      )
+    }
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      result = result.filter((e) =>
+        e.title.toLowerCase().includes(q) ||
+        e.summary?.toLowerCase().includes(q) ||
+        e.markets?.some((m) => m.question.toLowerCase().includes(q))
+      )
+    }
+    return result
+  }, [events, activeCategory, search])
 
   const updatedLabel = useMemo(() => {
     if (!lastUpdated) return null
@@ -284,6 +305,30 @@ export default function EventsFeedPage() {
             {cat}
           </button>
         ))}
+      </div>
+
+      {/* Search */}
+      <div className="relative mb-5">
+        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
+        </svg>
+        <input
+          value={searchInput}
+          onChange={handleSearchChange}
+          placeholder="Search events and markets..."
+          className="w-full bg-bg-surface border border-bg-border rounded pl-9 pr-3 py-2 text-sm font-mono
+            text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent/40 transition-colors"
+        />
+        {searchInput && (
+          <button
+            onClick={() => { setSearchInput(''); setSearch('') }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary"
+          >
+            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* Loading */}
