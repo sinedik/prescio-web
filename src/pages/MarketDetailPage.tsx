@@ -265,7 +265,9 @@ export default function MarketDetailPage() {
   const [historyReal, setHistoryReal] = useState(false)
   const [showAddPosition, setShowAddPosition] = useState(false)
   const [showPaywall, setShowPaywall] = useState(false)
-  const isPro = profile?.is_pro ?? false
+  const [paywallVariant, setPaywallVariant] = useState<'pro' | 'alpha'>('pro')
+  const { isPro, isAlpha } = useAuthContext()
+  const analysesToday = profile?.analyses_today ?? 0
 
   // Persist to sessionStorage
   useEffect(() => {
@@ -571,33 +573,87 @@ export default function MarketDetailPage() {
         )}
       </div>
 
-      {/* ── AI Analysis or Paywall ── */}
-      {!isPro ? (
-        <div
-          className="rounded-lg p-6 mb-4 text-center"
-          style={{ background: 'rgb(var(--bg-surface))', border: '1px solid rgb(var(--bg-border))' }}
-        >
-          <p className="text-[10px] font-mono text-text-muted tracking-widest mb-3">AI ANALYSIS</p>
-          <p className="text-sm font-mono text-text-secondary leading-relaxed mb-1">
-            Edge score, fair value estimate,
+      {/* ── AI Analysis — tiered access ── */}
+
+      {/* FREE: analyze button (3/day) + locked block after */}
+      {!isPro && !analysis && (
+        <div className="bg-bg-surface border border-bg-border rounded-lg p-6 mb-4 text-center">
+          <p className="text-[10px] font-mono text-text-muted tracking-widest mb-1">AI ANALYSIS</p>
+          <p className="text-xs font-mono text-text-muted mb-4">
+            {analysesToday} / 3 free analyses used today
           </p>
-          <p className="text-sm font-mono text-text-secondary leading-relaxed mb-1">
-            thesis and resolution arbitrage
-          </p>
-          <p className="text-sm font-mono text-text-secondary leading-relaxed">
-            are available with Pro.
+          {analyzeError && (
+            <div className="text-xs font-mono text-danger bg-danger/5 border border-danger/20 rounded px-3 py-2 mb-4">
+              {analyzeError}
+            </div>
+          )}
+          <button
+            onClick={() => {
+              if (analysesToday >= 3) { setPaywallVariant('pro'); setShowPaywall(true) }
+              else handleAnalyze()
+            }}
+            disabled={analyzing}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-accent text-bg-base
+              text-xs font-mono font-bold rounded hover:bg-accent/90 transition-colors disabled:opacity-50"
+          >
+            {analyzing ? <><SpinnerIcon /> ANALYZING...</> : 'ANALYZE WITH AI'}
+          </button>
+        </div>
+      )}
+
+      {/* FREE: analysis done → locked teaser */}
+      {!isPro && analysis && (
+        <div className="bg-bg-surface border border-bg-border rounded-lg p-6 mb-4 text-center">
+          <div className="w-9 h-9 rounded-full bg-bg-elevated border border-bg-border flex items-center justify-center mx-auto mb-3 text-base">
+            🔒
+          </div>
+          <p className="text-sm font-mono text-text-secondary mb-1">Analysis ready</p>
+          <p className="text-xs font-mono text-text-muted mb-5 max-w-xs mx-auto leading-relaxed">
+            Upgrade to Pro to unlock thesis, crowd bias, edge score and resolution analysis.
           </p>
           <button
-            onClick={() => setShowPaywall(true)}
-            className="mt-5 px-6 py-2.5 bg-accent text-bg-base text-xs font-mono font-bold rounded
-              hover:bg-accent/90 transition-colors"
+            onClick={() => { setPaywallVariant('pro'); setShowPaywall(true) }}
+            className="px-6 py-2.5 bg-accent text-bg-base text-xs font-mono font-bold rounded hover:bg-accent/90 transition-colors"
           >
             Upgrade to Pro
           </button>
         </div>
-      ) : analysis ? (
+      )}
+
+      {/* PRO / ALPHA: no analysis yet → analyze button */}
+      {isPro && !analysis && (
+        <div className="bg-bg-surface border border-bg-border rounded-lg p-6 mb-4 text-center">
+          <p className="text-sm font-mono text-text-secondary mb-1">No AI analysis yet</p>
+          <p className="text-xs font-mono text-text-muted mb-4">
+            {isAlpha ? 'Alpha · Unlimited analyses' : 'Pro · Unlimited analyses'}
+          </p>
+          {analyzeError && (
+            <div className="text-xs font-mono text-danger bg-danger/5 border border-danger/20 rounded px-3 py-2 mb-4">
+              {analyzeError}
+            </div>
+          )}
+          <button
+            onClick={handleAnalyze}
+            disabled={analyzing}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-accent text-bg-base
+              text-xs font-mono font-bold rounded hover:bg-accent/90 transition-colors disabled:opacity-50"
+          >
+            {analyzing ? <><SpinnerIcon /> ANALYZING...</> : (
+              <>
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 2a10 10 0 1 0 10 10" /><path d="M12 6v6l4 2" />
+                </svg>
+                ANALYZE WITH AI
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* PRO / ALPHA with analysis */}
+      {isPro && analysis && (
         <>
-          {/* Recommendation */}
+          {/* Recommendation card */}
           <div className={`border rounded-lg p-4 mb-4 ${
             absEdge >= 10 ? 'bg-accent/5 border-accent/20' :
             absEdge >= 5  ? 'bg-watch/5 border-watch/20' :
@@ -612,11 +668,25 @@ export default function MarketDetailPage() {
                 {analysis.actionReason && (
                   <p className="text-xs font-mono text-text-secondary mt-2">{analysis.actionReason}</p>
                 )}
+
+                {/* Kelly sizing: visible to Alpha, blurred to Pro */}
                 {analysis.kellySizing && typeof analysis.kellySizing === 'object' && (
-                  <p className="text-xs font-mono text-text-secondary mt-1">
-                    {analysis.kellySizing.kellyUsed?.toFixed(0)}% Kelly ·
-                    Bet ${analysis.kellySizing.betSize} · Pot. +${analysis.kellySizing.potentialWin}
-                  </p>
+                  isAlpha ? (
+                    <p className="text-xs font-mono text-text-secondary mt-1">
+                      {analysis.kellySizing.kellyUsed?.toFixed(0)}% Kelly ·
+                      Bet ${analysis.kellySizing.betSize} · Pot. +${analysis.kellySizing.potentialWin}
+                    </p>
+                  ) : (
+                    <div
+                      className="flex items-center gap-1.5 mt-1 cursor-pointer group"
+                      onClick={() => { setPaywallVariant('alpha'); setShowPaywall(true) }}
+                    >
+                      <p className="text-xs font-mono text-text-secondary blur-sm select-none group-hover:blur-none transition-all">
+                        XX% Kelly · Bet $XXX · Pot. +$XXX
+                      </p>
+                      <span className="text-xs shrink-0">🔒</span>
+                    </div>
+                  )
                 )}
               </div>
 
@@ -632,19 +702,73 @@ export default function MarketDetailPage() {
                     </div>
                   </div>
                 )}
-                <button onClick={() => setShowAddPosition(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-accent/10 border border-accent/30
-                    text-accent text-xs font-mono font-bold rounded hover:bg-accent/20 transition-colors">
-                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M12 5v14M5 12h14" />
-                  </svg>
-                  ADD TO PORTFOLIO
-                </button>
+
+                {/* Add to Portfolio: Alpha only */}
+                {isAlpha && (
+                  <button onClick={() => setShowAddPosition(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-accent/10 border border-accent/30
+                      text-accent text-xs font-mono font-bold rounded hover:bg-accent/20 transition-colors">
+                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                    ADD TO PORTFOLIO
+                  </button>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Analysis text */}
+          {/* Edge signals block: blurred for Pro, full for Alpha */}
+          <div className="bg-bg-surface border border-bg-border rounded-lg p-4 mb-4">
+            <p className="text-[10px] font-mono text-text-muted tracking-widest mb-3">EDGE SIGNALS</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="bg-bg-elevated rounded p-3">
+                <p className="text-[9px] font-mono text-text-muted mb-1 tracking-wider">EDGE SCORE</p>
+                {isAlpha ? (
+                  <p className={`text-lg font-mono font-bold leading-none ${edgeColor(analysis.edge)}`}>
+                    {formatEdge(analysis.edge)}
+                  </p>
+                ) : (
+                  <div
+                    className="flex items-center gap-1 cursor-pointer"
+                    onClick={() => { setPaywallVariant('alpha'); setShowPaywall(true) }}
+                  >
+                    <p className="text-lg font-mono font-bold text-text-primary leading-none blur-sm select-none">+XX</p>
+                    <span className="text-sm">🔒</span>
+                  </div>
+                )}
+              </div>
+
+              {analysis.kellySizing && typeof analysis.kellySizing === 'object' && (
+                <div className="bg-bg-elevated rounded p-3">
+                  <p className="text-[9px] font-mono text-text-muted mb-1 tracking-wider">KELLY FRACTION</p>
+                  {isAlpha ? (
+                    <p className="text-lg font-mono font-bold text-text-primary leading-none">
+                      {analysis.kellySizing.kellyUsed?.toFixed(1)}%
+                    </p>
+                  ) : (
+                    <div
+                      className="flex items-center gap-1 cursor-pointer"
+                      onClick={() => { setPaywallVariant('alpha'); setShowPaywall(true) }}
+                    >
+                      <p className="text-lg font-mono font-bold text-text-primary leading-none blur-sm select-none">X.X%</p>
+                      <span className="text-sm">🔒</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Entry/exit timing: Alpha only */}
+              {isAlpha && analysis.horizon && (
+                <div className="bg-bg-elevated rounded p-3">
+                  <p className="text-[9px] font-mono text-text-muted mb-1 tracking-wider">HORIZON</p>
+                  <p className="text-sm font-mono font-bold text-text-primary leading-none">{analysis.horizon}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Analysis text: thesis / crowd_bias / resolution (Pro+) */}
           <div className="bg-bg-surface border border-bg-border rounded-lg p-5 mb-4 space-y-4">
             <h2 className="text-xs font-mono font-bold text-text-muted tracking-widest">ANALYSIS</h2>
             {analysis.thesis && (
@@ -667,44 +791,10 @@ export default function MarketDetailPage() {
             )}
           </div>
         </>
-      ) : (
-        /* No analysis yet */
-        <div className="bg-bg-surface border border-bg-border rounded-lg p-6 mb-4 text-center">
-          <p className="text-sm font-mono text-text-secondary mb-1">No AI analysis yet</p>
-          <p className="text-xs font-mono text-text-muted mb-4">
-            {profile?.is_pro ? 'Unlimited analyses · Pro' : `${profile?.analyses_today ?? 0} / 3 free analyses used today`}
-          </p>
-          {analyzeError && (
-            <div className="text-xs font-mono text-danger bg-danger/5 border border-danger/20 rounded px-3 py-2 mb-4">
-              {analyzeError}
-            </div>
-          )}
-          <button
-            onClick={handleAnalyze}
-            disabled={analyzing}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-accent text-bg-base
-              text-xs font-mono font-bold rounded hover:bg-accent/90 transition-colors disabled:opacity-50"
-          >
-            {analyzing ? (
-              <>
-                <SpinnerIcon />
-                ANALYZING...
-              </>
-            ) : (
-              <>
-                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 2a10 10 0 1 0 10 10" />
-                  <path d="M12 6v6l4 2" />
-                </svg>
-                ANALYZE WITH AI
-              </>
-            )}
-          </button>
-        </div>
       )}
 
       {showPaywall && (
-        <PaywallModal onClose={() => setShowPaywall(false)} />
+        <PaywallModal variant={paywallVariant} onClose={() => setShowPaywall(false)} />
       )}
 
       {/* ── Tags ── */}

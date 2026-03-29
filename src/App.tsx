@@ -3,8 +3,10 @@ import { useAuthContext } from './contexts/AuthContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import Layout from './components/Layout'
+import EventsFeedPage from './pages/EventsFeedPage'
 import FeedPage from './pages/FeedPage'
 import MarketDetailPage from './pages/MarketDetailPage'
+import EventDetailPage from './pages/EventDetailPage'
 import PortfolioPage from './pages/PortfolioPage'
 import LandingPage from './pages/LandingPage'
 import AuthPage from './pages/AuthPage'
@@ -65,8 +67,11 @@ export default function App() {
 
       {/* Protected routes with Layout + onboarding gate */}
       <Route element={<ProtectedLayout />}>
+        <Route path="/feed" element={<EventsFeedPage />} />
         <Route path="/markets" element={<FeedPage />} />
         <Route path="/watchlist" element={<WatchlistPage />} />
+        <Route path="/events/:id" element={<EventDetailPage />} />
+        <Route path="/markets/:id" element={<MarketDetailPage />} />
         <Route path="/market/:slug" element={<MarketDetailPage />} />
         <Route path="/portfolio" element={<PortfolioPage />} />
         <Route path="/profile" element={<ProfilePage />} />

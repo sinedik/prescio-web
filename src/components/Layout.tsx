@@ -18,6 +18,7 @@ const STATUS_CONFIG: Record<ScanStatus, { dotClass: string; textClass: string; l
 }
 
 const NAV_LINKS = [
+  { to: '/feed',      label: 'FEED' },
   { to: '/markets',   label: 'MARKETS' },
   { to: '/watchlist', label: 'WATCHLIST' },
   { to: '/portfolio', label: 'PORTFOLIO' },
@@ -48,7 +49,7 @@ export default function Layout() {
 
   const email = user?.email ?? ''
   const initials = email.slice(0, 2).toUpperCase()
-  const isPro = profile?.is_pro ?? false
+  const plan = profile?.plan ?? (profile?.is_pro ? 'pro' : 'free')
   const { dotClass, textClass, label } = STATUS_CONFIG[scanStatus]
 
   return (
@@ -124,8 +125,18 @@ export default function Layout() {
               ))}
             </div>
 
-            {/* PRO badge */}
-            {isPro && (
+            {/* Plan badge */}
+            {plan === 'alpha' && (
+              <span className="hidden sm:inline text-[9px] font-mono font-bold px-2 py-0.5 rounded"
+                style={{
+                  color: 'rgb(var(--accent-green, 34 197 94))',
+                  background: 'rgb(var(--accent-green, 34 197 94) / 0.08)',
+                  border: '1px solid rgb(var(--accent-green, 34 197 94) / 0.25)',
+                }}>
+                ALPHA
+              </span>
+            )}
+            {plan === 'pro' && (
               <span className="hidden sm:inline text-[9px] font-mono font-bold px-2 py-0.5 rounded"
                 style={{
                   color: 'rgb(var(--accent))',

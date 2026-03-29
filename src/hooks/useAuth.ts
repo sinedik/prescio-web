@@ -6,6 +6,7 @@ export interface Profile {
   id: string
   email: string
   is_pro: boolean
+  plan: 'free' | 'pro' | 'alpha'
   interests: string[]
   analyses_today: number
   analyses_date: string | null
@@ -152,10 +153,15 @@ export function useAuth() {
     }
   }
 
+  const isPro = profile ? (profile.plan === 'pro' || profile.plan === 'alpha' || profile.is_pro) : false
+  const isAlpha = profile ? profile.plan === 'alpha' : false
+
   return {
     user,
     profile,
     session,
+    isPro,
+    isAlpha,
     signIn,
     signUp,
     signOut,

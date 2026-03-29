@@ -5,20 +5,27 @@ import { activatePro } from '../api'
 
 interface Props {
   onClose: () => void
+  variant?: 'pro' | 'alpha'
   analysesToday?: number
   analysesLimit?: number
 }
 
 const PRO_FEATURES = [
-  'Edge score — how mispriced each market is',
-  'Fair value estimate — AI probability assessment',
-  'Full thesis — why the crowd is wrong',
-  'Resolution arbitrage — literal criteria analysis',
-  'Kelly sizing — optimal position size',
+  'Full thesis & crowd bias',
+  'Resolution arbitrage analysis',
   'Unlimited analyses per day',
+  'Event context & timeline',
 ]
 
-export default function PaywallModal({ onClose, analysesToday = 0, analysesLimit = 3 }: Props) {
+const ALPHA_FEATURES = [
+  'Edge score on every market',
+  'Kelly-optimal position size',
+  'Entry/exit timing signals',
+  'Instant alerts when edge found',
+  'AI accuracy track record',
+]
+
+export default function PaywallModal({ onClose, variant = 'pro', analysesToday = 0, analysesLimit = 3 }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { user, refreshProfile } = useAuthContext()
@@ -32,11 +39,22 @@ export default function PaywallModal({ onClose, analysesToday = 0, analysesLimit
     onClose()
   })
 
-  const limitReached = analysesToday >= analysesLimit
-  const heading = 'Unlock AI Edge Analysis'
-  const subtext = limitReached
-    ? 'Come back tomorrow or upgrade for unlimited access.'
-    : 'See what the market is missing.'
+  const isAlpha = variant === 'alpha'
+  const limitReached = !isAlpha && analysesToday >= analysesLimit
+
+  const heading = isAlpha ? 'Unlock Edge Signals' : 'Unlock AI Analysis'
+  const subtext = isAlpha
+    ? 'Full edge signals and Kelly sizing on every market.'
+    : limitReached
+      ? 'Come back tomorrow or upgrade for unlimited access.'
+      : 'See what the market is missing.'
+  const price = isAlpha ? '$39.99/mo' : '$14.99/mo'
+  const ctaLabel = isAlpha ? 'Upgrade to Alpha' : 'Upgrade to Pro'
+  const features = isAlpha ? ALPHA_FEATURES : PRO_FEATURES
+  const accentCls = isAlpha
+    ? 'text-[color:rgb(34_197_94)] border-[rgb(34_197_94/0.3)] bg-[rgb(34_197_94/0.08)]'
+    : 'text-accent border-accent/30 bg-accent/10'
+  const dotCls = isAlpha ? 'bg-[rgb(34_197_94)]' : 'bg-accent'
 
   async function handleUpgrade() {
     setLoading(true)
@@ -60,7 +78,9 @@ export default function PaywallModal({ onClose, analysesToday = 0, analysesLimit
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div>
-            <p className="text-[10px] font-mono text-text-muted tracking-wider mb-1">UPGRADE TO PRO</p>
+            <p className="text-[10px] font-mono text-text-muted tracking-wider mb-1">
+              {isAlpha ? 'UPGRADE TO ALPHA' : 'UPGRADE TO PRO'}
+            </p>
             <h2 className="text-lg font-mono font-bold text-text-primary leading-tight">
               {heading}
             </h2>
@@ -78,12 +98,18 @@ export default function PaywallModal({ onClose, analysesToday = 0, analysesLimit
 
         {/* Features */}
         <div className="flex flex-col gap-2 mb-5">
-          {PRO_FEATURES.map((f) => (
+          {features.map((f) => (
             <div key={f} className="flex items-center gap-2.5">
-              <div className="w-4 h-4 rounded-full bg-accent/10 border border-accent/30 flex items-center justify-center shrink-0">
-                <svg className="w-2.5 h-2.5 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                  <path d="M5 13l4 4L19 7" />
-                </svg>
+              <div className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${accentCls}`}>
+                {isAlpha ? (
+                  <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M13 2L4.5 13H11l-2 9 8.5-11H11.5l1.5-9z" />
+                  </svg>
+                ) : (
+                  <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <path d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
               </div>
               <span className="text-sm font-mono text-text-secondary">{f}</span>
             </div>
@@ -100,17 +126,32 @@ export default function PaywallModal({ onClose, analysesToday = 0, analysesLimit
         <button
           onClick={handleUpgrade}
           disabled={loading}
-          className="w-full py-3 bg-accent text-bg-base text-sm font-mono font-bold rounded-lg
-            hover:bg-accent/90 transition-colors disabled:opacity-50 mb-3"
+          className={`w-full py-3 text-bg-base text-sm font-mono font-bold rounded-lg transition-colors disabled:opacity-50 mb-3 ${
+            isAlpha
+              ? 'bg-[rgb(34_197_94)] hover:bg-[rgb(34_197_94/0.9)]'
+              : 'bg-accent hover:bg-accent/90'
+          }`}
         >
-          {loading ? 'LOADING...' : 'Upgrade to Pro → $14.99/month · Cancel anytime'}
+          {loading ? 'LOADING...' : `${ctaLabel} — ${price} · Cancel anytime`}
         </button>
+
+        {!isAlpha && (
+          <button
+            onClick={() => {
+              onClose()
+              // trigger alpha modal from parent if needed
+            }}
+            className="w-full py-1.5 text-[10px] font-mono text-text-muted hover:text-text-secondary transition-colors"
+          >
+            Already on Pro? Upgrade to Alpha →
+          </button>
+        )}
 
         <button
           onClick={onClose}
           className="w-full py-2 text-xs font-mono text-text-muted hover:text-text-secondary transition-colors"
         >
-          Maybe tomorrow
+          Maybe later
         </button>
       </div>
     </div>

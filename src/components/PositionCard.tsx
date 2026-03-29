@@ -132,6 +132,14 @@ export default function PositionCard({ position: p, onUpdateStatus, onDelete }: 
               </span>
             </div>
           )}
+          {p.ai_edge_at_entry !== undefined && (
+            <div className="hidden sm:block">
+              <span className="text-text-muted">AI EDGE AT ENTRY </span>
+              <span className={p.ai_edge_at_entry >= 5 ? 'text-accent' : p.ai_edge_at_entry >= 0 ? 'text-watch' : 'text-danger'}>
+                {p.ai_edge_at_entry > 0 ? '+' : ''}{p.ai_edge_at_entry.toFixed(0)}pp
+              </span>
+            </div>
+          )}
           {p.closedAt && (
             <div className="text-text-muted">{formatDate(p.closedAt)}</div>
           )}

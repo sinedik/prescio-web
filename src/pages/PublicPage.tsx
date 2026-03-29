@@ -76,7 +76,9 @@ export default function PublicPage() {
           <LandingPage />
         </div>
       ) : (
-        <AuthPage exiting={stage === 'exiting-auth'} />
+        <div className={stage === 'exiting-auth' ? 'public-exit-auth' : ''}>
+          <AuthPage />
+        </div>
       )}
     </div>
   )

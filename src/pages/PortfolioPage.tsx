@@ -1,10 +1,11 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { usePortfolio, calcPortfolioStats, calcPositionPnl } from '../hooks/usePortfolio'
 import PositionCard from '../components/PositionCard'
 import AddPositionModal from '../components/AddPositionModal'
 import PaywallModal from '../components/PaywallModal'
 import { useAuthContext } from '../contexts/AuthContext'
 import { daysUntil } from '../utils'
+import { api } from '../lib/api'
 import type { Position, PositionStatus } from '../types'
 
 type FilterStatus = PositionStatus | 'all'
@@ -170,9 +171,10 @@ function ResolutionReminders({ positions }: { positions: Position[] }) {
 }
 
 export default function PortfolioPage() {
-  const { profile } = useAuthContext()
-  const isPro = profile?.is_pro ?? false
+  const { isPro, isAlpha } = useAuthContext()
   const [showPaywall, setShowPaywall] = useState(false)
+  const [paywallVariant, setPaywallVariant] = useState<'pro' | 'alpha'>('pro')
+  const [aiAccuracy, setAiAccuracy] = useState<{ accuracy: number; total: number } | null>(null)
 
   const { positions, addPosition, updateStatus, deletePosition, synced } = usePortfolio()
   const [showModal, setShowModal] = useState(false)
@@ -182,6 +184,11 @@ export default function PortfolioPage() {
   const atPositionLimit = !isPro && positions.length >= 5
 
   const stats = useMemo(() => calcPortfolioStats(positions), [positions])
+
+  useEffect(() => {
+    if (!isAlpha) return
+    api.getAccuracy().then(setAiAccuracy).catch(() => { /* optional */ })
+  }, [isAlpha])
 
   const filtered = useMemo(() => {
     return positions
@@ -228,7 +235,7 @@ export default function PortfolioPage() {
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+      <div className={`grid gap-3 mb-4 ${isAlpha && aiAccuracy ? 'grid-cols-2 sm:grid-cols-5' : 'grid-cols-2 sm:grid-cols-4'}`}>
         <StatCard
           label="DEPLOYED"
           value={`$${stats.deployed.toFixed(0)}`}
@@ -254,6 +261,14 @@ export default function PortfolioPage() {
           positive={stats.roi > 0}
           negative={stats.roi < 0}
         />
+        {isAlpha && aiAccuracy && (
+          <StatCard
+            label="AI ACCURACY"
+            value={`${aiAccuracy.accuracy.toFixed(0)}%`}
+            sub={`${aiAccuracy.total} resolved`}
+            highlight={aiAccuracy.accuracy >= 60}
+          />
+        )}
       </div>
 
       {/* Charts */}
@@ -359,7 +374,12 @@ export default function PortfolioPage() {
         />
       )}
 
-      {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
+      {showPaywall && (
+        <PaywallModal
+          variant={paywallVariant}
+          onClose={() => setShowPaywall(false)}
+        />
+      )}
     </div>
   )
 }

@@ -108,6 +108,7 @@ export interface Position {
   amount: number         // $ invested
   // meta
   thesis: string
+  ai_edge_at_entry?: number  // pp edge at time of entry (Alpha)
   status: PositionStatus
   createdAt: string      // ISO
   closedAt?: string      // ISO

@@ -99,7 +99,9 @@ export default function ProfilePage() {
   const displayName = profile.display_name || email.split('@')[0]
   const initials = (profile.display_name || email).slice(0, 2).toUpperCase()
   const avatarColor = getAvatarColor(displayName)
-  const isPro = profile.is_pro
+  const plan = profile.plan ?? (profile.is_pro ? 'pro' : 'free')
+  const isPro = plan === 'pro' || plan === 'alpha'
+  const isAlpha = plan === 'alpha'
   const analysesToday = profile.analyses_today ?? 0
   const streakDays = profile.streak_days ?? 0
   const totalAnalyses = profile.analyses_total ?? 0
@@ -189,11 +191,41 @@ export default function ProfilePage() {
           className="rounded-xl p-5"
           style={{
             background: 'rgb(var(--bg-surface))',
-            border: `1px solid ${isPro ? 'rgb(var(--accent) / 0.2)' : 'rgb(var(--bg-border))'}`,
-            borderLeft: isPro ? '3px solid rgb(var(--accent))' : undefined,
+            border: isAlpha
+              ? '1px solid rgb(34 197 94 / 0.2)'
+              : isPro
+                ? '1px solid rgb(var(--accent) / 0.2)'
+                : '1px solid rgb(var(--bg-border))',
+            borderLeft: isAlpha
+              ? '3px solid rgb(34 197 94)'
+              : isPro
+                ? '3px solid rgb(var(--accent))'
+                : undefined,
           }}
         >
-          {isPro ? (
+          {isAlpha ? (
+            /* ─ ALPHA ─ */
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-sm font-mono font-bold text-text-primary">ALPHA PLAN</span>
+                <span className="flex items-center gap-1.5 text-[10px] font-mono font-bold px-2 py-0.5 rounded"
+                  style={{ background: 'rgb(34 197 94 / 0.1)', border: '1px solid rgb(34 197 94 / 0.25)', color: 'rgb(34 197 94)' }}>
+                  ACTIVE
+                  <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'rgb(34 197 94)' }} />
+                </span>
+              </div>
+              <p className="text-xs font-mono text-text-muted mb-4">All features unlocked</p>
+              <button
+                onClick={handleManageSubscription}
+                disabled={portalLoading}
+                className="text-xs font-mono border px-3 py-1.5 rounded hover:opacity-80 transition-opacity disabled:opacity-50"
+                style={{ color: 'rgb(34 197 94)', borderColor: 'rgb(34 197 94 / 0.3)' }}
+              >
+                {portalLoading ? 'LOADING...' : 'Manage subscription →'}
+              </button>
+            </div>
+          ) : isPro ? (
+            /* ─ PRO ─ */
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-sm font-mono font-bold text-text-primary">PRO PLAN</span>
@@ -202,21 +234,34 @@ export default function ProfilePage() {
                   <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
                 </span>
               </div>
-              <p className="text-xs font-mono text-text-muted mb-3">All features unlocked</p>
-              <button
-                onClick={handleManageSubscription}
-                disabled={portalLoading}
-                className="text-xs font-mono text-accent border border-accent/30 px-3 py-1.5 rounded
-                  hover:bg-accent/10 transition-colors disabled:opacity-50"
-              >
-                {portalLoading ? 'LOADING...' : 'Manage subscription →'}
-              </button>
+              <p className="text-xs font-mono text-text-muted mb-4">Unlimited analyses</p>
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={async () => {
+                    setUpgradeLoading(true)
+                    try { await openCheckout(user.email) } catch { /* */ } finally { setUpgradeLoading(false) }
+                  }}
+                  disabled={upgradeLoading}
+                  className="flex items-center justify-center gap-1.5 w-full py-2 text-xs font-mono font-bold rounded-lg border transition-colors disabled:opacity-50"
+                  style={{ color: 'rgb(34 197 94)', borderColor: 'rgb(34 197 94 / 0.3)', background: 'rgb(34 197 94 / 0.05)' }}
+                >
+                  {upgradeLoading ? 'LOADING...' : 'Upgrade to Alpha →'}
+                </button>
+                <button
+                  onClick={handleManageSubscription}
+                  disabled={portalLoading}
+                  className="text-xs font-mono text-text-muted hover:text-text-secondary transition-colors w-fit disabled:opacity-50"
+                >
+                  {portalLoading ? 'LOADING...' : 'Manage subscription →'}
+                </button>
+              </div>
             </div>
           ) : (
+            /* ─ FREE ─ */
             <div>
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-mono font-bold text-text-primary">FREE PLAN</span>
-                <span className="text-[11px] font-mono text-text-muted">{analysesToday} / 3 today</span>
+                <span className="text-[11px] font-mono text-text-muted">{analysesToday} / 3 analyses today</span>
               </div>
               <div className="h-1.5 rounded-full mb-4 overflow-hidden bg-bg-border">
                 <div
@@ -224,32 +269,29 @@ export default function ProfilePage() {
                   style={{ width: `${Math.min(100, (analysesToday / 3) * 100)}%` }}
                 />
               </div>
-              <button
-                onClick={async () => {
-                  setUpgradeLoading(true)
-                  try { await openCheckout(user.email) } catch { /* */ } finally { setUpgradeLoading(false) }
-                }}
-                disabled={upgradeLoading}
-                className="w-full py-2.5 bg-accent text-bg-base text-sm font-mono font-bold rounded-lg
-                  hover:bg-accent/90 transition-colors disabled:opacity-50 mb-4"
-              >
-                {upgradeLoading ? 'LOADING...' : 'Upgrade to Pro — $14.99/mo'}
-              </button>
               <div className="flex flex-col gap-2">
-                {[
-                  'Edge score on every market',
-                  'Full AI analysis & thesis',
-                  'Kelly-optimal position sizing',
-                  'Resolution arbitrage',
-                  'Email alerts when edge ≥ 15%',
-                ].map((f) => (
-                  <div key={f} className="flex items-center gap-2">
-                    <svg className="w-3 h-3 shrink-0 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <path d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span className="text-xs font-mono text-text-muted">{f}</span>
-                  </div>
-                ))}
+                <button
+                  onClick={async () => {
+                    setUpgradeLoading(true)
+                    try { await openCheckout(user.email) } catch { /* */ } finally { setUpgradeLoading(false) }
+                  }}
+                  disabled={upgradeLoading}
+                  className="w-full py-2.5 bg-accent text-bg-base text-sm font-mono font-bold rounded-lg
+                    hover:bg-accent/90 transition-colors disabled:opacity-50"
+                >
+                  {upgradeLoading ? 'LOADING...' : 'Upgrade to Pro — $14.99/mo'}
+                </button>
+                <button
+                  onClick={async () => {
+                    setUpgradeLoading(true)
+                    try { await openCheckout(user.email) } catch { /* */ } finally { setUpgradeLoading(false) }
+                  }}
+                  disabled={upgradeLoading}
+                  className="w-full py-2.5 border text-xs font-mono font-bold rounded-lg transition-colors disabled:opacity-50"
+                  style={{ color: 'rgb(34 197 94)', borderColor: 'rgb(34 197 94 / 0.3)', background: 'rgb(34 197 94 / 0.05)' }}
+                >
+                  {upgradeLoading ? 'LOADING...' : 'Upgrade to Alpha — $39.99/mo'}
+                </button>
               </div>
             </div>
           )}
