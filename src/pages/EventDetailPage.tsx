@@ -19,6 +19,10 @@ interface RelatedMarket {
   platform: string
   price: number
   volume: number
+  analysis?: {
+    recommendation?: string
+    confidence_score?: number
+  }
 }
 
 interface EventDetail {
@@ -84,8 +88,24 @@ export default function EventDetailPage() {
     setAnalyzing(true)
     setAnalyzeError(null)
     try {
-      await api.analyzeEvent(id)
-      window.location.reload()
+      const result = await api.analyzeEvent(id) as Record<string, unknown>
+
+      if (!result.queued) {
+        window.location.reload()
+        return
+      }
+
+      // Поллим GET /events/:id каждые 4 секунды пока не появится ai_summary
+      const MAX_ATTEMPTS = 20
+      for (let i = 0; i < MAX_ATTEMPTS; i++) {
+        await new Promise(r => setTimeout(r, 4000))
+        const fresh = await api.getEvent(id) as EventDetail
+        if (fresh?.ai_summary) {
+          window.location.reload()
+          return
+        }
+      }
+      setAnalyzeError('Analysis is taking too long. Refresh the page in a moment.')
     } catch (err: unknown) {
       const e = err as { type?: string; limit?: number }
       if (e?.type === 'limit_reached') {
@@ -263,11 +283,23 @@ export default function EventDetailPage() {
                   <p className="text-[13px] font-mono text-text-secondary truncate">{m.question}</p>
                   <p className="text-[10px] font-mono text-text-muted mt-0.5">{m.platform}</p>
                 </div>
-                <div className="text-right shrink-0">
-                  <p className="text-sm font-mono font-bold text-text-primary">{m.price.toFixed(0)}%</p>
-                  {m.volume > 0 && (
-                    <p className="text-[10px] font-mono text-text-muted">{formatVolume(m.volume)}</p>
+                <div className="flex items-center gap-2 shrink-0">
+                  {m.analysis?.recommendation && (
+                    <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border ${
+                      m.analysis.recommendation === 'enter'  ? 'text-accent border-accent/40 bg-accent/10' :
+                      m.analysis.recommendation === 'watch'  ? 'text-watch border-watch/30' :
+                      m.analysis.recommendation === 'skip'   ? 'text-text-muted border-bg-border' :
+                      'text-text-muted border-bg-border'
+                    }`}>
+                      {m.analysis.recommendation.toUpperCase()}
+                    </span>
                   )}
+                  <div className="text-right">
+                    <p className="text-sm font-mono font-bold text-text-primary">{m.price.toFixed(0)}%</p>
+                    {m.volume > 0 && (
+                      <p className="text-[10px] font-mono text-text-muted">{formatVolume(m.volume)}</p>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

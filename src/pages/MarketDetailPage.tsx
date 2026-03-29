@@ -281,63 +281,89 @@ export default function MarketDetailPage() {
   const { isPro, isAlpha } = useAuthContext()
   const analysesToday = profile?.analyses_today ?? 0
 
-  // Persist to sessionStorage
+  // Master loader — всегда загружает свежие данные по UUID, не зависит от cache/state
   useEffect(() => {
+    if (!slug) return
+    let cancelled = false
+    console.log('[MarketDetail] effect start, slug=', slug, 'hasState=', !!location.state?.item)
+
+    // 1. Быстрый показ из navigation state / sessionStorage
     const stateItem = location.state?.item as Partial<MarketOpportunity> | undefined
     if (stateItem?.market) {
       const key = CACHE_PREFIX + slugify(stateItem.market.question)
       sessionStorage.setItem(key, JSON.stringify(stateItem))
-      setMarket(stateItem.market)
-      setAnalysis(stateItem.analysis)
-      setNews(stateItem.news)
-      setMetaculusMatch(stateItem.metaculusMatch ?? undefined)
-    }
-  }, [location.state])
-
-  // Restore from sessionStorage or fetch from backend
-  useEffect(() => {
-    if (market || !slug) return
-
-    const key = CACHE_PREFIX + slug
-    const cached = sessionStorage.getItem(key)
-    if (cached) {
-      try {
-        const parsed = JSON.parse(cached) as Partial<MarketOpportunity>
-        setMarket(parsed.market)
-        setAnalysis(parsed.analysis)
-        setNews(parsed.news)
-        setMetaculusMatch(parsed.metaculusMatch ?? undefined)
+      if (!cancelled) {
+        setMarket(stateItem.market)
+        setAnalysis(stateItem.analysis)
+        setNews(stateItem.news)
+        setMetaculusMatch(stateItem.metaculusMatch ?? undefined)
         setMarketLoading(false)
-        return
-      } catch { /* ignore */ }
+      }
+    } else {
+      const key = CACHE_PREFIX + slug
+      const cached = sessionStorage.getItem(key)
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached) as Partial<MarketOpportunity>
+          if (!cancelled) {
+            setMarket(parsed.market)
+            setAnalysis(parsed.analysis)
+            setNews(parsed.news)
+            setMetaculusMatch(parsed.metaculusMatch ?? undefined)
+            setMarketLoading(false)
+          }
+        } catch { /* ignore */ }
+      }
     }
 
-    // Fetch from backend: try by id first, then search by slug
-    let cancelled = false
-    setMarketLoading(true)
+    // 2. Всегда делаем свежий запрос к API по UUID маркета
     ;(async () => {
       try {
-        const m = await api.getMarket(slug) as Market & { price_history?: HistoryPoint[] }
-        if (!cancelled && m) {
-          setMarket(m)
-          if (m.price_history?.length) { setHistory(m.price_history); setHistoryReal(true) }
-          return
-        }
-      } catch { /* not a valid id — fall through to search */ }
+        // Сначала получаем ID маркета (slug → UUID через поиск, если нужно)
+        const initial = stateItem?.market
+        let marketId = initial?.id
 
-      try {
-        const results = await api.getMarkets({ search: slug, limit: 1 }) as Market[] | { markets: Market[] }
-        const list = Array.isArray(results) ? results : ((results as { markets: Market[] }).markets ?? [])
-        const m = list[0] as (Market & { price_history?: HistoryPoint[] }) | undefined
-        if (!cancelled && m) {
-          setMarket(m)
-          if (m.price_history?.length) { setHistory(m.price_history); setHistoryReal(true) }
+        if (!marketId) {
+          // Пробуем найти по slug
+          const results = await api.getMarkets({ search: slug.replace(/-/g, ' '), limit: 5 }) as { markets: Market[] }
+          const list = (results.markets ?? []) as (Market & { analysis?: Analysis })[]
+          const found = list.find(m => {
+            const s = m.question?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+            return s === slug || m.slug === slug
+          }) ?? list[0]
+          if (found) {
+            marketId = found.id
+            if (!cancelled) {
+              setMarket(found as Market)
+              if ((found as Market & { analysis?: Analysis }).analysis) setAnalysis((found as Market & { analysis?: Analysis }).analysis)
+              setMarketLoading(false)
+            }
+          }
+        }
+
+        if (!marketId || cancelled) return
+        const { data: { session: dbgSession } } = await (await import('../lib/supabase')).supabase.auth.getSession()
+        console.log('[MarketDetail] fetching fresh by UUID=', marketId, 'has_token=', !!dbgSession?.access_token, 'plan=?')
+
+        // Запрашиваем полные данные по UUID (включая analysis)
+        const fresh = await api.getMarket(marketId) as Market & { analysis?: Analysis; price_history?: HistoryPoint[] }
+        if (!cancelled && fresh) {
+          setMarket(fresh)
+          if (fresh.analysis) setAnalysis(fresh.analysis)
+          if (fresh.price_history?.length) { setHistory(fresh.price_history); setHistoryReal(true) }
+          const key = CACHE_PREFIX + slug
+          // Не перезаписываем сохранённый анализ если свежий запрос вернул пустой
+          // (race condition: auth ещё не восстановилась, план определился как free)
+          const prevStr = sessionStorage.getItem(key)
+          const prevAnalysis = prevStr ? (JSON.parse(prevStr) as { analysis?: Analysis }).analysis : undefined
+          sessionStorage.setItem(key, JSON.stringify({ market: fresh, analysis: fresh.analysis ?? prevAnalysis }))
+          setMarketLoading(false)
         }
       } catch { /* ignore */ }
-    })().finally(() => { if (!cancelled) setMarketLoading(false) })
+    })()
 
     return () => { cancelled = true }
-  }, [slug, market])
+  }, [slug])
 
   // Filter price history from market object by selected interval
   useEffect(() => {
@@ -353,13 +379,48 @@ export default function MarketDetailPage() {
     setAnalyzing(true)
     setAnalyzeError(null)
     try {
-      const result = await api.analyzeMarket(market.id)
-      setAnalysis(result.analysis)
-      setNews(result.news)
-      setMetaculusMatch(result.metaculusMatch ?? undefined)
-      // Update cache
-      const key = CACHE_PREFIX + slugify(market.question)
-      sessionStorage.setItem(key, JSON.stringify({ market, analysis: result.analysis, news: result.news, metaculusMatch: result.metaculusMatch }))
+      const marketId = market.id!
+      const marketQuestion = market.question!
+      const result = await api.analyzeMarket(marketId) as Record<string, unknown>
+
+      // Всегда перечитываем из GET — данные правильно форматированы и гарантированно из БД
+      const pollForAnalysis = async () => {
+        const MAX_ATTEMPTS = 12
+        for (let i = 0; i < MAX_ATTEMPTS; i++) {
+          await new Promise(r => setTimeout(r, 10000))
+          const fresh = await api.getMarket(marketId) as Market & { analysis?: Analysis }
+          if (fresh?.analysis) {
+            setAnalysis(fresh.analysis)
+            setMarket(prev => prev ? { ...prev } : prev)
+            const key = CACHE_PREFIX + slugify(marketQuestion)
+            sessionStorage.setItem(key, JSON.stringify({ market: fresh, analysis: fresh.analysis, news, metaculusMatch }))
+            setAnalyzing(false)
+            return true
+          }
+        }
+        return false
+      }
+
+      // Если анализ уже был в БД — сразу перечитываем без ожидания
+      if (result.analysis) {
+        const fresh = await api.getMarket(marketId) as Market & { analysis?: Analysis }
+        if (fresh?.analysis) {
+          setAnalysis(fresh.analysis)
+          const key = CACHE_PREFIX + slugify(marketQuestion)
+          sessionStorage.setItem(key, JSON.stringify({ market: fresh, analysis: fresh.analysis, news, metaculusMatch }))
+        } else {
+          // Fallback: анализ есть но план не позволяет читать через GET (free user)
+          setAnalysis(result.analysis as Analysis)
+        }
+        setAnalyzing(false)
+        return
+      }
+
+      // Анализ поставлен в очередь — поллим каждые 10 секунд
+      if (result.queued) {
+        const found = await pollForAnalysis()
+        if (!found) setAnalyzeError('Analysis is taking too long. Refresh the page in a moment.')
+      }
     } catch (err: unknown) {
       const e = err as { type?: string; limit?: number }
       if (e?.type === 'limit_reached') {
