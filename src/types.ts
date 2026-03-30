@@ -20,6 +20,14 @@ export interface Market {
   url: string
   // Kalshi-specific
   ticker?: string
+  // Event context (enrichment)
+  event?: {
+    id: string
+    title: string
+    image_url?: string | null
+    description?: string | null
+    enrichment_status?: 'pending' | 'ready' | 'failed'
+  } | null
 }
 
 export interface KellySizing {

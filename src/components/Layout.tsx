@@ -38,7 +38,7 @@ const STATUS_CONFIG: Record<ScanStatus, { dotClass: string; textClass: string; l
 const NAV_LINKS = [
   { to: '/feed',      label: 'FEED' },
   { to: '/markets',   label: 'MARKETS' },
-  { to: '/watchlist', label: 'WATCHLIST' },
+  { to: '/dashboard', label: 'DASHBOARD' },
   { to: '/portfolio', label: 'PORTFOLIO' },
 ]
 

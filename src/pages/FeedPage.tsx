@@ -8,6 +8,7 @@ import { getFeed, getMarkets } from '../api'
 import type { Market, MarketOpportunity, FilterPlatform, SortField } from '../types'
 import { useAuthContext } from '../contexts/AuthContext'
 import { IconBolt } from '../components/icons'
+import { getAnalyzingIds, getAnalyzedIds } from '../lib/activeAnalyses'
 
 const POLL_INTERVAL = 15_000
 
@@ -48,7 +49,7 @@ const moduleCache = {
   edgeItems: [] as MarketOpportunity[],
   marketsAt: 0,
   edgeAt: 0,
-  TTL: 5 * 60 * 1000, // 5 min before background refresh
+  TTL: 60 * 1000, // 1 min — короткий TTL чтобы данные были свежими
 }
 
 export default function FeedPage() {
@@ -64,8 +65,7 @@ export default function FeedPage() {
   // Data — initialise from module cache so there's no blank flash on remount
   const [rawMarkets, setRawMarkets] = useState<Market[]>(moduleCache.markets)
   const [edgeItems, setEdgeItems] = useState<MarketOpportunity[]>(moduleCache.edgeItems)
-  // Start in non-loading state if we already have cached data for the default view (markets)
-  const [loading, setLoading] = useState(moduleCache.markets.length === 0)
+  const [loading, setLoading] = useState(true)  // всегда показываем скелетоны при первом рендере
   const [scanning, setScanning] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
@@ -85,6 +85,9 @@ export default function FeedPage() {
   const [edgeSort, setEdgeSort] = useState<SortField>('edge')
   const [showSkipped, setShowSkipped] = useState(false)
 
+  const analyzingMarketIds = useState(() => getAnalyzingIds('market'))[0]
+  const analyzedMarketIds  = useState(() => getAnalyzedIds('market'))[0]
+
   const pollTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const stopPolling = useCallback(() => {
@@ -94,15 +97,16 @@ export default function FeedPage() {
     }
   }, [])
 
-  const load = useCallback(async (isPolling = false) => {
+  const load = useCallback(async (isPolling = false, forceRefresh = false) => {
     const now = Date.now()
-    const cached = viewMode === 'markets'
+    const cached = !forceRefresh && (viewMode === 'markets'
       ? moduleCache.markets.length > 0 && (now - moduleCache.marketsAt) < moduleCache.TTL
-      : moduleCache.edgeItems.length > 0 && (now - moduleCache.edgeAt) < moduleCache.TTL
+      : moduleCache.edgeItems.length > 0 && (now - moduleCache.edgeAt) < moduleCache.TTL)
 
     // Show cached data instantly, skip full loading state
     if (!isPolling && cached) {
       setLoading(false)
+      return  // используем кеш, не запрашиваем
     } else if (!isPolling) {
       setLoading(true)
       stopPolling()
@@ -156,14 +160,15 @@ export default function FeedPage() {
       return true
     })
     .sort((a, b) => {
+      const aAna = analyzingMarketIds.has(a.id ?? '')
+      const bAna = analyzingMarketIds.has(b.id ?? '')
+      if (aAna !== bAna) return aAna ? -1 : 1
       if (marketsSort === 'volume') return (b.volume ?? 0) - (a.volume ?? 0)
       if (marketsSort === 'resolution') {
         const da = a.resolutionDate ? new Date(a.resolutionDate).getTime() : Infinity
         const db = b.resolutionDate ? new Date(b.resolutionDate).getTime() : Infinity
         return da - db
       }
-      const pa = a.yesPrice > 1 ? a.yesPrice : a.yesPrice * 100
-      const pb = b.yesPrice > 1 ? b.yesPrice : b.yesPrice * 100
       if (marketsSort === 'category') {
         return (a.category ?? '').localeCompare(b.category ?? '')
       }
@@ -229,7 +234,7 @@ export default function FeedPage() {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => load(false)}
+            onClick={() => load(false, true)}
             disabled={loading}
             className="flex items-center gap-2 px-3 py-1.5 text-xs font-mono font-medium text-text-secondary
               border border-bg-border rounded hover:border-text-muted hover:text-text-primary
@@ -518,6 +523,8 @@ export default function FeedPage() {
               market={market}
               rank={i}
               isPro={isPro}
+              analyzing={analyzingMarketIds.has(market.id ?? '')}
+              analyzed={analyzedMarketIds.has(market.id ?? '')}
               onClick={() => navigate(`/market/${slugify(market.question)}`, { state: { item: { market } } })}
               onAnalyze={() => {
                 if (isPro) {

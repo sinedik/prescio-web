@@ -8,6 +8,8 @@ interface Props {
   isPro?: boolean
   onClick?: () => void
   onAnalyze?: () => void
+  analyzing?: boolean
+  analyzed?: boolean
 }
 
 // Deterministic mock sparkline ending at current price
@@ -51,7 +53,7 @@ function formatResolution(date: string | undefined, days: number | null): string
   return `Resolves ${new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
 }
 
-export default function MarketCard({ market, rank, isPro, onClick, onAnalyze }: Props) {
+export default function MarketCard({ market, rank, isPro, onClick, onAnalyze, analyzing, analyzed }: Props) {
   const prob = market.yesPrice != null
     ? (market.yesPrice > 1 ? market.yesPrice : market.yesPrice * 100)
     : null
@@ -72,13 +74,30 @@ export default function MarketCard({ market, rank, isPro, onClick, onAnalyze }: 
   }
   const catStyle = market.category ? (CATEGORY_COLORS[market.category] ?? 'text-text-muted border-bg-border bg-bg-surface') : ''
 
+  const ev = market.event
+  const showImage = ev?.enrichment_status === 'ready' && !!ev.image_url
+
   return (
     <div
       onClick={onClick}
-      className="group relative bg-bg-surface border border-bg-border rounded-lg px-4 py-3.5 cursor-pointer
-        hover:border-text-muted/30 hover:bg-bg-elevated/60 transition-all duration-200 animate-slide-up"
+      className={`group relative bg-bg-surface rounded-lg overflow-hidden cursor-pointer
+        hover:bg-bg-elevated/60 transition-all duration-200 animate-slide-up border ${
+        analyzed ? 'border-accent/25 bg-accent/[0.02]' : 'border-bg-border'
+      }`}
       style={{ animationDelay: `${rank * 30}ms`, animationFillMode: 'both' }}
     >
+      {/* Event image / skeleton */}
+      {ev && (
+        showImage ? (
+          <div className="w-full h-28 overflow-hidden">
+            <img src={ev.image_url!} alt={ev.title} className="w-full h-full object-cover" />
+          </div>
+        ) : ev.enrichment_status === 'pending' ? (
+          <div className="w-full h-28 bg-bg-elevated animate-pulse" />
+        ) : null
+      )}
+
+      <div className="px-4 py-3.5">
       {/* Row 1: platform badge + category + sparkline */}
       <div className="flex items-center justify-between gap-3 mb-2">
         <div className="flex items-center gap-1.5 flex-wrap">
@@ -88,6 +107,11 @@ export default function MarketCard({ market, rank, isPro, onClick, onAnalyze }: 
           {market.category && (
             <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${catStyle}`}>
               {market.category.replace('_', ' ')}
+            </span>
+          )}
+          {analyzing && (
+            <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border border-watch/40 bg-watch/10 text-watch animate-pulse">
+              ANALYZING
             </span>
           )}
         </div>
@@ -144,6 +168,7 @@ export default function MarketCard({ market, rank, isPro, onClick, onAnalyze }: 
             ↗
           </a>
         </div>
+      </div>
       </div>
     </div>
   )

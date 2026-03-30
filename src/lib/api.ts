@@ -69,6 +69,12 @@ export const api = {
   deletePosition: (id: string) =>
     apiFetch(`/api/portfolio/${id}`, { method: 'DELETE' }),
 
+  // Polymarket
+  getPolymarketPortfolio: () =>
+    apiFetch('/api/polymarket/portfolio'),
+  getPolymarketActivity: (limit = 50) =>
+    apiFetch(`/api/polymarket/activity?limit=${limit}`),
+
   // Alerts
   getAlerts: () =>
     apiFetch('/api/alerts'),
@@ -76,4 +82,10 @@ export const api = {
   // Accuracy
   getAccuracy: () =>
     apiFetch<{ accuracy: number; total: number; correct: number }>('/api/accuracy'),
+
+  // User
+  getUserMe: () =>
+    apiFetch('/api/user/me'),
+  getUserAnalyses: (params?: { status?: 'pending' | 'done' | 'failed'; limit?: number; offset?: number }) =>
+    apiFetch(`/api/user/analyses${toSearch(params)}`),
 }

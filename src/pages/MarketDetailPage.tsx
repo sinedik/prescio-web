@@ -11,6 +11,32 @@ import PaywallModal from '../components/PaywallModal'
 import { usePortfolio } from '../hooks/usePortfolio'
 import { api } from '../lib/api'
 import { useAuthContext } from '../contexts/AuthContext'
+import AnalysisLoader from '../AnalysisLoader'
+import { markAnalyzing, clearAnalyzing, isAnalyzing, markAnalyzed } from '../lib/activeAnalyses'
+
+// ---- Event analysis types ----
+interface KeyFactor {
+  factor: string
+  description: string
+  impact: 'bullish' | 'bearish' | 'neutral'
+  weight: number
+}
+
+interface Scenario {
+  label: 'bull' | 'base' | 'bear'
+  probability: number
+  title: string
+  description: string
+}
+
+interface EventAiSummary {
+  situation_summary: string
+  key_factors: KeyFactor[]
+  scenarios?: Scenario[] | null
+  next_key_date?: string | null
+  overall_sentiment: 'BULLISH' | 'BEARISH' | 'NEUTRAL'
+  uncertainty_level: 'LOW' | 'MEDIUM' | 'HIGH'
+}
 
 // ---- Interactive SVG Price Chart ----
 interface HistoryPoint { t: number; p: number }
@@ -268,13 +294,17 @@ export default function MarketDetailPage() {
   const [news, setNews] = useState<NewsItem[] | undefined>(location.state?.item?.news)
   const [metaculusMatch, setMetaculusMatch] = useState<MetaculusMatch | undefined>(location.state?.item?.metaculusMatch)
 
-  const [marketLoading, setMarketLoading] = useState(!market)
-  const historyLoading = false
+  const [marketLoading, setMarketLoading] = useState(true) // всегда скелетон до первого ответа API
+  const [freshLoading, setFreshLoading] = useState(true)   // свежий запрос ещё идёт
+  const [historyLoading, setHistoryLoading] = useState(true)
   const [historyInterval, setHistoryInterval] = useState<'1w' | '1m' | '6m' | 'max'>('max')
   const [analyzing, setAnalyzing] = useState(false)
   const [analyzeError, setAnalyzeError] = useState<string | null>(null)
+  const [eventAi, setEventAi] = useState<EventAiSummary | null>(null)
+  const [eventAnalyzing, setEventAnalyzing] = useState(false)
   const [history, setHistory] = useState<HistoryPoint[]>([])
   const [historyReal, setHistoryReal] = useState(false)
+  const [siblings, setSiblings] = useState<{ id: string; question: string; price: number; no_price?: number; volume?: number; resolution_date?: string; slug?: string }[]>([])
   const [showAddPosition, setShowAddPosition] = useState(false)
   const [showPaywall, setShowPaywall] = useState(false)
   const [paywallVariant, setPaywallVariant] = useState<'pro' | 'alpha'>('pro')
@@ -324,6 +354,14 @@ export default function MarketDetailPage() {
         let marketId = initial?.id
 
         if (!marketId) {
+          // Если slug — это UUID, используем напрямую
+          const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+          if (UUID_RE.test(slug)) {
+            marketId = slug
+          }
+        }
+
+        if (!marketId) {
           // Пробуем найти по slug
           const results = await api.getMarkets({ search: slug.replace(/-/g, ' '), limit: 5 }) as { markets: Market[] }
           const list = (results.markets ?? []) as (Market & { analysis?: Analysis })[]
@@ -346,24 +384,98 @@ export default function MarketDetailPage() {
         console.log('[MarketDetail] fetching fresh by UUID=', marketId, 'has_token=', !!dbgSession?.access_token, 'plan=?')
 
         // Запрашиваем полные данные по UUID (включая analysis)
-        const fresh = await api.getMarket(marketId) as Market & { analysis?: Analysis; price_history?: HistoryPoint[] }
+        const fresh = await api.getMarket(marketId) as Market & { analysis?: Analysis; price_history?: HistoryPoint[]; siblings?: { id: string; question: string; price: number; resolution_date?: string; slug?: string }[] }
         if (!cancelled && fresh) {
           setMarket(fresh)
-          if (fresh.analysis) setAnalysis(fresh.analysis)
-          if (fresh.price_history?.length) { setHistory(fresh.price_history); setHistoryReal(true) }
+          if (fresh.analysis) {
+            setAnalysis(fresh.analysis)
+            markAnalyzed('market', marketId)
+            clearAnalyzing('market', marketId)
+          } else if (isAnalyzing('market', marketId)) {
+            // Resume polling after page reload
+            setAnalyzing(true)
+            ;(async () => {
+              for (let i = 0; i < 12; i++) {
+                await new Promise(r => setTimeout(r, 10000))
+                if (cancelled) break
+                try {
+                  const polled = await api.getMarket(marketId) as Market & { analysis?: Analysis }
+                  if (polled?.analysis) {
+                    if (!cancelled) {
+                      setAnalysis(polled.analysis)
+                      markAnalyzed('market', marketId)
+                      clearAnalyzing('market', marketId)
+                      setAnalyzing(false)
+                      const k = CACHE_PREFIX + slug
+                      sessionStorage.setItem(k, JSON.stringify({ market: polled, analysis: polled.analysis }))
+                    }
+                    return
+                  }
+                } catch { /* continue */ }
+              }
+              if (!cancelled) {
+                clearAnalyzing('market', marketId)
+                setAnalyzing(false)
+              }
+            })()
+          }
+          if (fresh.price_history?.length) {
+            setHistory(fresh.price_history)
+            setHistoryReal(true)
+            setHistoryLoading(false)
+          } else {
+            setHistoryLoading(false)
+          }
+          if (fresh.siblings) setSiblings(fresh.siblings)
           const key = CACHE_PREFIX + slug
-          // Не перезаписываем сохранённый анализ если свежий запрос вернул пустой
-          // (race condition: auth ещё не восстановилась, план определился как free)
           const prevStr = sessionStorage.getItem(key)
           const prevAnalysis = prevStr ? (JSON.parse(prevStr) as { analysis?: Analysis }).analysis : undefined
           sessionStorage.setItem(key, JSON.stringify({ market: fresh, analysis: fresh.analysis ?? prevAnalysis }))
           setMarketLoading(false)
         }
-      } catch { /* ignore */ }
+        if (!cancelled) setFreshLoading(false)
+      } catch {
+        if (!cancelled) {
+          setHistoryLoading(false)
+          setFreshLoading(false)
+        }
+      }
     })()
 
     return () => { cancelled = true }
   }, [slug])
+
+  // Fetch (or auto-analyze) event AI when market analysis is ready
+  useEffect(() => {
+    if (!market?.event?.id || !isPro || !analysis) return
+    let cancelled = false
+    const eventId = market.event.id
+    ;(async () => {
+      try {
+        const ev = await api.getEvent(eventId) as { ai_summary?: EventAiSummary }
+        if (cancelled) return
+        if (ev?.ai_summary) { setEventAi(ev.ai_summary); return }
+
+        // Событие не проанализировано — запускаем анализ автоматически
+        setEventAnalyzing(true)
+        try {
+          await api.analyzeEvent(eventId)
+          for (let i = 0; i < 20; i++) {
+            await new Promise(r => setTimeout(r, 3000))
+            if (cancelled) break
+            const fresh = await api.getEvent(eventId) as { ai_summary?: EventAiSummary }
+            if (fresh?.ai_summary) {
+              if (!cancelled) setEventAi(fresh.ai_summary)
+              return
+            }
+          }
+        } catch { /* ignore */ } finally {
+          if (!cancelled) setEventAnalyzing(false)
+        }
+      } catch { /* ignore */ }
+    })()
+    return () => { cancelled = true }
+  }, [market?.event?.id, analysis, isPro])
 
   // Filter price history from market object by selected interval
   useEffect(() => {
@@ -372,14 +484,16 @@ export default function MarketDetailPage() {
     const filtered = filterHistory(fullHistory, historyInterval)
     setHistory(filtered)
     setHistoryReal(filtered.length > 1)
+    setHistoryLoading(false)
   }, [market, historyInterval])
 
   async function handleAnalyze() {
     if (!market) return
     setAnalyzing(true)
     setAnalyzeError(null)
+    const marketId = market.id!
+    markAnalyzing('market', marketId)
     try {
-      const marketId = market.id!
       const marketQuestion = market.question!
       const result = await api.analyzeMarket(marketId) as Record<string, unknown>
 
@@ -392,6 +506,7 @@ export default function MarketDetailPage() {
           if (fresh?.analysis) {
             setAnalysis(fresh.analysis)
             setMarket(prev => prev ? { ...prev } : prev)
+            markAnalyzed('market', marketId)
             const key = CACHE_PREFIX + slugify(marketQuestion)
             sessionStorage.setItem(key, JSON.stringify({ market: fresh, analysis: fresh.analysis, news, metaculusMatch }))
             setAnalyzing(false)
@@ -429,22 +544,45 @@ export default function MarketDetailPage() {
         setAnalyzeError(err instanceof Error ? err.message : 'Analysis failed')
       }
     } finally {
+      clearAnalyzing('market', marketId)
       setAnalyzing(false)
     }
   }
 
   if (marketLoading) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-6">
-        <div className="flex flex-col gap-4 animate-pulse">
-          <div className="h-4 w-16 bg-bg-elevated rounded" />
-          <div className="bg-bg-surface border border-bg-border rounded-lg p-5 space-y-3">
-            <div className="h-3 w-32 bg-bg-elevated rounded" />
-            <div className="h-5 w-3/4 bg-bg-elevated rounded" />
-            <div className="grid grid-cols-4 gap-3">
-              {[...Array(4)].map((_, i) => <div key={i} className="h-16 bg-bg-elevated rounded" />)}
-            </div>
+      <div className="max-w-3xl mx-auto px-4 py-6 animate-pulse">
+        {/* Back */}
+        <div className="h-3 w-10 bg-bg-elevated rounded mb-5" />
+        {/* Event context */}
+        <div className="bg-bg-surface border border-bg-border rounded-xl overflow-hidden mb-4">
+          <div className="w-full h-36 bg-bg-elevated" />
+          <div className="px-4 py-3 space-y-2">
+            <div className="h-2 w-24 bg-bg-elevated rounded" />
+            <div className="h-4 w-2/3 bg-bg-elevated rounded" />
+            <div className="h-3 w-full bg-bg-elevated rounded" />
           </div>
+        </div>
+        {/* Header card */}
+        <div className="bg-bg-surface border border-bg-border rounded-lg p-5 mb-4 space-y-3">
+          <div className="flex gap-2"><div className="h-5 w-20 bg-bg-elevated rounded" /><div className="h-5 w-16 bg-bg-elevated rounded" /></div>
+          <div className="h-5 w-4/5 bg-bg-elevated rounded" />
+          <div className="h-4 w-2/3 bg-bg-elevated rounded" />
+          <div className="grid grid-cols-4 gap-3 pt-1">
+            {[...Array(4)].map((_, i) => <div key={i} className="h-16 bg-bg-elevated rounded" />)}
+          </div>
+        </div>
+        {/* Price chart */}
+        <div className="bg-bg-surface border border-bg-border rounded-lg p-4 mb-4">
+          <div className="h-3 w-24 bg-bg-elevated rounded mb-3" />
+          <div className="h-40 bg-bg-elevated rounded" />
+        </div>
+        {/* AI Analysis */}
+        <div className="bg-bg-surface border border-bg-border rounded-lg p-6 mb-4 space-y-3">
+          <div className="h-3 w-20 bg-bg-elevated rounded" />
+          <div className="h-4 w-1/2 bg-bg-elevated rounded" />
+          <div className="h-3 w-full bg-bg-elevated rounded" />
+          <div className="h-3 w-5/6 bg-bg-elevated rounded" />
         </div>
       </div>
     )
@@ -476,6 +614,19 @@ export default function MarketDetailPage() {
     ? confScore >= 70 ? 'bg-accent' : confScore >= 40 ? 'bg-watch' : 'bg-text-muted'
     : 'bg-text-muted'
 
+  const SENTIMENT_CFG: Record<string, { label: string; cls: string }> = {
+    BULLISH: { label: 'BULLISH', cls: 'text-accent bg-accent/10 border-accent/30' },
+    BEARISH: { label: 'BEARISH', cls: 'text-danger bg-danger/10 border-danger/30' },
+    NEUTRAL: { label: 'NEUTRAL', cls: 'text-text-muted bg-bg-elevated border-bg-border' },
+  }
+  const UNCERT_CFG: Record<string, { label: string; cls: string }> = {
+    LOW:    { label: 'LOW uncertainty',  cls: 'text-accent/80 border-accent/20' },
+    MEDIUM: { label: 'MED uncertainty',  cls: 'text-watch border-watch/30' },
+    HIGH:   { label: 'HIGH uncertainty', cls: 'text-danger border-danger/25' },
+  }
+  const sentCfg = eventAi ? SENTIMENT_CFG[eventAi.overall_sentiment] : null
+  const uncertCfg = eventAi ? UNCERT_CFG[eventAi.uncertainty_level] : null
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-6">
       {/* Back */}
@@ -486,6 +637,26 @@ export default function MarketDetailPage() {
         </svg>
         BACK
       </button>
+
+      {/* ── Event context card ── */}
+      {market.event && (
+        <div className="bg-bg-surface border border-bg-border rounded-xl overflow-hidden mb-4">
+          {market.event.enrichment_status === 'ready' && market.event.image_url ? (
+            <div className="w-full h-36 overflow-hidden">
+              <img src={market.event.image_url} alt={market.event.title} className="w-full h-full object-cover" />
+            </div>
+          ) : market.event.enrichment_status === 'pending' ? (
+            <div className="w-full h-36 bg-bg-elevated animate-pulse" />
+          ) : null}
+          <div className="px-4 py-3">
+            <p className="text-[10px] font-mono text-text-muted tracking-widest mb-1">EVENT CONTEXT</p>
+            <p className="text-sm font-mono font-bold text-text-primary leading-snug mb-1">{market.event.title}</p>
+            {market.event.description && (
+              <p className="text-xs font-mono text-text-muted leading-relaxed line-clamp-2">{market.event.description}</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ── Header card ── */}
       <div className="bg-bg-surface border border-bg-border rounded-lg p-5 mb-4">
@@ -591,6 +762,72 @@ export default function MarketDetailPage() {
         </div>
       </div>
 
+      {/* ── Related market variants (siblings) ── */}
+      {siblings.length > 0 && (
+        <div className="bg-bg-surface border border-bg-border rounded-lg p-4 mb-4">
+          <p className="text-[10px] font-mono font-bold text-text-muted tracking-widest mb-3">OTHER OUTCOMES</p>
+          <div className="flex flex-col gap-1">
+            {/* Current market — active row */}
+            {(() => {
+              const curProb = prob != null ? Math.round(prob) : 50
+              const curNo = 100 - curProb
+              return (
+                <div className="rounded-md bg-bg-elevated border border-accent/20 px-3 py-2.5">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-sm font-mono text-text-primary flex-1 pr-3 truncate">{market.question}</span>
+                    <span className="text-sm font-mono font-bold text-accent shrink-0">{curProb}%</span>
+                  </div>
+                  <div className="w-full h-1 bg-bg-border rounded-full overflow-hidden mb-2">
+                    <div className="h-full bg-accent rounded-full" style={{ width: `${curProb}%` }} />
+                  </div>
+                  <div className="flex gap-1.5">
+                    <button className="flex-1 py-1 text-xs font-mono font-bold rounded bg-accent/15 text-accent border border-accent/30 hover:bg-accent/25 transition-colors">
+                      YES {curProb}¢
+                    </button>
+                    <button className="flex-1 py-1 text-xs font-mono font-bold rounded bg-bg-border/60 text-text-secondary border border-bg-border hover:bg-bg-border transition-colors">
+                      NO {curNo}¢
+                    </button>
+                  </div>
+                </div>
+              )
+            })()}
+            {/* Siblings */}
+            {siblings.map(s => {
+              const noP = s.no_price ?? (100 - s.price)
+              return (
+                <div
+                  key={s.id}
+                  className="rounded-md px-3 py-2.5 cursor-pointer hover:bg-bg-elevated/50 transition-colors border border-transparent hover:border-bg-border"
+                  onClick={() => navigate(`/markets/${s.id}`)}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-sm font-mono text-text-secondary flex-1 pr-3 truncate">{s.question}</span>
+                    <span className="text-sm font-mono font-bold text-text-primary shrink-0">{s.price}%</span>
+                  </div>
+                  <div className="w-full h-1 bg-bg-border rounded-full overflow-hidden mb-2">
+                    <div className="h-full bg-text-muted/50 rounded-full" style={{ width: `${s.price}%` }} />
+                  </div>
+                  <div className="flex gap-1.5">
+                    <button
+                      className="flex-1 py-1 text-xs font-mono font-bold rounded bg-bg-elevated text-text-secondary border border-bg-border hover:bg-accent/10 hover:text-accent hover:border-accent/30 transition-colors"
+                      onClick={e => { e.stopPropagation(); navigate(`/markets/${s.id}`) }}
+                    >
+                      YES {s.price}¢
+                    </button>
+                    <button
+                      className="flex-1 py-1 text-xs font-mono font-bold rounded bg-bg-elevated text-text-secondary border border-bg-border hover:bg-bg-border transition-colors"
+                      onClick={e => { e.stopPropagation(); navigate(`/markets/${s.id}`) }}
+                    >
+                      NO {noP}¢
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ── Price chart ── */}
       <div className="bg-bg-surface border border-bg-border rounded-lg p-4 mb-4">
         <div className="flex items-center justify-between mb-3">
@@ -624,7 +861,9 @@ export default function MarketDetailPage() {
           </div>
         </div>
 
-        {market.platform !== 'polymarket' ? (
+        {historyLoading ? (
+          <div className="w-full bg-bg-elevated rounded animate-pulse" style={{ height: 160 }} />
+        ) : market.platform !== 'polymarket' ? (
           <div className="flex flex-col items-center justify-center gap-3 py-8">
             <div className="flex items-center gap-3">
               {/* Current price pill */}
@@ -654,14 +893,32 @@ export default function MarketDetailPage() {
             )}
           </div>
         ) : (
-          <PriceChart history={history} loading={historyLoading} />
+          <PriceChart history={history} loading={false} />
         )}
       </div>
 
       {/* ── AI Analysis — tiered access ── */}
 
+      {/* Fresh fetch in progress — skeleton placeholder */}
+      {freshLoading && !analyzing && !analysis && (
+        <div className="bg-bg-surface border border-bg-border rounded-lg p-6 mb-4 animate-pulse space-y-3">
+          <div className="h-2.5 w-20 bg-bg-elevated rounded" />
+          <div className="h-4 w-1/2 bg-bg-elevated rounded" />
+          <div className="h-3 w-full bg-bg-elevated rounded" />
+          <div className="h-3 w-4/5 bg-bg-elevated rounded" />
+        </div>
+      )}
+
+      {/* Analyzing in progress: show loader inside the block */}
+      {analyzing && (
+        <div className="bg-bg-surface border border-bg-border rounded-lg p-6 mb-4">
+          <p className="text-[10px] font-mono text-text-muted tracking-widest mb-4">AI ANALYSIS</p>
+          <AnalysisLoader height={300} />
+        </div>
+      )}
+
       {/* FREE: analyze button (3/day) + locked block after */}
-      {!isPro && !analysis && (
+      {!freshLoading && !analyzing && !isPro && !analysis && (
         <div className="bg-bg-surface border border-bg-border rounded-lg p-6 mb-4 text-center">
           <p className="text-[10px] font-mono text-text-muted tracking-widest mb-1">AI ANALYSIS</p>
           <p className="text-xs font-mono text-text-muted mb-4">
@@ -687,7 +944,7 @@ export default function MarketDetailPage() {
       )}
 
       {/* FREE: analysis done → locked teaser */}
-      {!isPro && analysis && (
+      {!analyzing && !isPro && !freshLoading && analysis && (
         <div className="bg-bg-surface border border-bg-border rounded-lg p-6 mb-4 text-center">
           <div className="w-9 h-9 rounded-full bg-bg-elevated border border-bg-border flex items-center justify-center mx-auto mb-3 text-base">
             🔒
@@ -706,7 +963,7 @@ export default function MarketDetailPage() {
       )}
 
       {/* PRO / ALPHA: no analysis yet → analyze button */}
-      {isPro && !analysis && (
+      {!freshLoading && !analyzing && isPro && !analysis && (
         <div className="bg-bg-surface border border-bg-border rounded-lg p-6 mb-4 text-center">
           <p className="text-sm font-mono text-text-secondary mb-1">No AI analysis yet</p>
           <p className="text-xs font-mono text-text-muted mb-4">
@@ -736,145 +993,241 @@ export default function MarketDetailPage() {
       )}
 
       {/* PRO / ALPHA with analysis */}
-      {isPro && analysis && (
+      {!analyzing && isPro && !freshLoading && analysis && (
         <>
-          {/* Recommendation card */}
-          <div className={`border rounded-lg p-4 mb-4 ${
-            absEdge >= 10 ? 'bg-accent/5 border-accent/20' :
-            absEdge >= 5  ? 'bg-watch/5 border-watch/20' :
-            'bg-bg-surface border-bg-border'
-          }`}>
-            <div className="flex items-start justify-between gap-4 flex-wrap">
-              <div>
-                <p className="text-[10px] font-mono text-text-muted mb-1.5 tracking-wider">RECOMMENDATION</p>
-                <span className={`text-sm font-mono font-bold px-2.5 py-1 rounded ${actionColor(analysis.action)}`}>
-                  {analysis.action || analysis.edgeDirection}
-                </span>
-                {analysis.actionReason && (
-                  <p className="text-xs font-mono text-text-secondary mt-2">{analysis.actionReason}</p>
-                )}
+          {/* Single unified AI Analysis card */}
+          <div className="bg-bg-surface border border-accent/15 rounded-xl p-5 mb-4">
 
-                {/* Kelly sizing: visible to Alpha, blurred to Pro */}
-                {analysis.kellySizing && typeof analysis.kellySizing === 'object' && (
-                  isAlpha ? (
-                    <p className="text-xs font-mono text-text-secondary mt-1">
-                      {analysis.kellySizing.kellyUsed?.toFixed(0)}% Kelly ·
-                      Bet ${analysis.kellySizing.betSize} · Pot. +${analysis.kellySizing.potentialWin}
-                    </p>
-                  ) : (
-                    <div
-                      className="flex items-center gap-1.5 mt-1 cursor-pointer group"
-                      onClick={() => { setPaywallVariant('alpha'); setShowPaywall(true) }}
-                    >
-                      <p className="text-xs font-mono text-text-secondary blur-sm select-none group-hover:blur-none transition-all">
-                        XX% Kelly · Bet $XXX · Pot. +$XXX
-                      </p>
-                      <span className="text-xs shrink-0">🔒</span>
-                    </div>
-                  )
+            {/* Header: label + badges + action buttons */}
+            <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
+              <p className="text-[10px] font-mono font-bold text-text-muted tracking-widest">AI ANALYSIS</p>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {analysis.action && (
+                  <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${actionColor(analysis.action)}`}>
+                    {analysis.action}
+                  </span>
                 )}
-              </div>
-
-              <div className="flex flex-col items-end gap-3">
                 {confScore != null && (
-                  <div className="text-right">
-                    <p className="text-[10px] font-mono text-text-muted mb-1.5 tracking-wider">CONFIDENCE</p>
-                    <div className="flex items-center gap-2 justify-end">
-                      <div className="w-24 h-1.5 bg-bg-elevated rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full ${confBarColor}`} style={{ width: `${confScore}%` }} />
-                      </div>
-                      <span className="text-sm font-mono font-bold text-text-primary">{confScore}%</span>
-                    </div>
-                  </div>
+                  <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${
+                    confScore >= 70 ? 'text-accent border-accent/30 bg-accent/5'
+                    : confScore >= 40 ? 'text-watch border-watch/30 bg-watch/5'
+                    : 'text-text-muted border-bg-border'
+                  }`}>
+                    {confScore}% CONF
+                  </span>
                 )}
-
-                {/* Add to Portfolio: Alpha only */}
-                {isAlpha && (
-                  <button onClick={() => setShowAddPosition(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-accent/10 border border-accent/30
-                      text-accent text-xs font-mono font-bold rounded hover:bg-accent/20 transition-colors">
-                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <path d="M12 5v14M5 12h14" />
-                    </svg>
-                    ADD TO PORTFOLIO
-                  </button>
+                {sentCfg && (
+                  <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${sentCfg.cls}`}>
+                    {sentCfg.label}
+                  </span>
+                )}
+                {uncertCfg && (
+                  <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${uncertCfg.cls}`}>
+                    {uncertCfg.label}
+                  </span>
+                )}
+                {eventAi?.next_key_date && (
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded border border-bg-border text-text-muted">
+                    {new Date(eventAi.next_key_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </span>
                 )}
               </div>
             </div>
-          </div>
 
-          {/* Edge signals block: blurred for Pro, full for Alpha */}
-          <div className="bg-bg-surface border border-bg-border rounded-lg p-4 mb-4">
-            <p className="text-[10px] font-mono text-text-muted tracking-widest mb-3">EDGE SIGNALS</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <div className="bg-bg-elevated rounded p-3">
-                <p className="text-[9px] font-mono text-text-muted mb-1 tracking-wider">EDGE SCORE</p>
-                {isAlpha ? (
+            {/* Action reason */}
+            {analysis.actionReason && (
+              <p className="text-sm font-mono text-text-secondary leading-relaxed mb-4">
+                {analysis.actionReason}
+              </p>
+            )}
+
+            {/* Edge + Fair Value row */}
+            {isAlpha && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+                <div className="bg-bg-elevated rounded-lg p-3">
+                  <p className="text-[9px] font-mono text-text-muted mb-1 tracking-wider">EDGE SCORE</p>
                   <p className={`text-lg font-mono font-bold leading-none ${edgeColor(analysis.edge)}`}>
                     {formatEdge(analysis.edge)}
                   </p>
-                ) : (
-                  <div
-                    className="flex items-center gap-1 cursor-pointer"
-                    onClick={() => { setPaywallVariant('alpha'); setShowPaywall(true) }}
-                  >
-                    <p className="text-lg font-mono font-bold text-text-primary leading-none blur-sm select-none">+XX</p>
-                    <span className="text-sm">🔒</span>
+                </div>
+                {analysis.fairProb != null && (
+                  <div className="bg-bg-elevated rounded-lg p-3">
+                    <p className="text-[9px] font-mono text-text-muted mb-1 tracking-wider">FAIR VALUE</p>
+                    <p className="text-lg font-mono font-bold text-accent leading-none">{formatProb(analysis.fairProb)}</p>
                   </div>
                 )}
-              </div>
-
-              {analysis.kellySizing && typeof analysis.kellySizing === 'object' && (
-                <div className="bg-bg-elevated rounded p-3">
-                  <p className="text-[9px] font-mono text-text-muted mb-1 tracking-wider">KELLY FRACTION</p>
-                  {isAlpha ? (
+                {analysis.kellySizing && typeof analysis.kellySizing === 'object' && (
+                  <div className="bg-bg-elevated rounded-lg p-3">
+                    <p className="text-[9px] font-mono text-text-muted mb-1 tracking-wider">KELLY</p>
                     <p className="text-lg font-mono font-bold text-text-primary leading-none">
                       {analysis.kellySizing.kellyUsed?.toFixed(1)}%
                     </p>
-                  ) : (
-                    <div
-                      className="flex items-center gap-1 cursor-pointer"
-                      onClick={() => { setPaywallVariant('alpha'); setShowPaywall(true) }}
-                    >
-                      <p className="text-lg font-mono font-bold text-text-primary leading-none blur-sm select-none">X.X%</p>
-                      <span className="text-sm">🔒</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {!isAlpha && (
+              <div
+                className="flex items-center gap-2 mb-4 cursor-pointer group"
+                onClick={() => { setPaywallVariant('alpha'); setShowPaywall(true) }}
+              >
+                <div className="grid grid-cols-3 gap-3 flex-1">
+                  {['EDGE SCORE', 'FAIR VALUE', 'KELLY'].map(label => (
+                    <div key={label} className="bg-bg-elevated rounded-lg p-3">
+                      <p className="text-[9px] font-mono text-text-muted mb-1 tracking-wider">{label}</p>
+                      <p className="text-lg font-mono font-bold text-text-primary leading-none blur-sm select-none">XX</p>
                     </div>
-                  )}
+                  ))}
                 </div>
-              )}
+                <span className="text-base shrink-0">🔒</span>
+              </div>
+            )}
 
-              {/* Entry/exit timing: Alpha only */}
-              {isAlpha && analysis.horizon && (
-                <div className="bg-bg-elevated rounded p-3">
-                  <p className="text-[9px] font-mono text-text-muted mb-1 tracking-wider">HORIZON</p>
-                  <p className="text-sm font-mono font-bold text-text-primary leading-none">{analysis.horizon}</p>
+            {/* Thesis / Crowd Bias / Resolution Note */}
+            {(analysis.thesis || analysis.crowdBias || analysis.resolutionNote) && (
+              <div className="space-y-3 mb-4">
+                {analysis.thesis && (
+                  <div>
+                    <p className="text-[10px] font-mono text-text-muted mb-1 tracking-wider">THESIS</p>
+                    <p className="text-sm font-mono text-text-secondary leading-relaxed">{analysis.thesis}</p>
+                  </div>
+                )}
+                {analysis.crowdBias && (
+                  <div>
+                    <p className="text-[10px] font-mono text-text-muted mb-1 tracking-wider">CROWD BIAS</p>
+                    <p className="text-sm font-mono text-text-secondary leading-relaxed">{analysis.crowdBias}</p>
+                  </div>
+                )}
+                {analysis.resolutionNote && (
+                  <div>
+                    <p className="text-[10px] font-mono text-text-muted mb-1 tracking-wider">RESOLUTION NOTE</p>
+                    <p className="text-sm font-mono text-text-secondary leading-relaxed">{analysis.resolutionNote}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Kelly sizing detail (Alpha only) */}
+            {isAlpha && analysis.kellySizing && typeof analysis.kellySizing === 'object' && (
+              <p className="text-xs font-mono text-text-muted mb-4">
+                Bet ${analysis.kellySizing.betSize} · Potential +${analysis.kellySizing.potentialWin}
+              </p>
+            )}
+
+            {/* Event-level AI analysis loading */}
+            {eventAnalyzing && !eventAi && (
+              <div className="border-t border-bg-border mt-4 pt-4">
+                <AnalysisLoader height={180} startPhase={2} />
+              </div>
+            )}
+
+            {/* Event-level AI analysis */}
+            {eventAi && (
+              <div className="border-t border-bg-border mt-4 pt-4 space-y-4">
+                {/* Situation summary */}
+                <div>
+                  <p className="text-[10px] font-mono text-text-muted tracking-wider mb-2">SITUATION</p>
+                  <p className="text-sm font-mono text-text-secondary leading-relaxed">{eventAi.situation_summary}</p>
                 </div>
-              )}
-            </div>
+
+                {/* Key factors */}
+                {eventAi.key_factors?.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-mono text-text-muted tracking-wider mb-3">KEY FACTORS</p>
+                    <div className="flex flex-col gap-3">
+                      {eventAi.key_factors.map((f, i) => {
+                        const impact = f.impact ?? 'neutral'
+                        const weight = f.weight ?? 0.5
+                        const impactCls = impact === 'bullish' ? 'text-accent' : impact === 'bearish' ? 'text-danger' : 'text-text-muted/60'
+                        const barCls   = impact === 'bullish' ? 'bg-accent' : impact === 'bearish' ? 'bg-danger' : 'bg-text-muted/30'
+                        const icon     = impact === 'bullish' ? '↑' : impact === 'bearish' ? '↓' : '→'
+                        return (
+                          <div key={i}>
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <span className={`text-[12px] font-mono font-bold shrink-0 w-4 ${impactCls}`}>{icon}</span>
+                              <span className="text-[12px] font-mono font-bold text-text-primary flex-1">{f.factor}</span>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <div className="w-16 h-1 bg-bg-elevated rounded-full overflow-hidden">
+                                  <div className={`h-full rounded-full transition-all ${barCls}`} style={{ width: `${Math.round(weight * 100)}%` }} />
+                                </div>
+                                <span className="text-[10px] font-mono text-text-muted w-5 text-right">{Math.round(weight * 10)}</span>
+                              </div>
+                            </div>
+                            {f.description && <p className="text-[11px] font-mono text-text-muted leading-relaxed pl-6">{f.description}</p>}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Scenarios */}
+                {eventAi.scenarios?.length ? (
+                  <div>
+                    <p className="text-[10px] font-mono text-text-muted tracking-wider mb-3">SCENARIOS</p>
+                    {isAlpha ? (
+                      <div className="grid grid-cols-3 gap-2">
+                        {eventAi.scenarios.map((s, i) => {
+                          const cfg = s.label === 'bull'
+                            ? { border: 'border-accent/30 bg-accent/5', lbl: 'text-accent', prob: 'text-accent' }
+                            : s.label === 'bear'
+                            ? { border: 'border-danger/30 bg-danger/5', lbl: 'text-danger', prob: 'text-danger' }
+                            : { border: 'border-bg-border bg-bg-elevated/20', lbl: 'text-text-muted', prob: 'text-text-secondary' }
+                          return (
+                            <div key={i} className={`rounded-lg border p-3 ${cfg.border}`}>
+                              <div className="flex items-center justify-between mb-1.5">
+                                <span className={`text-[10px] font-mono font-bold uppercase tracking-wider ${cfg.lbl}`}>{s.label}</span>
+                                <span className={`text-sm font-mono font-bold ${cfg.prob}`}>{s.probability}%</span>
+                              </div>
+                              <p className="text-[11px] font-mono font-bold text-text-primary mb-1 leading-snug">{s.title}</p>
+                              <p className="text-[10px] font-mono text-text-muted leading-relaxed">{s.description}</p>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        <div className="grid grid-cols-3 gap-2 blur-sm opacity-40 pointer-events-none select-none">
+                          {['BULL', 'BASE', 'BEAR'].map((lbl) => (
+                            <div key={lbl} className="rounded-lg border border-bg-border p-3">
+                              <div className="flex items-center justify-between mb-1.5">
+                                <div className="h-2.5 w-8 bg-bg-elevated rounded" />
+                                <div className="h-3 w-6 bg-bg-elevated rounded" />
+                              </div>
+                              <div className="h-2.5 w-full bg-bg-elevated rounded mb-1" />
+                              <div className="h-2 w-4/5 bg-bg-elevated rounded" />
+                            </div>
+                          ))}
+                        </div>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <button
+                            onClick={() => { setPaywallVariant('alpha'); setShowPaywall(true) }}
+                            className="px-3 py-1.5 bg-bg-surface border border-bg-border text-[10px] font-mono font-bold text-text-muted hover:border-text-muted/40 hover:text-text-secondary rounded-lg transition-colors"
+                          >
+                            Alpha only
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            )}
+
+            {/* Add to Portfolio */}
+            {isAlpha && (
+              <button onClick={() => setShowAddPosition(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 mt-4 bg-accent/10 border border-accent/30
+                  text-accent text-xs font-mono font-bold rounded hover:bg-accent/20 transition-colors">
+                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+                ADD TO PORTFOLIO
+              </button>
+            )}
           </div>
 
-          {/* Analysis text: thesis / crowd_bias / resolution (Pro+) */}
-          <div className="bg-bg-surface border border-bg-border rounded-lg p-5 mb-4 space-y-4">
-            <h2 className="text-xs font-mono font-bold text-text-muted tracking-widest">ANALYSIS</h2>
-            {analysis.thesis && (
-              <div>
-                <p className="text-[10px] font-mono text-text-muted mb-1 tracking-wider">THESIS</p>
-                <p className="text-sm text-text-secondary leading-relaxed">{analysis.thesis}</p>
-              </div>
-            )}
-            {analysis.crowdBias && (
-              <div>
-                <p className="text-[10px] font-mono text-text-muted mb-1 tracking-wider">CROWD BIAS</p>
-                <p className="text-sm text-text-secondary leading-relaxed">{analysis.crowdBias}</p>
-              </div>
-            )}
-            {analysis.resolutionNote && (
-              <div>
-                <p className="text-[10px] font-mono text-text-muted mb-1 tracking-wider">RESOLUTION NOTE</p>
-                <p className="text-sm text-text-secondary leading-relaxed">{analysis.resolutionNote}</p>
-              </div>
-            )}
-          </div>
         </>
       )}
 

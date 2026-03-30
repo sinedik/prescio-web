@@ -1,10 +1,11 @@
-import { useState, useMemo, useCallback, useRef } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { useNavigate } from 'react-router-dom'
 import { usePolling } from '../hooks/usePolling'
 import { api } from '../lib/api'
 import { useAuthContext } from '../contexts/AuthContext'
 import PaywallModal from '../components/PaywallModal'
+import { getAnalyzingIds, getAnalyzedIds } from '../lib/activeAnalyses'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -19,6 +20,9 @@ interface FeedEvent {
   id: string
   title: string
   summary: string
+  description?: string | null
+  image_url?: string | null
+  enrichment_status?: 'pending' | 'ready' | 'failed'
   category: string
   severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
   status: 'active' | 'resolved'
@@ -84,6 +88,8 @@ function EventCard({
   onUpgradePro,
   onUpgradeAlpha,
   onClick,
+  analyzing,
+  analyzed,
 }: {
   event: FeedEvent
   isPro: boolean
@@ -91,16 +97,36 @@ function EventCard({
   onUpgradePro: () => void
   onUpgradeAlpha: () => void
   onClick: () => void
+  analyzing?: boolean
+  analyzed?: boolean
 }) {
   const sevCfg = SEVERITY_CONFIG[event.severity] ?? SEVERITY_CONFIG.MEDIUM
   const sentCfg = event.sentiment ? SENTIMENT_CONFIG[event.sentiment] : null
   const uncertCfg = event.uncertainty_level ? UNCERTAINTY_CONFIG[event.uncertainty_level] : null
 
+  const enrichReady = event.enrichment_status === 'ready'
+  const showImage = enrichReady && !!event.image_url
+
   return (
     <div
-      className="bg-bg-surface border border-bg-border rounded-xl p-5 cursor-pointer hover:border-text-muted/30 transition-colors"
+      className={`rounded-xl overflow-hidden cursor-pointer transition-colors border ${
+        analyzed ? 'bg-bg-surface border-accent/25 bg-accent/[0.02] hover:border-accent/40'
+        : 'bg-bg-surface border-bg-border hover:border-text-muted/30'
+      }`}
       onClick={onClick}
     >
+      {/* Image area: skeleton while pending, image when ready, subtle bg when ready but no image */}
+      {showImage ? (
+        <div className="w-full h-32 overflow-hidden">
+          <img src={event.image_url!} alt={event.title} className="w-full h-full object-cover" />
+        </div>
+      ) : enrichReady ? (
+        <div className="w-full h-32 bg-bg-elevated/50" />
+      ) : (
+        <div className="w-full h-32 bg-bg-elevated animate-pulse" />
+      )}
+
+      <div className="p-5">
       {/* Top row: badges + time */}
       <div className="flex items-center gap-2 mb-3 flex-wrap">
         <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-bg-border bg-bg-elevated text-text-muted uppercase tracking-wider">
@@ -109,18 +135,30 @@ function EventCard({
         <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${sevCfg.cls}`}>
           {sevCfg.label}
         </span>
+        {analyzing && (
+          <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border border-watch/40 bg-watch/10 text-watch animate-pulse">
+            ANALYZING
+          </span>
+        )}
         <span className="ml-auto text-[10px] font-mono text-text-muted">
           updated {formatUpdated(event.updated_at)}
         </span>
       </div>
 
-      {/* Title + summary */}
+      {/* Title + description/summary */}
       <h3 className="text-[15px] font-mono font-bold text-text-primary leading-snug mb-1.5">
         {event.title}
       </h3>
-      <p className="text-xs font-mono text-text-muted leading-relaxed mb-3 line-clamp-2">
-        {event.summary}
-      </p>
+      {!enrichReady ? (
+        <div className="space-y-1 mb-3 animate-pulse">
+          <div className="h-2.5 w-full bg-bg-elevated rounded" />
+          <div className="h-2.5 w-4/5 bg-bg-elevated rounded" />
+        </div>
+      ) : (
+        <p className="text-xs font-mono text-text-muted leading-relaxed mb-3 line-clamp-2">
+          {event.description ?? event.summary}
+        </p>
+      )}
 
       {/* Pro: sentiment + uncertainty */}
       {isPro && (sentCfg || uncertCfg) && (
@@ -197,6 +235,7 @@ function EventCard({
           View full analysis →
         </span>
       </div>
+      </div>
     </div>
   )
 }
@@ -231,7 +270,10 @@ export default function EventsFeedPage() {
   const navigate = useNavigate()
   const { isPro, isAlpha } = useAuthContext()
   const [activeCategory, setActiveCategory] = useState('ALL')
+  const [activeSort, setActiveSort] = useState<'volume' | 'recent' | 'ending'>('volume')
   const [paywallVariant, setPaywallVariant] = useState<'pro' | 'alpha' | null>(null)
+  const analyzingEventIds = useState(() => getAnalyzingIds('event'))[0]
+  const analyzedEventIds  = useState(() => getAnalyzedIds('event'))[0]
   const [search, setSearch] = useState('')
   const [searchInput, setSearchInput] = useState('')
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -244,15 +286,44 @@ export default function EventsFeedPage() {
   }, [])
 
   const { data, loading, lastUpdated } = usePolling<{ events?: FeedEvent[]; items?: unknown[] }>(
-    () => api.getFeed() as Promise<{ events?: FeedEvent[]; items?: unknown[] }>,
+    () => api.getFeed({ sort: activeSort }) as Promise<{ events?: FeedEvent[]; items?: unknown[] }>,
     5 * 60 * 1000,
+    activeSort,
   )
 
-  const events: FeedEvent[] = useMemo(() => {
-    if (!data) return []
-    const raw = (data as { events?: FeedEvent[] }).events ?? []
-    return raw
+  const [events, setEvents] = useState<FeedEvent[]>([])
+
+  // Sync from polling data
+  useEffect(() => {
+    if (data?.events) setEvents(data.events as FeedEvent[])
   }, [data])
+
+  // Enrichment polling: re-fetch feed every 5s while any event is still pending
+  useEffect(() => {
+    const hasPending = events.some(e => e.enrichment_status === 'pending')
+    if (!hasPending) return
+
+    let cancelled = false
+    const timer = setTimeout(async () => {
+      if (cancelled) return
+      try {
+        const fresh = await api.getFeed() as { events?: FeedEvent[] }
+        if (cancelled || !fresh?.events) return
+        setEvents(prev => prev.map(ev => {
+          const updated = fresh.events!.find(f => f.id === ev.id)
+          if (!updated) return ev
+          return {
+            ...ev,
+            enrichment_status: updated.enrichment_status,
+            image_url: updated.image_url,
+            description: updated.description,
+          }
+        }))
+      } catch { /* ignore */ }
+    }, 5000)
+
+    return () => { cancelled = true; clearTimeout(timer) }
+  }, [events])
 
   const filtered = useMemo(() => {
     let result = events
@@ -270,8 +341,14 @@ export default function EventsFeedPage() {
         e.markets?.some((m) => m.question.toLowerCase().includes(q))
       )
     }
+    result = [...result].sort((a, b) => {
+      const aAna = analyzingEventIds.has(a.id)
+      const bAna = analyzingEventIds.has(b.id)
+      if (aAna !== bAna) return aAna ? -1 : 1
+      return 0
+    })
     return result
-  }, [events, activeCategory, search])
+  }, [events, activeCategory, search, analyzingEventIds])
 
   const updatedLabel = useMemo(() => {
     if (!lastUpdated) return null
@@ -305,6 +382,27 @@ export default function EventsFeedPage() {
             }`}
           >
             {cat}
+          </button>
+        ))}
+      </div>
+
+      {/* Sort tabs */}
+      <div className="flex items-center gap-1.5 mb-4">
+        {([
+          { key: 'volume', label: 'TRENDING' },
+          { key: 'recent',  label: 'RECENT' },
+          { key: 'ending',  label: 'ENDING SOON' },
+        ] as const).map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => setActiveSort(key)}
+            className={`px-3 py-1.5 text-[10px] font-mono font-bold rounded border whitespace-nowrap transition-colors ${
+              activeSort === key
+                ? 'border-text-primary/40 bg-bg-elevated text-text-primary'
+                : 'border-bg-border text-text-muted hover:text-text-secondary hover:border-text-muted/30'
+            }`}
+          >
+            {label}
           </button>
         ))}
       </div>
@@ -369,6 +467,8 @@ export default function EventsFeedPage() {
               onUpgradePro={() => setPaywallVariant('pro')}
               onUpgradeAlpha={() => setPaywallVariant('alpha')}
               onClick={() => navigate(`/events/${event.id}`)}
+              analyzing={analyzingEventIds.has(event.id)}
+              analyzed={analyzedEventIds.has(event.id)}
             />
           ))}
         </div>

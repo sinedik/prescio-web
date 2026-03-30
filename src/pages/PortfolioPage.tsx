@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { usePortfolio, calcPortfolioStats, calcPositionPnl } from '../hooks/usePortfolio'
 import PositionCard from '../components/PositionCard'
@@ -177,6 +178,7 @@ export default function PortfolioPage() {
   const [showPaywall, setShowPaywall] = useState(false)
   const [paywallVariant, setPaywallVariant] = useState<'pro' | 'alpha'>('pro')
   const [aiAccuracy, setAiAccuracy] = useState<{ accuracy: number; total: number } | null>(null)
+  const [view, setView] = useState<'manual' | 'polymarket'>('manual')
 
   const { positions, addPosition, updateStatus, deletePosition, synced } = usePortfolio()
   const [showModal, setShowModal] = useState(false)
@@ -235,6 +237,27 @@ export default function PortfolioPage() {
           )}
         </div>
       </div>
+
+      {/* View tabs */}
+      <div className="flex items-center gap-1.5 mb-5">
+        {(['manual', 'polymarket'] as const).map((v) => (
+          <button
+            key={v}
+            onClick={() => setView(v)}
+            className={`px-3 py-1.5 text-[10px] font-mono font-bold rounded border transition-colors ${
+              view === v
+                ? 'border-accent/40 bg-accent/10 text-accent'
+                : 'border-bg-border text-text-muted hover:text-text-secondary hover:border-text-muted/30'
+            }`}
+          >
+            {v === 'manual' ? 'MY POSITIONS' : 'POLYMARKET LIVE'}
+          </button>
+        ))}
+      </div>
+
+      {view === 'polymarket' && <PolymarketTab />}
+
+      {view === 'manual' && <>
 
       {/* Stats grid */}
       <div className={`grid gap-3 mb-4 ${isAlpha && aiAccuracy ? 'grid-cols-2 sm:grid-cols-5' : 'grid-cols-2 sm:grid-cols-4'}`}>
@@ -382,6 +405,176 @@ export default function PortfolioPage() {
           onClose={() => setShowPaywall(false)}
         />
       )}
+
+      </> /* end manual view */}
+    </div>
+  )
+}
+
+// ─── Polymarket Types ──────────────────────────────────────────────────────────
+
+interface PolyPosition {
+  title: string
+  slug?: string
+  outcome: string
+  size: number
+  avgPrice: number
+  initialValue: number
+  currentValue: number
+  cashPnl: number
+  percentPnl: number
+  realizedPnl: number
+  endDate?: string
+  closed: boolean
+}
+
+interface PolyPortfolio {
+  positions: PolyPosition[]
+  portfolio_value: { value?: number; realizedPnl?: number; unrealizedPnl?: number } | null
+  balance: Record<string, string> | null
+  error: string | null
+}
+
+// ─── PolymarketTab ─────────────────────────────────────────────────────────────
+
+function PolymarketTab() {
+  const [data, setData] = useState<PolyPortfolio | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    api.getPolymarketPortfolio()
+      .then((d) => setData(d as PolyPortfolio))
+      .catch((e) => setError(e?.message ?? 'Failed to load'))
+      .finally(() => setLoading(false))
+  }, [])
+
+  if (loading) return (
+    <div className="space-y-3 animate-pulse">
+      <div className="grid grid-cols-3 gap-3">
+        {[1, 2, 3].map(i => <div key={i} className="h-20 bg-bg-elevated rounded-lg" />)}
+      </div>
+      {[1, 2, 3].map(i => <div key={i} className="h-16 bg-bg-elevated rounded-lg" />)}
+    </div>
+  )
+
+  if (error || data?.error) return (
+    <div className="bg-bg-surface border border-danger/20 rounded-lg p-6 text-center">
+      <p className="text-xs font-mono text-danger mb-1">CONNECTION ERROR</p>
+      <p className="text-[11px] font-mono text-text-muted">{error ?? data?.error}</p>
+      <p className="text-[10px] font-mono text-text-muted mt-3">Make sure POLYMARKET_WALLET is set in the API .env</p>
+    </div>
+  )
+
+  if (!data) return null
+
+  const open   = data.positions.filter(p => !p.closed)
+  const closed = data.positions.filter(p => p.closed)
+
+  const totalCurrentValue = open.reduce((s, p) => s + (p.currentValue ?? 0), 0)
+  const totalUnrealizedPnl = open.reduce((s, p) => s + (p.cashPnl ?? 0), 0)
+  const totalRealizedPnl  = closed.reduce((s, p) => s + (p.cashPnl ?? 0), 0)
+  const usdcBalance = data.balance ? parseFloat(Object.values(data.balance)[0] ?? '0') : null
+
+  return (
+    <div>
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+        {usdcBalance != null && (
+          <StatCard label="USDC BALANCE" value={`$${usdcBalance.toFixed(2)}`} sub="available" />
+        )}
+        <StatCard
+          label="POSITIONS VALUE"
+          value={`$${totalCurrentValue.toFixed(2)}`}
+          sub={`${open.length} open`}
+        />
+        <StatCard
+          label="UNREALIZED P&L"
+          value={`${totalUnrealizedPnl >= 0 ? '+' : ''}$${totalUnrealizedPnl.toFixed(2)}`}
+          sub="open positions"
+          positive={totalUnrealizedPnl > 0}
+          negative={totalUnrealizedPnl < 0}
+        />
+        <StatCard
+          label="REALIZED P&L"
+          value={`${totalRealizedPnl >= 0 ? '+' : ''}$${totalRealizedPnl.toFixed(2)}`}
+          sub={`${closed.length} closed`}
+          positive={totalRealizedPnl > 0}
+          negative={totalRealizedPnl < 0}
+        />
+      </div>
+
+      {/* Open positions */}
+      {open.length > 0 && (
+        <div className="mb-5">
+          <p className="text-[10px] font-mono font-bold text-text-muted tracking-widest mb-3">OPEN POSITIONS</p>
+          <div className="flex flex-col gap-2">
+            {open.map((p, i) => <PolyPositionRow key={i} pos={p} />)}
+          </div>
+        </div>
+      )}
+
+      {/* Closed positions */}
+      {closed.length > 0 && (
+        <div>
+          <p className="text-[10px] font-mono font-bold text-text-muted tracking-widest mb-3">CLOSED POSITIONS</p>
+          <div className="flex flex-col gap-2">
+            {closed.slice(0, 10).map((p, i) => <PolyPositionRow key={i} pos={p} />)}
+          </div>
+        </div>
+      )}
+
+      {data.positions.length === 0 && (
+        <div className="bg-bg-surface border border-bg-border rounded-lg p-12 text-center">
+          <p className="text-sm font-mono text-text-muted">NO POSITIONS FOUND</p>
+          <p className="text-[11px] font-mono text-text-muted mt-2">No Polymarket positions for this wallet</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function PolyPositionRow({ pos }: { pos: PolyPosition }) {
+  const pnlPos = pos.cashPnl >= 0
+  const outcomeYes = pos.outcome?.toLowerCase() === 'yes'
+  const navigate = useNavigate()
+
+  return (
+    <div
+      className={`bg-bg-surface border border-bg-border rounded-lg px-4 py-3 ${pos.slug ? 'cursor-pointer hover:border-text-muted/30 transition-colors' : ''}`}
+      onClick={() => pos.slug && navigate(`/markets/${pos.slug}`)}
+    >
+      <div className="flex items-start gap-3">
+        <div className="flex-1 min-w-0">
+          <p className="text-[13px] font-mono text-text-secondary leading-snug truncate">{pos.title}</p>
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border ${
+              outcomeYes
+                ? 'text-accent border-accent/40 bg-accent/10'
+                : 'text-danger border-danger/30 bg-danger/5'
+            }`}>
+              {pos.outcome?.toUpperCase()}
+            </span>
+            <span className="text-[10px] font-mono text-text-muted">
+              {pos.size.toFixed(1)} shares @ {(pos.avgPrice * 100).toFixed(1)}¢
+            </span>
+            {pos.endDate && (
+              <span className="text-[10px] font-mono text-text-muted">
+                ends {new Date(pos.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="text-right shrink-0">
+          <p className="text-sm font-mono font-bold text-text-primary">${pos.currentValue.toFixed(2)}</p>
+          <p className={`text-[11px] font-mono font-bold ${pnlPos ? 'text-accent' : 'text-danger'}`}>
+            {pnlPos ? '+' : ''}${pos.cashPnl.toFixed(2)}
+            <span className="text-[10px] font-mono font-normal ml-1 opacity-70">
+              ({pnlPos ? '+' : ''}{pos.percentPnl.toFixed(1)}%)
+            </span>
+          </p>
+        </div>
+      </div>
     </div>
   )
 }

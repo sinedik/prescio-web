@@ -3,6 +3,8 @@ import { useState, useEffect, useRef } from 'react'
 export function usePolling<T>(
   fetcher: () => Promise<T>,
   interval = 5 * 60 * 1000,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ...deps: any[]
 ) {
   const [data, setData] = useState<T | null>(null)
   const [loading, setLoading] = useState(true)
@@ -12,6 +14,7 @@ export function usePolling<T>(
 
   useEffect(() => {
     let mounted = true
+    setLoading(true)
 
     async function run() {
       try {
@@ -50,7 +53,7 @@ export function usePolling<T>(
       document.removeEventListener('visibilitychange', handleVisibility)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, deps)
 
   return { data, loading, error, lastUpdated }
 }
