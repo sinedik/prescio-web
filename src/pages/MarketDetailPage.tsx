@@ -453,7 +453,13 @@ export default function MarketDetailPage() {
       try {
         const ev = await api.getEvent(eventId) as { ai_summary?: EventAiSummary }
         if (cancelled) return
-        if (ev?.ai_summary) { setEventAi(ev.ai_summary); return }
+        if (ev?.ai_summary) {
+          // Кеш есть — показываем анимацию минимум полный цикл (6 сцен × 5с = 30с)
+          setEventAnalyzing(true)
+          await new Promise(r => setTimeout(r, 30000))
+          if (!cancelled) { setEventAi(ev.ai_summary); setEventAnalyzing(false) }
+          return
+        }
 
         // Событие не проанализировано — запускаем анализ автоматически
         setEventAnalyzing(true)
@@ -515,15 +521,17 @@ export default function MarketDetailPage() {
         return false
       }
 
-      // Если анализ уже был в БД — сразу перечитываем без ожидания
+      // Если анализ уже был в БД — перечитываем, но ждём минимум полный цикл анимации (4 сцены × 5с)
       if (result.analysis) {
-        const fresh = await api.getMarket(marketId) as Market & { analysis?: Analysis }
+        const [fresh] = await Promise.all([
+          api.getMarket(marketId) as Promise<Market & { analysis?: Analysis }>,
+          new Promise(r => setTimeout(r, 20000)),
+        ])
         if (fresh?.analysis) {
           setAnalysis(fresh.analysis)
           const key = CACHE_PREFIX + slugify(marketQuestion)
           sessionStorage.setItem(key, JSON.stringify({ market: fresh, analysis: fresh.analysis, news, metaculusMatch }))
         } else {
-          // Fallback: анализ есть но план не позволяет читать через GET (free user)
           setAnalysis(result.analysis as Analysis)
         }
         setAnalyzing(false)

@@ -99,19 +99,19 @@ const REGIONS: Region[] = [
 // ─── Scene orders ─────────────────────────────────────────────────────────────
 
 const P1_SCENES = [
-  {id:'candles',  hold:280},
-  {id:'price',    hold:260},
-  {id:'graph',    hold:280},
-  {id:'entities', hold:270},
+  {id:'candles',  hold:5000},
+  {id:'price',    hold:5000},
+  {id:'graph',    hold:5000},
+  {id:'entities', hold:5000},
 ]
 
 const P2_SCENES = [
-  {id:'globe',    hold:300},
-  {id:'americas', hold:320},
-  {id:'globe',    hold:280},
-  {id:'eurasia',  hold:320},
-  {id:'globe',    hold:280},
-  {id:'fareast',  hold:320},
+  {id:'globe',    hold:5000},
+  {id:'americas', hold:5000},
+  {id:'globe',    hold:5000},
+  {id:'eurasia',  hold:5000},
+  {id:'globe',    hold:5000},
+  {id:'fareast',  hold:5000},
 ]
 
 const ASSETS = ['BTC','ETH','SPX','DXY','GLD','OIL','EUR','JPY','BND']
@@ -259,7 +259,7 @@ export default function AnalysisLoader({
   const rafRef=useRef<number>(0)
   const stateRef=useRef<S>({...mkState(), phase: startPhase})
   const phaseRef=useRef<1|2>(startPhase)
-  const p2Scene=useRef({idx:0,age:0,alpha:0})
+  const p2Scene=useRef({idx:0,startTime:Date.now(),alpha:0})
 
   const [phase,setPhase]=useState<1|2>(startPhase)
   const [flash,setFlash]=useState(false)
@@ -294,6 +294,7 @@ export default function AnalysisLoader({
     function resize(){canvas.width=canvas.offsetWidth;canvas.height=canvas.offsetHeight||height}
     resize()
     initDrops(s,canvas.width,canvas.height);initPrice(s);initCandles(s);initGraph(s);initRegion(s,0)
+    p2Scene.current={idx:0,startTime:Date.now(),alpha:0}
     const scenes=startPhase===1?P1_SCENES:P2_SCENES
     setSceneLabel(scenes[0].id)
     nextThought()
@@ -303,19 +304,19 @@ export default function AnalysisLoader({
     const pTimer=setInterval(()=>{pctT.current=Math.min(pctT.current+2+Math.random()*2.5,97)},420)
     const paTimer=setInterval(()=>{pctV.current+=(pctT.current-pctV.current)*.14;setPct(Math.round(pctV.current))},30)
 
-    const FD=28
+    const FD=500
     function loop(){
       const w=canvas.width,h=canvas.height
       ctx.fillStyle='rgba(2,5,2,0.28)';ctx.fillRect(0,0,w,h)
       drawMatrix(ctx,s,w,h)
       const sc=p2Scene.current
-      sc.age++
+      const elapsed=Date.now()-sc.startTime
       const scene=scenes[sc.idx%scenes.length]
-      if(sc.age<FD)sc.alpha=sc.age/FD
-      else if(sc.age>scene.hold-FD)sc.alpha=Math.max(0,(scene.hold-sc.age)/FD)
+      if(elapsed<FD)sc.alpha=elapsed/FD
+      else if(elapsed>scene.hold-FD)sc.alpha=Math.max(0,(scene.hold-elapsed)/FD)
       else sc.alpha=1
-      if(sc.age>=scene.hold){
-        sc.idx=(sc.idx+1)%scenes.length;sc.age=0;sc.alpha=0
+      if(elapsed>=scene.hold){
+        sc.idx=(sc.idx+1)%scenes.length;sc.startTime=Date.now();sc.alpha=0
         const next=scenes[sc.idx]
         setSceneLabel(next.id)
         if(next.id==='candles')initCandles(s)
