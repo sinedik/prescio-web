@@ -302,6 +302,7 @@ export default function MarketDetailPage() {
   const [analyzeError, setAnalyzeError] = useState<string | null>(null)
   const [eventAi, setEventAi] = useState<EventAiSummary | null>(null)
   const [eventAnalyzing, setEventAnalyzing] = useState(false)
+  const userTriggeredAnalysis = useRef(false)
   const [history, setHistory] = useState<HistoryPoint[]>([])
   const [historyReal, setHistoryReal] = useState(false)
   const [siblings, setSiblings] = useState<{ id: string; question: string; price: number; no_price?: number; volume?: number; resolution_date?: string; slug?: string }[]>([])
@@ -454,10 +455,16 @@ export default function MarketDetailPage() {
         const ev = await api.getEvent(eventId) as { ai_summary?: EventAiSummary }
         if (cancelled) return
         if (ev?.ai_summary) {
-          // Кеш есть — показываем анимацию минимум полный цикл (6 сцен × 5с = 30с)
-          setEventAnalyzing(true)
-          await new Promise(r => setTimeout(r, 30000))
-          if (!cancelled) { setEventAi(ev.ai_summary); setEventAnalyzing(false) }
+          if (userTriggeredAnalysis.current) {
+            // Первый раз у пользователя — прогоняем анимацию (6 сцен × 5с = 30с)
+            userTriggeredAnalysis.current = false
+            setEventAnalyzing(true)
+            await new Promise(r => setTimeout(r, 30000))
+            if (!cancelled) { setEventAi(ev.ai_summary); setEventAnalyzing(false) }
+          } else {
+            // Уже видел — показываем сразу
+            if (!cancelled) setEventAi(ev.ai_summary)
+          }
           return
         }
 
@@ -494,6 +501,7 @@ export default function MarketDetailPage() {
 
   async function handleAnalyze() {
     if (!market) return
+    userTriggeredAnalysis.current = true
     setAnalyzing(true)
     setAnalyzeError(null)
     const marketId = market.id!
@@ -553,6 +561,7 @@ export default function MarketDetailPage() {
     } finally {
       clearAnalyzing('market', marketId)
       setAnalyzing(false)
+      userTriggeredAnalysis.current = false
     }
   }
 
