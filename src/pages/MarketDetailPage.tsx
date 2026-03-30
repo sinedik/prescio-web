@@ -309,7 +309,6 @@ export default function MarketDetailPage() {
   const [showPaywall, setShowPaywall] = useState(false)
   const [paywallVariant, setPaywallVariant] = useState<'pro' | 'alpha'>('pro')
   const { isPro, isAlpha } = useAuthContext()
-  const analysesToday = profile?.analyses_today ?? 0
 
   // Master loader — всегда загружает свежие данные по UUID, не зависит от cache/state
   useEffect(() => {
@@ -917,48 +916,24 @@ export default function MarketDetailPage() {
         </div>
       )}
 
-      {/* FREE: analyze button (3/day) + locked block after */}
-      {!freshLoading && !analyzing && !isPro && !analysis && (
-        <div className="bg-bg-surface border border-bg-border rounded-lg p-6 mb-4 text-center">
-          <p className="text-[10px] font-mono text-text-muted tracking-widest mb-1">AI ANALYSIS</p>
-          <p className="text-xs font-mono text-text-muted mb-4">
-            {analysesToday} / 3 free analyses used today
-          </p>
-          {analyzeError && (
-            <div className="text-xs font-mono text-danger bg-danger/5 border border-danger/20 rounded px-3 py-2 mb-4">
-              {analyzeError}
-            </div>
-          )}
-          <button
-            onClick={() => {
-              if (analysesToday >= 3) { setPaywallVariant('pro'); setShowPaywall(true) }
-              else handleAnalyze()
-            }}
-            disabled={analyzing}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-accent text-bg-base
-              text-xs font-mono font-bold rounded hover:bg-accent/90 transition-colors disabled:opacity-50"
-          >
-            {analyzing ? <><SpinnerIcon /> ANALYZING...</> : 'ANALYZE WITH AI'}
-          </button>
-        </div>
-      )}
-
-      {/* FREE: analysis done → locked teaser */}
-      {!analyzing && !isPro && !freshLoading && analysis && (
-        <div className="bg-bg-surface border border-bg-border rounded-lg p-6 mb-4 text-center">
-          <div className="w-9 h-9 rounded-full bg-bg-elevated border border-bg-border flex items-center justify-center mx-auto mb-3 text-base">
-            🔒
+      {/* FREE: locked paywall block */}
+      {!freshLoading && !isPro && (
+        <div className="bg-bg-surface border border-bg-border rounded-lg p-6 mb-4 relative overflow-hidden">
+          <p className="text-[10px] font-mono font-bold text-text-muted tracking-widest mb-3">AI ANALYSIS</p>
+          <div className="space-y-2 blur-[3px] opacity-60 pointer-events-none select-none">
+            <div className="h-3 w-full bg-bg-elevated rounded" />
+            <div className="h-3 w-5/6 bg-bg-elevated rounded" />
+            <div className="h-3 w-4/5 bg-bg-elevated rounded" />
+            <div className="h-3 w-3/4 bg-bg-elevated rounded" />
           </div>
-          <p className="text-sm font-mono text-text-secondary mb-1">Analysis ready</p>
-          <p className="text-xs font-mono text-text-muted mb-5 max-w-xs mx-auto leading-relaxed">
-            Upgrade to Pro to unlock thesis, crowd bias, edge score and resolution analysis.
-          </p>
-          <button
-            onClick={() => { setPaywallVariant('pro'); setShowPaywall(true) }}
-            className="px-6 py-2.5 bg-accent text-bg-base text-xs font-mono font-bold rounded hover:bg-accent/90 transition-colors"
-          >
-            Upgrade to Pro
-          </button>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <button
+              onClick={() => { setPaywallVariant('pro'); setShowPaywall(true) }}
+              className="px-4 py-2 bg-accent text-bg-base text-xs font-mono font-bold rounded-lg hover:bg-accent/90 transition-colors"
+            >
+              Unlock AI Analysis
+            </button>
+          </div>
         </div>
       )}
 
