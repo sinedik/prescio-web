@@ -1,12 +1,15 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+'use client'
+
+import Link from 'next/link'
+import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { getHealth } from '../api'
 import { api } from '../lib/api'
 import { useAuthContext } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import Logo from './Logo'
 import AppFooter from './AppFooter'
 import { IconMoon, IconSun } from './icons'
+import { SearchOverlay } from './search/SearchOverlay'
 
 interface Alert {
   id: string
@@ -38,23 +41,26 @@ const STATUS_CONFIG: Record<ScanStatus, { dotClass: string; textClass: string; l
 const NAV_LINKS = [
   { to: '/feed',      label: 'FEED' },
   { to: '/markets',   label: 'MARKETS' },
+  { to: '/sport',     label: 'SPORT' },
   { to: '/dashboard', label: 'DASHBOARD' },
-  { to: '/portfolio', label: 'PORTFOLIO' },
 ]
 
-export default function Layout() {
-  const navigate = useNavigate()
+export default function Layout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
+  const router = useRouter()
   const { theme, setTheme } = useTheme()
   const [scanStatus, setScanStatus] = useState<ScanStatus>('connecting')
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [alertsOpen, setAlertsOpen] = useState(false)
   const [seenCount, setSeenCount] = useState(0)
+  const [searchOpen, setSearchOpen] = useState(false)
   const alertsRef = useRef<HTMLDivElement>(null)
   const { user, profile } = useAuthContext()
+  const planForSearch = profile?.plan ?? (profile?.is_pro ? 'pro' : 'free')
 
   const checkHealth = useCallback(async () => {
     try {
-      const data = await getHealth()
+      const data = await api.getHealth()
       if (!data.lastScannedAt) { setScanStatus('connecting'); return }
       const mins = (Date.now() - new Date(data.lastScannedAt).getTime()) / 60000
       setScanStatus(mins < 30 ? 'live' : mins < 120 ? 'updating' : 'stale')
@@ -119,21 +125,25 @@ export default function Layout() {
 
           {/* Nav — centred absolutely so right panel doesn't shift it */}
           <nav className="absolute left-1/2 -translate-x-1/2 flex items-center gap-0.5">
-            {NAV_LINKS.map(({ to, label: navLabel }) => (
-              <NavLink
-                key={to}
-                to={to}
-                className={({ isActive }) =>
-                  `px-3 py-1.5 text-[11px] font-mono tracking-widest rounded-md transition-colors ${
-                    isActive
-                      ? 'text-accent font-bold'
-                      : 'text-text-muted font-medium hover:text-text-secondary'
-                  }`
-                }
-              >
-                {navLabel}
-              </NavLink>
-            ))}
+            {NAV_LINKS.map(({ to, label: navLabel }) => {
+              const path = pathname ?? ''
+              const isActive = path === to || path.startsWith(`${to}/`)
+              return (
+                <Link
+                  key={to}
+                  href={to}
+                  className={
+                    `px-3 py-1.5 text-[11px] font-mono tracking-widest rounded-md transition-colors ${
+                      isActive
+                        ? 'text-accent font-bold'
+                        : 'text-text-muted font-medium hover:text-text-secondary'
+                    }`
+                  }
+                >
+                  {navLabel}
+                </Link>
+              )
+            })}
           </nav>
 
           {/* Right cluster */}
@@ -193,6 +203,20 @@ export default function Layout() {
                 PRO
               </span>
             )}
+
+            {/* AI Search */}
+            <button
+              onClick={() => setSearchOpen(true)}
+              title="AI Search"
+              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-opacity hover:opacity-80"
+              style={{ background: 'rgb(var(--bg-elevated))', border: '1px solid rgb(var(--bg-border))', fontSize: '11px', color: 'rgb(var(--text-muted))', fontFamily: 'JetBrains Mono, monospace' }}
+            >
+              <span>⌕</span>
+              <span>Search</span>
+              {planForSearch === 'free' && (
+                <span style={{ fontSize: '8px', color: 'rgb(var(--accent))', fontWeight: 700 }}>PRO</span>
+              )}
+            </button>
 
             {/* Alerts bell */}
             <div ref={alertsRef} className="relative">
@@ -272,7 +296,7 @@ export default function Layout() {
 
             {/* Avatar */}
             <button
-              onClick={() => navigate('/profile')}
+              onClick={() => router.push('/profile')}
               title={email}
               className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-mono font-bold transition-all duration-150"
               style={{
@@ -291,10 +315,12 @@ export default function Layout() {
 
       {/* Main */}
       <main className="flex-1 overflow-auto">
-        <Outlet />
+        {children}
       </main>
 
       <AppFooter />
+
+      <SearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} plan={planForSearch} />
     </div>
   )
 }

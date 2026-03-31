@@ -88,10 +88,16 @@ export function useAuth() {
 
       if (session?.user) {
         if (event === 'SIGNED_IN') {
-          profileCache.userId = null
-          profileCache.data = null
-          setLoading(true)
-          fetchProfile(session.user.id).finally(() => setLoading(false))
+          // Only treat as a real sign-in (and show loading) when the user actually changed.
+          // Supabase can fire SIGNED_IN during token refreshes for the same user — ignore those.
+          if (profileCache.userId !== session.user.id) {
+            profileCache.userId = null
+            profileCache.data = null
+            setLoading(true)
+            fetchProfile(session.user.id).finally(() => setLoading(false))
+          } else if (!profileCache.data) {
+            fetchProfile(session.user.id).finally(() => setLoading(false))
+          }
         } else if (event === 'USER_UPDATED') {
           fetchProfile(session.user.id, true)
         }
@@ -155,6 +161,7 @@ export function useAuth() {
 
   const isPro = profile ? (profile.plan === 'pro' || profile.plan === 'alpha' || profile.is_pro) : false
   const isAlpha = profile ? profile.plan === 'alpha' : false
+  const plan: 'free' | 'pro' | 'alpha' = profile?.plan ?? (profile?.is_pro ? 'pro' : 'free')
 
   return {
     user,
@@ -162,6 +169,7 @@ export function useAuth() {
     session,
     isPro,
     isAlpha,
+    plan,
     signIn,
     signUp,
     signOut,

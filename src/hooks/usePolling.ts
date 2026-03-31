@@ -11,15 +11,22 @@ export function usePolling<T>(
   const [error, setError] = useState<unknown>(null)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  // Track whether we already have data so we don't flash loading on background refetches
+  const hasDataRef = useRef(false)
 
   useEffect(() => {
     let mounted = true
-    setLoading(true)
+    // Only show loading spinner on the very first fetch (no data yet).
+    // Background refetches (visibility restore, polling) update silently.
+    if (!hasDataRef.current) {
+      setLoading(true)
+    }
 
     async function run() {
       try {
         const result = await fetcher()
         if (mounted) {
+          hasDataRef.current = true
           setData(result)
           setLastUpdated(new Date())
           setError(null)
@@ -41,6 +48,7 @@ export function usePolling<T>(
           timerRef.current = null
         }
       } else {
+        // Background refetch — no loading state
         run()
         timerRef.current = setInterval(run, interval)
       }
