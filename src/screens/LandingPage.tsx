@@ -16,16 +16,22 @@ const MOCK_CARDS = [
     trend: [14, 11, 9, 10, 8, 8, 8], up: false,
   },
   {
+    platform: 'SPORT', pc: 'text-emerald-400 bg-emerald-400/10',
+    question: 'Champions League: Real Madrid vs Arsenal — Home Win',
+    category: 'FOOTBALL', mkt: 44, no: 56, vol: '—', date: 'Apr 8',
+    trend: [41, 42, 43, 44, 44, 44, 44], up: true,
+  },
+  {
     platform: 'KALSHI', pc: 'text-amber-400 bg-amber-400/10',
     question: 'Fed rate cut before July 2026?',
     category: 'POLICY', mkt: 62, no: 38, vol: '$18.4M', date: 'Resolves Jul 31',
     trend: [54, 57, 59, 61, 61, 62, 62], up: true,
   },
   {
-    platform: 'POLYMARKET', pc: 'text-blue-400 bg-blue-400/10',
-    question: 'Will Bitcoin reach $150k before end of 2026?',
-    category: 'CRYPTO', mkt: 28, no: 72, vol: '$12.1M', date: 'Resolves Dec 31',
-    trend: [22, 24, 25, 27, 28, 28, 28], up: true,
+    platform: 'ESPORTS', pc: 'text-violet-400 bg-violet-400/10',
+    question: 'Dota 2 TI2026: Team Spirit vs Team Liquid — Spirit Win',
+    category: 'DOTA 2', mkt: 61, no: 39, vol: '—', date: 'May 12',
+    trend: [52, 55, 57, 59, 60, 61, 61], up: true,
   },
   {
     platform: 'POLYMARKET', pc: 'text-blue-400 bg-blue-400/10',
@@ -42,20 +48,14 @@ const MOCK_CARDS = [
   {
     platform: 'METACULUS', pc: 'text-purple-400 bg-purple-400/10',
     question: 'AI system passes bar exam by mid-2026?',
-    category: 'ELECTIONS', mkt: 71, no: 29, vol: '—', date: 'Resolves Jun 30',
+    category: 'AI', mkt: 71, no: 29, vol: '—', date: 'Resolves Jun 30',
     trend: [60, 63, 66, 68, 70, 71, 71], up: true,
   },
   {
-    platform: 'POLYMARKET', pc: 'text-blue-400 bg-blue-400/10',
-    question: 'US-China trade deal signed in 2026?',
-    category: 'US_POLITICS', mkt: 45, no: 55, vol: '$15.2M', date: 'Resolves Dec 31',
-    trend: [40, 41, 43, 44, 45, 45, 45], up: true,
-  },
-  {
-    platform: 'KALSHI', pc: 'text-amber-400 bg-amber-400/10',
-    question: 'Netanyahu leaves office before June 2026?',
-    category: 'GEOPOLITICS', mkt: 31, no: 69, vol: '$73.3M', date: 'Resolves Jun 30',
-    trend: [35, 34, 33, 32, 31, 31, 31], up: false,
+    platform: 'CRYPTO', pc: 'text-amber-400 bg-amber-400/10',
+    question: 'Bitcoin (BTC) — AI: Bullish · RSI 58 · Strong accumulation',
+    category: 'BTC · $87,420', mkt: 74, no: 26, vol: '$2.1B', date: '24h vol',
+    trend: [64, 66, 68, 70, 72, 73, 74], up: true,
   },
 ]
 
@@ -172,12 +172,12 @@ function useNextScanMins() {
 function StatsSection() {
   const { ref, inView } = useInView(0.3)
   const vol = useCountUp(500, 1800, inView)
-  const platforms = useCountUp(3, 900, inView)
+  const leagues = useCountUp(15, 1200, inView)
 
   const stats = [
-    { display: `$${vol}M+`, label: 'Markets tracked' },
-    { display: `${platforms}`, label: 'Platforms' },
-    { display: '~2h', label: 'Scan interval' },
+    { display: `$${vol}M+`, label: 'Prediction market volume' },
+    { display: `${leagues}+`, label: 'Football leagues covered' },
+    { display: '4', label: 'Asset classes' },
   ]
 
   return (
@@ -213,173 +213,410 @@ function StatsSection() {
   )
 }
 
-// ── Section 2 — Edge demo ────────────────────────────────────────────────────
-function EdgeDemoSection() {
+// ── Section 2 — Two Pillars ──────────────────────────────────────────────────
+const SPORTS_OUTCOMES = [
+  { label: 'HOME', bk: '2.10', ai: '2.45', value: true },
+  { label: 'DRAW', bk: '3.40', ai: '3.20', value: false },
+  { label: 'AWAY', bk: '3.60', ai: '3.10', value: false },
+]
+
+function TwoPillarsSection() {
   const { ref, inView } = useInView(0.1)
-  const [hl, setHl] = useState(0)
-
-  useEffect(() => {
-    if (!inView) return
-    const timers = [400, 800, 1200, 1600].map((delay, i) =>
-      window.setTimeout(() => setHl(i + 1), delay)
-    )
-    return () => timers.forEach(window.clearTimeout)
-  }, [inView])
-
-  const metricBoxStyle = (active: boolean, activeGreen: boolean): React.CSSProperties => ({
-    background: active ? (activeGreen ? 'rgb(var(--accent) / 0.03)' : 'rgb(var(--bg-border))') : 'rgb(var(--bg-elevated))',
-    border: `1px solid ${active ? (activeGreen ? 'rgb(var(--accent) / 0.25)' : 'rgb(var(--bg-border))') : 'rgb(var(--bg-border))'}`,
-    borderRadius: '8px',
-    padding: '12px',
-    transition: 'background 400ms ease, border-color 400ms ease',
-  })
-
-  const explanations = [
-    { label: 'What the crowd thinks', detail: 'Polymarket traders price a 9% chance — reflecting noise and fear, not analysis.' },
-    { label: 'Our AI estimate', detail: 'Cross-referencing ISW and primary sources puts the real probability at 35%.' },
-    { label: 'Your opportunity', detail: '26 percentage points of edge. The kind the market rarely offers twice.' },
-    { label: 'Why the market is wrong', detail: 'Crowd conflates airstrikes with ground incursion. Resolution criteria says boots on ground only.' },
-  ]
 
   return (
     <section style={{ padding: '120px 0' }}>
       <div ref={ref} className="mx-auto" style={{ maxWidth: '1100px', padding: '0 clamp(16px, 4vw, 48px)' }}>
+
         {/* Header */}
         <div className="text-center mb-14" style={scrollFade(inView)}>
           <h2 className="font-mono font-bold text-text-primary mb-3" style={{ fontSize: 'clamp(22px, 3vw, 32px)' }}>
-            This is what edge looks like
+            One platform. Four markets.
           </h2>
           <p className="font-mono" style={{ fontSize: '14px', color: 'rgb(var(--text-secondary))' }}>
-            Market at 9%. Our AI says 35%. You see it first.
+            AI finds mispriced probability — whether it&apos;s a Polymarket question, a Champions League match, a Dota 2 tournament, or a crypto coin.
           </p>
         </div>
 
-        {/* Two-column layout */}
+        {/* Two pillars */}
         <div
-          className="grid grid-cols-1 items-start gap-10"
-          style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))' }}
+          className="grid gap-6"
+          style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(340px, 100%), 1fr))' }}
         >
+          {/* LEFT — Prediction Markets */}
           <div
-            className="md:col-span-1"
             style={{
               ...scrollFade(inView, 100),
-              gridColumn: 'span 1',
+              background: 'rgb(var(--bg-surface))',
+              border: '1px solid rgb(var(--bg-border))',
+              borderRadius: '16px',
+              padding: '32px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '24px',
             }}
           >
-            {/* Market Detail mock */}
+            <div>
+              <span
+                className="font-mono text-[10px] font-bold px-2 py-1 rounded"
+                style={{ color: 'rgb(96 165 250)', background: 'rgb(96 165 250 / 0.1)' }}
+              >
+                PREDICTION MARKETS
+              </span>
+              <h3 className="font-mono font-bold text-text-primary mt-4 mb-2" style={{ fontSize: '18px' }}>
+                Find mispriced markets
+              </h3>
+              <p style={{ fontSize: '13px', color: 'rgb(var(--text-secondary))', lineHeight: 1.75 }}>
+                Polymarket, Kalshi, and Metaculus — scanned every 2 hours. AI cross-references primary sources to find where crowd probability diverges from reality.
+              </p>
+            </div>
+
+            {/* PM demo card */}
             <div
               style={{
-                background: 'rgb(var(--bg-surface))',
+                background: 'rgb(var(--bg-elevated))',
                 border: '1px solid rgb(var(--bg-border))',
                 borderRadius: '12px',
-                padding: '24px',
+                padding: '20px',
               }}
             >
-              {/* Badges row */}
-              <div className="flex items-center gap-2 mb-4 flex-wrap">
-                <span className="text-[10px] font-mono font-bold px-2 py-1 rounded-lg text-blue-400 bg-blue-400/10">POLYMARKET</span>
-                <span className="text-[10px] font-mono font-bold px-2 py-1 rounded-lg text-accent bg-accent/10">ENTER</span>
-                <span className="text-[10px] font-mono font-bold px-2 py-1 rounded-lg ml-auto"
-                  style={{ color: 'rgb(var(--text-secondary))', background: 'rgb(var(--bg-elevated))', border: '1px solid rgb(var(--bg-border))' }}>
-                  RESOLVES IN 3D
-                </span>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="font-mono text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ color: 'rgb(96 165 250)', background: 'rgb(96 165 250 / 0.1)' }}>POLYMARKET</span>
+                <span className="font-mono text-[9px] px-1.5 py-0.5 rounded" style={{ color: 'rgb(var(--text-muted))', border: '1px solid rgb(var(--bg-border))' }}>GEOPOLITICS</span>
+                <span className="font-mono text-[9px] ml-auto" style={{ color: 'rgb(var(--text-muted))' }}>Resolves Dec 31</span>
               </div>
-
-              {/* Title */}
-              <h3 className="font-mono font-bold text-text-primary mb-5" style={{ fontSize: '15px', lineHeight: 1.5 }}>
-                Will US forces enter Iran by March 31?
-              </h3>
-
-              {/* Metrics 2×2 */}
-              <div className="grid grid-cols-2 gap-2 mb-4">
-                <div style={metricBoxStyle(hl >= 1, false)}>
-                  <p className="font-mono text-[9px] tracking-widest mb-1" style={{ color: 'rgb(var(--text-muted))' }}>MARKET PRICE</p>
-                  <p className="font-mono font-bold" style={{ fontSize: '22px', color: 'rgb(var(--text-secondary))' }}>9%</p>
-                </div>
-                <div style={metricBoxStyle(hl >= 2, true)}>
-                  <p className="font-mono text-[9px] tracking-widest mb-1" style={{ color: 'rgb(var(--text-muted))' }}>FAIR VALUE</p>
-                  <p className="font-mono font-bold" style={{ fontSize: '22px', color: 'rgb(var(--accent))' }}>35%</p>
-                </div>
-                <div style={metricBoxStyle(hl >= 3, true)}>
-                  <p className="font-mono text-[9px] tracking-widest mb-1" style={{ color: 'rgb(var(--text-muted))' }}>EDGE</p>
-                  <p className="font-mono font-bold" style={{ fontSize: '22px', color: 'rgb(var(--accent))' }}>+26pp</p>
-                </div>
-                <div style={{ background: 'rgb(var(--bg-elevated))', border: '1px solid rgb(var(--bg-border))', borderRadius: '8px', padding: '12px' }}>
-                  <p className="font-mono text-[9px] tracking-widest mb-1" style={{ color: 'rgb(var(--text-muted))' }}>VOLUME</p>
-                  <p className="font-mono font-bold" style={{ fontSize: '22px', color: 'rgb(var(--text-secondary))' }}>$27.8M</p>
-                </div>
+              <p className="font-mono text-sm font-medium text-text-primary mb-4 leading-snug">
+                Russia-Ukraine ceasefire agreement in 2026?
+              </p>
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                {[
+                  { label: 'MARKET', value: '33%', accent: false },
+                  { label: 'AI FAIR', value: '51%', accent: true },
+                  { label: 'EDGE', value: '+18pp', accent: true },
+                ].map(({ label, value, accent }) => (
+                  <div
+                    key={label}
+                    style={{
+                      background: accent ? 'rgb(var(--accent) / 0.05)' : 'rgb(var(--bg-surface))',
+                      border: accent ? '1px solid rgb(var(--accent) / 0.2)' : '1px solid transparent',
+                      borderRadius: '8px',
+                      padding: '10px',
+                      textAlign: 'center',
+                    }}
+                  >
+                    <p className="font-mono text-[9px] mb-1" style={{ color: 'rgb(var(--text-muted))' }}>{label}</p>
+                    <p
+                      className="font-mono font-bold"
+                      style={{ fontSize: '18px', color: accent ? 'rgb(var(--accent))' : 'rgb(var(--text-secondary))' }}
+                    >
+                      {value}
+                    </p>
+                  </div>
+                ))}
               </div>
-
-              {/* Recommendation */}
-              <div style={{ background: 'rgb(var(--bg-elevated))', border: '1px solid rgb(var(--bg-border))', borderRadius: '8px', padding: '12px', marginBottom: '8px' }}>
-                <p className="font-mono text-[9px] tracking-widest mb-2" style={{ color: 'rgb(var(--text-muted))' }}>RECOMMENDATION</p>
-                <div className="flex items-center gap-3">
-                  <span className="text-[10px] font-mono font-bold px-2 py-1 rounded-lg text-accent bg-accent/10">ENTER</span>
-                  <span className="font-mono text-sm" style={{ color: 'rgb(var(--text-secondary))' }}>
-                    Bet 25.0% Kelly · Pot. <span style={{ color: 'rgb(var(--accent))' }}>+$61</span>
+              <div
+                className="rounded-lg px-3 py-2"
+                style={{ background: 'rgb(var(--accent) / 0.08)', border: '1px solid rgb(var(--accent) / 0.15)' }}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-[9px] font-bold" style={{ color: 'rgb(var(--accent))' }}>ENTER</span>
+                  <span className="font-mono text-[9px] ml-auto" style={{ color: 'rgb(var(--text-secondary))' }}>
+                    25% Kelly · Vol $41.2M
                   </span>
                 </div>
               </div>
+            </div>
 
-              {/* Thesis — lights up at hl>=4 */}
-              <div
-                style={{
-                  background: 'rgb(var(--bg-elevated))', border: '1px solid rgb(var(--bg-border))', borderRadius: '8px', padding: '12px', marginBottom: '8px',
-                  opacity: hl >= 4 ? 1 : 0.35,
-                  transition: 'opacity 500ms ease',
-                }}
-              >
-                <p className="font-mono text-[9px] tracking-widest mb-2" style={{ color: 'rgb(var(--text-muted))' }}>THESIS</p>
-                <p style={{ fontSize: '12px', color: 'rgb(var(--text-secondary))', lineHeight: 1.6 }}>
-                  ISW reports indicate no imminent escalation timeline. Market is overpricing regime change risk based on isolated incidents rather than structural shifts in US-Iran relations.
-                </p>
-              </div>
-
-              {/* Resolution */}
-              <div style={{ background: 'rgb(var(--bg-elevated))', border: '1px solid rgb(var(--bg-border))', borderRadius: '8px', padding: '12px' }}>
-                <p className="font-mono text-[9px] tracking-widest mb-2" style={{ color: 'rgb(var(--text-muted))' }}>RESOLUTION CRITERIA</p>
-                <p style={{ fontSize: '12px', color: 'rgb(var(--text-secondary))', lineHeight: 1.6 }}>
-                  US military forces must physically enter Iranian sovereign territory. Airstrikes and proxy engagement do not qualify.
-                </p>
-              </div>
+            {/* Bullets */}
+            <div className="flex flex-col gap-2">
+              {[
+                'Resolution criteria analysis — read the fine print',
+                'ISW · AP · BBC · official briefings',
+                'Kelly-optimal position sizing',
+              ].map((item) => (
+                <div key={item} className="flex items-start gap-2">
+                  <span className="font-mono text-xs mt-0.5 shrink-0" style={{ color: 'rgb(var(--accent))' }}>→</span>
+                  <span className="font-mono text-xs" style={{ color: 'rgb(var(--text-secondary))' }}>{item}</span>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Right: explanation labels */}
-          <div className="flex flex-col justify-start gap-3 pt-2" style={scrollFade(inView, 200)}>
-            {explanations.map(({ label, detail }, i) => {
-              const active = hl >= i + 1
-              return (
-                <div
-                  key={i}
-                  style={{
-                    background: active ? 'rgb(var(--accent) / 0.06)' : 'transparent',
-                    border: `1px solid ${active ? 'rgb(var(--accent) / 0.13)' : 'transparent'}`,
-                    borderRadius: '12px',
-                    padding: '16px',
-                    transition: 'background 400ms ease, border-color 400ms ease',
-                  }}
-                >
-                  <div className="flex items-start gap-3">
-                    <span
-                      className="font-mono text-sm mt-0.5 shrink-0"
-                      style={{ color: active ? 'rgb(var(--accent))' : 'rgb(var(--text-muted))', transition: 'color 400ms ease' }}
+          {/* RIGHT — Sports */}
+          <div
+            style={{
+              ...scrollFade(inView, 200),
+              background: 'rgb(var(--bg-surface))',
+              border: '1px solid rgb(var(--bg-border))',
+              borderRadius: '16px',
+              padding: '32px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '24px',
+            }}
+          >
+            <div>
+              <span
+                className="font-mono text-[10px] font-bold px-2 py-1 rounded"
+                style={{ color: 'rgb(52 211 153)', background: 'rgb(52 211 153 / 0.1)' }}
+              >
+                SPORTS ANALYTICS
+              </span>
+              <h3 className="font-mono font-bold text-text-primary mt-4 mb-2" style={{ fontSize: '18px' }}>
+                Spot value in football odds
+              </h3>
+              <p style={{ fontSize: '13px', color: 'rgb(var(--text-secondary))', lineHeight: 1.75 }}>
+                AI models match form, injuries, and historical data to find where bookmaker odds diverge from real probability — across the top 15+ football leagues.
+              </p>
+            </div>
+
+            {/* Sports demo card */}
+            <div
+              style={{
+                background: 'rgb(var(--bg-elevated))',
+                border: '1px solid rgb(var(--bg-border))',
+                borderRadius: '12px',
+                padding: '20px',
+              }}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className="font-mono text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ color: 'rgb(52 211 153)', background: 'rgb(52 211 153 / 0.1)' }}>UCL · QF</span>
+                <span className="font-mono text-[9px]" style={{ color: 'rgb(var(--text-muted))' }}>Apr 8 · 21:00</span>
+              </div>
+              <p className="font-mono text-sm font-bold text-text-primary mb-1">Real Madrid</p>
+              <p className="font-mono text-[10px] mb-4" style={{ color: 'rgb(var(--text-muted))' }}>vs Arsenal · Emirates Stadium</p>
+
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                {SPORTS_OUTCOMES.map(({ label, bk, ai, value }) => (
+                  <div
+                    key={label}
+                    style={{
+                      background: value ? 'rgb(var(--accent) / 0.05)' : 'rgb(var(--bg-surface))',
+                      border: value ? '1px solid rgb(var(--accent) / 0.2)' : '1px solid transparent',
+                      borderRadius: '8px',
+                      padding: '10px',
+                      textAlign: 'center',
+                    }}
+                  >
+                    <p className="font-mono text-[9px] mb-1" style={{ color: 'rgb(var(--text-muted))' }}>{label}</p>
+                    <p className="font-mono font-bold text-text-secondary text-sm">{bk}</p>
+                    <p
+                      className="font-mono text-[9px] mt-0.5"
+                      style={{ color: value ? 'rgb(var(--accent))' : 'rgb(var(--text-muted))' }}
                     >
-                      →
-                    </span>
-                    <div>
-                      <p
-                        className="font-mono text-xs font-bold mb-1"
-                        style={{ color: active ? 'rgb(var(--accent))' : 'rgb(var(--text-muted))', transition: 'color 400ms ease' }}
-                      >
-                        {label}
-                      </p>
-                      <p style={{ fontSize: '13px', color: 'rgb(var(--text-secondary))', lineHeight: 1.65 }}>{detail}</p>
-                    </div>
+                      AI {ai}
+                    </p>
                   </div>
+                ))}
+              </div>
+
+              <div
+                className="rounded-lg px-3 py-2"
+                style={{ background: 'rgb(var(--accent) / 0.08)', border: '1px solid rgb(var(--accent) / 0.15)' }}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-[9px] font-bold" style={{ color: 'rgb(var(--accent))' }}>VALUE DETECTED</span>
+                  <span className="font-mono text-[9px] ml-auto" style={{ color: 'rgb(var(--text-secondary))' }}>
+                    Home · +16.7% EV
+                  </span>
                 </div>
-              )
-            })}
+              </div>
+            </div>
+
+            {/* Bullets */}
+            <div className="flex flex-col gap-2">
+              {[
+                'Form, injuries, head-to-head, venue stats',
+                'Expected goals (xG) model',
+                'Value bet detection across 15+ leagues',
+              ].map((item) => (
+                <div key={item} className="flex items-start gap-2">
+                  <span className="font-mono text-xs mt-0.5 shrink-0" style={{ color: 'rgb(var(--accent))' }}>→</span>
+                  <span className="font-mono text-xs" style={{ color: 'rgb(var(--text-secondary))' }}>{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* THIRD — Esports */}
+          <div
+            style={{
+              ...scrollFade(inView, 300),
+              background: 'rgb(var(--bg-surface))',
+              border: '1px solid rgb(var(--bg-border))',
+              borderRadius: '16px',
+              padding: '32px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '24px',
+            }}
+          >
+            <div>
+              <span
+                className="font-mono text-[10px] font-bold px-2 py-1 rounded"
+                style={{ color: 'rgb(167 139 250)', background: 'rgb(167 139 250 / 0.1)' }}
+              >
+                ESPORTS
+              </span>
+              <h3 className="font-mono font-bold text-text-primary mt-4 mb-2" style={{ fontSize: '18px' }}>
+                Dota 2 match intelligence
+              </h3>
+              <p style={{ fontSize: '13px', color: 'rgb(var(--text-secondary))', lineHeight: 1.75 }}>
+                Live Dota 2 match tracking with AI win probability. Draft analysis, team form, tournament context — everything in one feed.
+              </p>
+            </div>
+
+            {/* Esports demo card */}
+            <div
+              style={{
+                background: 'rgb(var(--bg-elevated))',
+                border: '1px solid rgb(var(--bg-border))',
+                borderRadius: '12px',
+                padding: '20px',
+              }}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <span className="font-mono text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ color: 'rgb(167 139 250)', background: 'rgb(167 139 250 / 0.1)' }}>DOTA 2 · TI2026</span>
+                <span className="font-mono text-[9px]" style={{ color: 'rgb(var(--text-muted))' }}>Group Stage · Live</span>
+              </div>
+
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-center flex-1">
+                  <p className="font-mono text-xs font-bold text-text-primary">Team Spirit</p>
+                  <p className="font-mono text-[9px] mt-0.5" style={{ color: 'rgb(var(--text-muted))' }}>1st seed</p>
+                </div>
+                <div className="font-mono text-xs font-bold px-3" style={{ color: 'rgb(var(--text-muted))' }}>VS</div>
+                <div className="text-center flex-1">
+                  <p className="font-mono text-xs font-bold text-text-primary">Team Liquid</p>
+                  <p className="font-mono text-[9px] mt-0.5" style={{ color: 'rgb(var(--text-muted))' }}>3rd seed</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                <div style={{ background: 'rgb(var(--accent) / 0.05)', border: '1px solid rgb(var(--accent) / 0.2)', borderRadius: '8px', padding: '10px', textAlign: 'center' }}>
+                  <p className="font-mono text-[9px] mb-1" style={{ color: 'rgb(var(--text-muted))' }}>SPIRIT WIN</p>
+                  <p className="font-mono font-bold text-accent" style={{ fontSize: '20px' }}>61%</p>
+                </div>
+                <div style={{ background: 'rgb(var(--bg-surface))', borderRadius: '8px', padding: '10px', textAlign: 'center' }}>
+                  <p className="font-mono text-[9px] mb-1" style={{ color: 'rgb(var(--text-muted))' }}>LIQUID WIN</p>
+                  <p className="font-mono font-bold text-text-secondary" style={{ fontSize: '20px' }}>39%</p>
+                </div>
+              </div>
+
+              <div
+                className="rounded-lg px-3 py-2"
+                style={{ background: 'rgb(var(--accent) / 0.08)', border: '1px solid rgb(var(--accent) / 0.15)' }}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-[9px] font-bold" style={{ color: 'rgb(var(--accent))' }}>AI SIGNAL</span>
+                  <span className="font-mono text-[9px] ml-auto" style={{ color: 'rgb(var(--text-secondary))' }}>
+                    Favor Spirit · Strong draft advantage
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Bullets */}
+            <div className="flex flex-col gap-2">
+              {[
+                'Live match tracking with win probability',
+                'Draft analysis & team form',
+                'Tournament context & historical data',
+              ].map((item) => (
+                <div key={item} className="flex items-start gap-2">
+                  <span className="font-mono text-xs mt-0.5 shrink-0" style={{ color: 'rgb(var(--accent))' }}>→</span>
+                  <span className="font-mono text-xs" style={{ color: 'rgb(var(--text-secondary))' }}>{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* FOURTH — Crypto */}
+          <div
+            style={{
+              ...scrollFade(inView, 400),
+              background: 'rgb(var(--bg-surface))',
+              border: '1px solid rgb(var(--bg-border))',
+              borderRadius: '16px',
+              padding: '32px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '24px',
+            }}
+          >
+            <div>
+              <span
+                className="font-mono text-[10px] font-bold px-2 py-1 rounded"
+                style={{ color: 'rgb(251 191 36)', background: 'rgb(251 191 36 / 0.1)' }}
+              >
+                CRYPTO MARKETS
+              </span>
+              <h3 className="font-mono font-bold text-text-primary mt-4 mb-2" style={{ fontSize: '18px' }}>
+                AI signals on coin markets
+              </h3>
+              <p style={{ fontSize: '13px', color: 'rgb(var(--text-secondary))', lineHeight: 1.75 }}>
+                Track major coins with AI-generated market signals. Prescio aggregates on-chain data, volume patterns, and market structure to highlight what's worth watching.
+              </p>
+            </div>
+
+            {/* Crypto demo card */}
+            <div
+              style={{
+                background: 'rgb(var(--bg-elevated))',
+                border: '1px solid rgb(var(--bg-border))',
+                borderRadius: '12px',
+                padding: '20px',
+              }}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <span className="font-mono text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ color: 'rgb(251 191 36)', background: 'rgb(251 191 36 / 0.1)' }}>CRYPTO</span>
+                <span className="font-mono text-[9px]" style={{ color: 'rgb(var(--text-muted))' }}>Updated 4 min ago</span>
+              </div>
+              <div className="flex flex-col gap-2">
+                {[
+                  { coin: 'BTC', price: '$87,420', change: '+2.3%', signal: 'BULLISH', up: true },
+                  { coin: 'ETH', price: '$3,241', change: '-1.1%', signal: 'NEUTRAL', up: false },
+                  { coin: 'SOL', price: '$142.6', change: '+5.7%', signal: 'BULLISH', up: true },
+                ].map(({ coin, price, change, signal, up }) => (
+                  <div
+                    key={coin}
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg"
+                    style={{ background: 'rgb(var(--bg-surface))', border: '1px solid rgb(var(--bg-border))' }}
+                  >
+                    <span className="font-mono text-xs font-bold text-text-primary w-8 shrink-0">{coin}</span>
+                    <span className="font-mono text-xs text-text-secondary flex-1">{price}</span>
+                    <span
+                      className="font-mono text-[10px] font-bold"
+                      style={{ color: up ? 'rgb(var(--accent))' : 'rgb(var(--danger))' }}
+                    >
+                      {change}
+                    </span>
+                    <span
+                      className="font-mono text-[9px] font-bold px-1.5 py-0.5 rounded"
+                      style={{
+                        color: signal === 'BULLISH' ? 'rgb(var(--accent))' : 'rgb(var(--text-muted))',
+                        background: signal === 'BULLISH' ? 'rgb(var(--accent) / 0.1)' : 'rgb(var(--bg-border))',
+                      }}
+                    >
+                      {signal}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Bullets */}
+            <div className="flex flex-col gap-2">
+              {[
+                'On-chain data · volume · market structure',
+                'AI sentiment and trend signals',
+                'Available in the same Markets feed',
+              ].map((item) => (
+                <div key={item} className="flex items-start gap-2">
+                  <span className="font-mono text-xs mt-0.5 shrink-0" style={{ color: 'rgb(var(--accent))' }}>→</span>
+                  <span className="font-mono text-xs" style={{ color: 'rgb(var(--text-secondary))' }}>{item}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -391,11 +628,11 @@ function EdgeDemoSection() {
 const HOW_IT_WORKS_STEPS = [
   {
     num: '01',
-    title: 'AI scans 3 platforms',
-    desc: 'Every 2 hours Prescio scans Polymarket, Kalshi and Metaculus — filtering 500+ markets down to the ones worth watching.',
+    title: 'AI scans four asset classes',
+    desc: 'Every 2 hours Prescio scans Polymarket, Kalshi, Metaculus, live football odds, esports matches, and crypto coin markets — filtering hundreds of signals down to the ones worth watching.',
     illustration: (
       <div className="flex flex-col gap-2">
-        {['POLYMARKET', 'KALSHI', 'METACULUS'].map((p) => (
+        {['POLYMARKET / KALSHI', 'SPORT', 'ESPORTS', 'CRYPTO'].map((p) => (
           <div
             key={p}
             className="flex items-center gap-3 px-3 py-2 rounded-lg"
@@ -410,11 +647,11 @@ const HOW_IT_WORKS_STEPS = [
   },
   {
     num: '02',
-    title: 'Cross-references primary sources',
-    desc: 'ISW, AP, BBC, official government briefings. Not Twitter. Not Reddit. The signal, not the noise.',
+    title: 'Cross-references curated data',
+    desc: 'For prediction markets: ISW, AP, BBC, official briefings. For sports: match stats, xG models, injury reports, head-to-head history. Not Twitter. Not Reddit. The signal, not the noise.',
     illustration: (
       <div className="flex flex-col gap-2">
-        {['ISW', 'AP Wire', 'BBC'].map((s) => (
+        {['ISW · AP · BBC', 'Match stats · xG', 'Injury reports'].map((s) => (
           <div
             key={s}
             className="flex items-center gap-3 px-3 py-2 rounded-lg"
@@ -429,8 +666,8 @@ const HOW_IT_WORKS_STEPS = [
   },
   {
     num: '03',
-    title: 'Free: track markets. Pro: trade with edge.',
-    desc: 'Free users track markets live — price, volume, and resolution date. Pro users get AI edge analysis, fair value estimate, and Kelly-optimal position size.',
+    title: 'Free: track everything. Pro: act with edge.',
+    desc: 'Free users track prediction markets and sports live — prices, odds, and resolution dates. Pro users get AI edge analysis, fair value estimates, and Kelly-optimal position sizing.',
     illustration: (
       <div
         className="rounded-xl p-3"
@@ -538,15 +775,14 @@ const WHY_CARDS = [
   {
     icon: (
       <svg className="text-accent" width="28" height="28" viewBox="0 0 28 28" fill="none">
-        <rect x="4" y="3" width="15" height="19" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-        <path d="M8 8h7M8 11h7M8 14h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-        <circle cx="20" cy="20" r="5" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-        <path d="M23.5 23.5L26 26" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        <path d="M4 20l6-8 5 5 4-6 5 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+        <circle cx="22" cy="7" r="3" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+        <path d="M22 10v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
       </svg>
     ),
-    title: 'Resolution arbitrage',
-    desc: 'We read the fine print. Most traders don\'t. When the crowd prices "war with Iran" but the resolution requires boots on the ground — that\'s your edge.',
-    badge: 'EXCLUSIVE',
+    title: 'Value where others see noise',
+    desc: 'In prediction markets: the crowd prices fear, not resolution criteria. In football: bookmakers price narratives, not xG. Prescio surfaces the gap.',
+    badge: 'CORE FEATURE',
     featured: false,
   },
   {
@@ -557,11 +793,11 @@ const WHY_CARDS = [
         <path d="M7.5 7.5l2 2M18.5 18.5l2 2M7.5 20.5l2-2M18.5 9.5l2-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
       </svg>
     ),
-    title: 'Primary sources only',
-    desc: 'ISW daily updates. AP wire. Official government briefings. No aggregators, no pundits. The same sources professionals use.',
+    title: 'Curated data, not aggregated noise',
+    desc: 'Prediction markets: ISW, AP, BBC, official briefings. Sports: match stats, xG models, injury reports, head-to-head history. No Twitter. No Reddit.',
     badge: null,
     featured: true,
-    sub: 'ISW · AP · BBC',
+    sub: 'ISW · AP · xG · Injuries',
   },
   {
     icon: (
@@ -572,7 +808,7 @@ const WHY_CARDS = [
       </svg>
     ),
     title: 'Mathematically optimal sizing',
-    desc: 'Quarter Kelly by default. Half Kelly when you have track record. Never guessing, never overbet. Position size that survives variance.',
+    desc: 'Quarter Kelly by default. Half Kelly when you have a track record. Never guessing, never overbet. Position size that survives variance — for both markets.',
     badge: null,
     featured: false,
     formula: 'f* = (bp − q) / b',
@@ -588,7 +824,7 @@ function WhyPrescioSection() {
       <div ref={ref} className="mx-auto" style={{ maxWidth: '1100px', padding: '0 clamp(16px, 4vw, 48px)' }}>
         <div className="text-center mb-14" style={scrollFade(inView)}>
           <h2 className="font-mono font-bold text-text-primary mb-3" style={{ fontSize: 'clamp(22px, 3vw, 32px)' }}>
-            Built different
+            Why Prescio
           </h2>
         </div>
 
@@ -689,7 +925,7 @@ function CtaSection({ onSignup }: { onSignup: () => void }) {
           className="font-mono mb-10"
           style={{ ...scrollFade(inView, 200), fontSize: '14px', color: 'rgb(var(--text-secondary))' }}
         >
-          3 free analyses per day. No credit card required.
+          Free to track. Pro to get the edge. No credit card required to start.
         </p>
 
         {/* CTA button */}
@@ -844,7 +1080,7 @@ export default function LandingPage() {
                   Prescio
                 </div>
                 <div className="font-mono text-[10px] text-text-muted tracking-[0.08em] mt-0.5 uppercase">
-                  prediction intelligence
+                  markets · sports · esports · crypto
                 </div>
               </div>
             </div>
@@ -853,7 +1089,7 @@ export default function LandingPage() {
             <div className="inline-flex items-center gap-2 bg-accent/10 border border-accent/20
               rounded-full px-3 py-1 mb-5">
               <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-              <span className="text-[10px] font-mono text-accent tracking-wider">AI-POWERED EDGE DETECTION</span>
+              <span className="text-[10px] font-mono text-accent tracking-wider">AI-POWERED INTELLIGENCE PLATFORM</span>
             </div>
 
             {/* Heading */}
@@ -861,20 +1097,21 @@ export default function LandingPage() {
               className="font-mono font-bold text-text-primary leading-tight mb-4"
               style={{ fontSize: 'clamp(1.6rem, 3.2vw, 2.8rem)' }}
             >
-              The market is wrong.<br />
+              Markets are wrong.<br />
               <span className="text-accent">Prescio shows you where.</span>
             </h1>
 
             {/* Description */}
             <p className="text-text-muted mb-6" style={{ fontSize: '14px', lineHeight: 1.7 }}>
-              Track every prediction market across <span className="text-text-secondary">Polymarket, Kalshi and Metaculus</span>.
-              Pro users get AI edge analysis —{' '}
-              finding mispriced markets <span className="text-accent">before the crowd corrects them.</span>
+              AI-powered analytics for <span className="text-text-secondary">prediction markets, sports, esports, and crypto</span>.
+              One platform to track everything —
+              Pro users get AI edge analysis{' '}
+              <span className="text-accent">before the crowd corrects them.</span>
             </p>
 
             {/* Feature pills */}
             <div className="flex flex-wrap gap-2 mb-6">
-              {['Resolution analysis', 'Kelly sizing', 'Primary sources only', '3 platforms'].map((f) => (
+              {['Prediction markets', 'Sports analytics', 'Esports', 'Crypto signals'].map((f) => (
                 <span key={f} className="text-[10px] font-mono text-text-muted border border-bg-border px-2 py-1 rounded-md">
                   {f}
                 </span>
@@ -899,7 +1136,7 @@ export default function LandingPage() {
               </button>
             </div>
             <p className="text-[11px] font-mono text-text-muted">
-              No credit card · 3 free analyses/day
+              No credit card required to start
             </p>
           </div>
         </div>
@@ -926,7 +1163,7 @@ export default function LandingPage() {
               <span className="text-[10px] font-mono text-text-muted">· {MOCK_CARDS.length} live</span>
             </div>
             <div className="flex items-center gap-3 text-[10px] font-mono text-text-muted">
-              <span className="hidden lg:block">Polymarket · Kalshi · Metaculus</span>
+              <span className="hidden lg:block">Polymarket · Kalshi · Sport · Esports · Crypto</span>
               <span style={{ color: 'rgb(var(--text-muted))' }}>Updated 2 min ago</span>
             </div>
           </div>
@@ -980,7 +1217,7 @@ export default function LandingPage() {
 
       {/* ── BELOW FOLD ── */}
       <StatsSection />
-      <EdgeDemoSection />
+      <TwoPillarsSection />
       <HowItWorksSection sectionId="how-it-works" />
       <WhyPrescioSection />
       <CtaSection onSignup={() => router.push('/auth?mode=signup')} />

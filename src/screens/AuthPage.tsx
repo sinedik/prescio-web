@@ -15,16 +15,26 @@ const FEATURES = [
         <path d="M4.5 7l1.8 1.8L9.5 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     ),
-    text: 'AI scans Polymarket, Kalshi & Metaculus every 2 hours',
+    text: 'Prediction markets — Polymarket, Kalshi & Metaculus',
   },
   {
     icon: (
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <rect x="1.5" y="2" width="11" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.4"/>
-        <path d="M4 5h6M4 7h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+        <path d="M7 2C4.24 2 2 4.24 2 7s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5z" stroke="currentColor" strokeWidth="1.4" fill="none"/>
+        <path d="M5 7.5l1.5 1.5L9 5.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     ),
-    text: 'Cross-referenced with ISW, AP, BBC — primary sources only',
+    text: 'Sports — football value bets across 15+ leagues',
+  },
+  {
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <rect x="2" y="4" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.4" fill="none"/>
+        <path d="M5 4V3a2 2 0 014 0v1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+        <circle cx="7" cy="7.5" r="1" fill="currentColor"/>
+      </svg>
+    ),
+    text: 'Esports — Dota 2 live match AI predictions',
   },
   {
     icon: (
@@ -32,16 +42,7 @@ const FEATURES = [
         <path d="M2 10l3-3 2 2 3-4 2 2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     ),
-    text: 'Fair value estimate + Kelly-optimal position sizing',
-  },
-  {
-    icon: (
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <path d="M7 1.5v2M7 10.5v2M1.5 7h2M10.5 7h2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-        <circle cx="7" cy="7" r="3" stroke="currentColor" strokeWidth="1.4"/>
-      </svg>
-    ),
-    text: '3 free analyses per day — no credit card required',
+    text: 'Crypto — AI signals on coin markets & trends',
   },
 ]
 
@@ -250,7 +251,7 @@ export default function AuthPage() {
           <Logo size={32} textSize={20} />
         </div>
         <p className="font-mono text-xs tracking-wider mb-8" style={{ color: 'rgb(var(--text-muted))' }}>
-          prediction intelligence
+          markets · sports · esports · crypto
         </p>
 
         {/* Headline */}
@@ -258,11 +259,11 @@ export default function AuthPage() {
           className="font-mono font-bold leading-tight mb-3"
           style={{ fontSize: 'clamp(22px, 2.4vw, 30px)', color: 'rgb(var(--text-primary))' }}
         >
-          See the edge before<br />
-          <span style={{ color: 'rgb(var(--accent))' }}>the market does.</span>
+          Markets are wrong.<br />
+          <span style={{ color: 'rgb(var(--accent))' }}>Prescio shows you where.</span>
         </h1>
         <p className="text-sm mb-10" style={{ color: 'rgb(var(--text-secondary))', lineHeight: 1.7 }}>
-          Real-time AI analysis across prediction markets. Find mispriced opportunities before the crowd corrects them.
+          AI-powered intelligence across prediction markets, sports, esports, and crypto. One platform to find mispriced probability before the crowd corrects it.
         </p>
 
         {/* Feature bullets */}
@@ -293,7 +294,7 @@ export default function AuthPage() {
           style={{ borderTop: '1px solid rgb(var(--bg-border))' }}
         >
           {[
-            { value: '3', label: 'Platforms' },
+            { value: '4', label: 'Asset classes' },
             { value: String(analysesCount ?? 247), label: 'Analyses today' },
             { value: '$500M+', label: 'Volume tracked' },
           ].map(({ value, label }, i) => (

@@ -1,5 +1,7 @@
+'use client'
+
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import Link from 'next/link'
 import Logo from './Logo'
 import { api } from '../lib/api'
 
@@ -64,7 +66,7 @@ export default function AppFooter() {
         <div className="flex flex-col gap-4">
           <Logo size={28} textSize={15} />
           <p className="font-mono text-xs leading-relaxed" style={{ color: 'rgb(var(--text-muted))' }}>
-            AI-powered prediction market<br />intelligence for serious traders.
+            AI-powered intelligence for prediction<br />markets, sports, esports, and crypto.
           </p>
           {/* Platform badges */}
           <div className="flex flex-wrap gap-1.5 mt-1">
@@ -110,7 +112,7 @@ export default function AppFooter() {
               ) : (
                 <Link
                   key={label}
-                  to={to!}
+                  href={to!}
                   className="text-xs font-mono transition-colors"
                   style={{ color: 'rgb(var(--text-muted))' }}
                   onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'rgb(var(--text-secondary))' }}
