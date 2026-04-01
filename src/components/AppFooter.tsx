@@ -10,7 +10,7 @@ const FOOTER_LINKS = {
     { label: 'Markets', to: '/markets' },
     { label: 'Watchlist', to: '/watchlist' },
     { label: 'Portfolio', to: '/portfolio' },
-    { label: 'Pro', to: '/auth?mode=signup' },
+    { label: 'Pricing', to: '/pricing' },
   ],
   COMPANY: [
     { label: 'About', to: '/' },

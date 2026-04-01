@@ -1016,6 +1016,12 @@ export default function LandingPage() {
             >
               How it works
             </button>
+            <a
+              href="/pricing"
+              className="hidden sm:block text-xs font-mono text-text-muted hover:text-text-secondary transition-colors"
+            >
+              Pricing
+            </a>
 
             {/* Theme toggle */}
             <div
