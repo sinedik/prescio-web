@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { FeedCard } from '../components/feed/FeedCard'
 import { FeedFilters } from '../components/feed/FeedFilters'
 import { SearchOverlay } from '../components/search/SearchOverlay'
+import { ErrorBoundary } from '../components/ErrorBoundary'
 import { usePolling } from '../hooks/usePolling'
 import { feedApi } from '../lib/api'
 import { useAuthContext } from '../contexts/AuthContext'
@@ -34,6 +35,7 @@ export function FeedScreen({ initialEvents = [] }: Props) {
     (loading && filters.sort === 'recent' ? initialEvents : [])
 
   return (
+    <ErrorBoundary>
     <div className="flex flex-col">
       {/* Topbar */}
       <div className="sticky top-0 z-10 border-b border-bg-border bg-bg-base">
@@ -70,5 +72,6 @@ export function FeedScreen({ initialEvents = [] }: Props) {
 
       <SearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} plan={plan} />
     </div>
+    </ErrorBoundary>
   )
 }

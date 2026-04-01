@@ -235,7 +235,7 @@ export default function EventDetailPage() {
     } catch (err: unknown) {
       const e = err as { type?: string; limit?: number }
       if (e?.type === 'limit_reached') {
-        setAnalyzeError(`Daily limit reached (${e.limit ?? 3} analyses/day). Upgrade to Pro for unlimited.`)
+        setPaywallVariant('pro')
       } else {
         setAnalyzeError(err instanceof Error ? err.message : 'Analysis failed')
       }

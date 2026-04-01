@@ -43,12 +43,20 @@ export function FeedCard({ event, plan }: Props) {
           </h3>
         </div>
 
-        {/* Edge score — Pro+ */}
+        {/* Edge score — Pro+: full number; Free: directional only */}
         {plan !== 'free' && analysis?.edge_score != null && (
           <div className="flex-shrink-0 flex flex-col items-center rounded-md px-2 py-1" style={{ background: 'var(--bg-elevated)', minWidth: '44px' }}>
             <span style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>edge</span>
             <span style={{ fontSize: '16px', fontWeight: 700, color: analysis.edge_score > 0.5 ? 'var(--accent)' : 'var(--text-secondary)' }}>
               {(analysis.edge_score * 100).toFixed(0)}
+            </span>
+          </div>
+        )}
+        {plan === 'free' && analysis?.edge_score != null && (
+          <div className="flex-shrink-0 flex flex-col items-center rounded-md px-2 py-1 opacity-70" style={{ background: 'var(--bg-elevated)', minWidth: '36px' }}>
+            <span style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>edge</span>
+            <span style={{ fontSize: '18px', fontWeight: 700, color: analysis.edge_score > 0.5 ? 'var(--accent)' : 'var(--danger)' }}>
+              {analysis.edge_score > 0.5 ? '↑' : '↓'}
             </span>
           </div>
         )}
