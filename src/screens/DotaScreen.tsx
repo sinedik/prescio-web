@@ -6,13 +6,17 @@ import { usePageTitle } from '../hooks/usePageTitle'
 import { api } from '../lib/api'
 import DotaLiveCard from '../components/dota/DotaLiveCard'
 import DotaMatchCard from '../components/dota/DotaMatchCard'
+import { useLang } from '../contexts/LanguageContext'
+import { useT } from '../lib/i18n'
 import type { DotaSeries, DotaProMatch } from '../types/dota'
 
 type Tab = 'live' | 'recent'
 
 export default function DotaScreen() {
-  usePageTitle('Dota 2')
+  usePageTitle('Esports')
   const router = useRouter()
+  const { lang } = useLang()
+  const tr = useT(lang)
   const [tab, setTab] = useState<Tab>('live')
 
   // Live series — poll every 30s
@@ -30,8 +34,8 @@ export default function DotaScreen() {
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-lg font-mono font-bold text-text-primary tracking-wider">DOTA 2</h1>
-          <p className="text-[10px] font-mono text-text-muted mt-0.5">Pro matches · Live · Steam + OpenDota</p>
+          <h1 className="text-lg font-mono font-bold text-text-primary tracking-wider">{tr('dota.title').toUpperCase()}</h1>
+          <p className="text-[10px] font-mono text-text-muted mt-0.5">Dota 2 · CS2 · Pro matches · Steam + OpenDota</p>
         </div>
         <div className="flex items-center gap-2">
           {tab === 'live' && series.length > 0 && (
@@ -47,9 +51,9 @@ export default function DotaScreen() {
       {/* Tabs */}
       <div className="flex items-center gap-0.5 bg-bg-surface border border-bg-border rounded p-1 w-fit mb-6">
         {([
-          { key: 'live', label: 'LIVE' },
-          { key: 'recent', label: 'RECENT' },
-        ] as { key: Tab; label: string }[]).map(({ key, label }) => (
+          { key: 'live' as Tab, label: tr('dota.live_matches').toUpperCase() },
+          { key: 'recent' as Tab, label: tr('dota.recent_matches').toUpperCase() },
+        ]).map(({ key, label }) => (
           <button
             key={key}
             onClick={() => setTab(key)}
@@ -80,7 +84,7 @@ export default function DotaScreen() {
                   <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
                 </svg>
               </div>
-              <p className="text-sm font-mono text-text-muted mb-1">No live matches right now</p>
+              <p className="text-sm font-mono text-text-muted mb-1">{tr('dota.no_live')}</p>
               <p className="text-xs font-mono text-text-muted opacity-60">Check back during a tournament</p>
             </div>
           )}

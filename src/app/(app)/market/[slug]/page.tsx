@@ -1,5 +1,63 @@
-'use client'
-
+import type { Metadata } from 'next'
+import { getSiteUrl } from '@/lib/site'
+import { supabase } from '@/lib/supabase'
 import MarketDetailPage from '@/screens/MarketDetailPage'
+
+interface Props { params: Promise<{ slug: string }> }
+
+async function fetchMarketMeta(slug: string) {
+  try {
+    const { data } = await supabase
+      .from('markets')
+      .select('question, probability, platform, volume')
+      .or(`slug.eq.${slug},id.eq.${slug}`)
+      .single()
+    return data
+  } catch {
+    return null
+  }
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params
+  const market = await fetchMarketMeta(slug)
+  const siteUrl = getSiteUrl()
+
+  if (!market) {
+    return {
+      title: 'Market',
+      description: 'Prediction market analysis on Prescio.',
+    }
+  }
+
+  const prob = market.probability != null ? Math.round(Number(market.probability) * 100) : null
+  const platform = market.platform ? String(market.platform) : null
+
+  const descParts: string[] = []
+  if (prob != null) descParts.push(`Current price: ${prob}%`)
+  if (platform) descParts.push(`on ${platform.charAt(0).toUpperCase() + platform.slice(1)}`)
+  descParts.push('AI analysis and edge signal on Prescio.')
+
+  const title = String(market.question ?? 'Market Analysis')
+  const description = descParts.join(' · ')
+  const canonical = `${siteUrl}/market/${slug}`
+
+  return {
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      title: `${title} | Prescio`,
+      description,
+      url: canonical,
+      type: 'article',
+    },
+    twitter: {
+      card: 'summary',
+      title: `${title} | Prescio`,
+      description,
+    },
+  }
+}
 
 export default MarketDetailPage

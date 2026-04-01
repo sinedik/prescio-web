@@ -6,10 +6,14 @@ import { SearchOverlay } from '../components/search/SearchOverlay'
 import { usePolling } from '../hooks/usePolling'
 import { feedApi } from '../lib/api'
 import { useAuthContext } from '../contexts/AuthContext'
+import { useLang } from '../contexts/LanguageContext'
+import { useT } from '../lib/i18n'
 import type { FeedFilters as Filters, UnifiedEvent } from '../types/index'
 
 export function FeedScreen() {
   const { profile } = useAuthContext()
+  const { lang } = useLang()
+  const tr = useT(lang)
   const plan = profile?.plan ?? (profile?.is_pro ? 'pro' : 'free')
   const [filters, setFilters] = useState<Filters>({ sort: 'recent' })
   const [searchOpen, setSearchOpen] = useState(false)
@@ -27,13 +31,13 @@ export function FeedScreen() {
       {/* Topbar */}
       <div className="sticky top-0 z-10 border-b border-bg-border bg-bg-base">
         <div className="max-w-5xl mx-auto flex items-center justify-between px-6 py-3">
-          <h1 className="text-base font-semibold text-text-primary">Feed</h1>
+          <h1 className="text-base font-semibold text-text-primary">{tr('feed.title')}</h1>
           <button
             onClick={() => setSearchOpen(true)}
             className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-bg-elevated border border-bg-border text-text-muted text-xs transition-opacity hover:opacity-80"
           >
             <span>⌕</span>
-            <span>AI Search</span>
+            <span>{tr('feed.ai_search')}</span>
             {plan === 'free' && <span className="text-[9px] text-accent font-bold">PRO</span>}
           </button>
         </div>
@@ -51,7 +55,7 @@ export function FeedScreen() {
         }
         {!loading && events.length === 0 && (
           <div className="py-16 text-center">
-            <p className="text-sm text-text-muted">No events found</p>
+            <p className="text-sm text-text-muted">{tr('feed.no_events')}</p>
           </div>
         )}
         {events.map(event => <FeedCard key={event.id} event={event} plan={plan} />)}

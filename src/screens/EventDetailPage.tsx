@@ -1,3 +1,4 @@
+'use client'
 import { useState, useEffect, useRef } from 'react'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { useParams, useRouter } from 'next/navigation'
@@ -577,7 +578,7 @@ export default function EventDetailPage() {
                       <p className="text-[10px] font-mono text-text-muted mt-0.5">{m.platform}{m.volume > 0 ? ` · ${formatVolume(m.volume)}` : ''}</p>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-sm font-mono font-bold text-text-primary">{m.price.toFixed(0)}%</p>
+                      <p className="text-sm font-mono font-bold text-text-primary">{m.price != null ? `${m.price.toFixed(0)}%` : '—'}</p>
                       {hasEdge && (
                         <p className={`text-[10px] font-mono font-bold ${edgePos ? 'text-accent' : 'text-danger'}`}>
                           {edgePos ? '+' : ''}{a!.edge_score}pp

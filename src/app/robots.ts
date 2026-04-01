@@ -4,22 +4,35 @@ import { getSiteUrl } from '@/lib/site'
 export default function robots(): MetadataRoute.Robots {
   const base = getSiteUrl()
   return {
-    rules: {
-      userAgent: '*',
-      allow: '/',
-      disallow: [
-        '/api/',
-        '/auth',
-        '/forgot-password',
-        '/onboarding',
-        '/pro-success',
-        '/dashboard',
-        '/feed',
-        '/portfolio',
-        '/profile',
-        '/events/',
-      ],
-    },
+    rules: [
+      {
+        userAgent: '*',
+        allow: [
+          '/',
+          '/markets',
+          '/market/',
+          '/markets/',
+          '/events/',
+          '/sport/',
+          '/dota/',
+          '/feed',
+          '/pricing',
+          '/privacy',
+          '/terms',
+        ],
+        disallow: [
+          '/api/',
+          '/auth',
+          '/forgot-password',
+          '/onboarding',
+          '/pro-success',
+          '/dashboard',
+          '/portfolio',
+          '/profile',
+          '/watchlist',
+        ],
+      },
+    ],
     sitemap: `${base}/sitemap.xml`,
   }
 }

@@ -8,24 +8,29 @@ const siteUrl = getSiteUrl()
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: 'Prescio — See the Edge Before the Market Does',
+    default: 'Prescio — AI Edge Detection for Prediction Markets',
     template: '%s | Prescio',
   },
   description:
-    'AI-powered analysis of Polymarket, Kalshi and Metaculus. Find mispriced markets before the crowd corrects them.',
+    'Prescio aggregates Kalshi, Polymarket and Metaculus in one place and uses AI to find where the market is wrong. Free to track, Pro to get the edge.',
+  keywords: [
+    'prediction markets', 'kalshi', 'polymarket', 'metaculus',
+    'prediction market analysis', 'AI betting', 'esports analytics',
+    'market edge', 'betting tools', 'dota 2 analytics', 'cs2 analytics',
+  ],
   openGraph: {
     type: 'website',
     locale: 'en_US',
     siteName: 'Prescio',
     url: `${siteUrl}/`,
-    title: 'Prescio — Prediction Market Intelligence',
-    description: 'AI-powered edge detection. Find mispriced markets before the crowd.',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Prescio' }],
+    title: 'Prescio — AI Edge Detection for Prediction Markets',
+    description: 'One platform. Kalshi, Polymarket, Metaculus, sports odds and esports. AI finds where the market is wrong — you act on it.',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Prescio — Prediction Market Intelligence' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Prescio — Prediction Market Intelligence',
-    description: 'AI-powered prediction market intelligence.',
+    title: 'Prescio — AI Edge Detection for Prediction Markets',
+    description: 'One platform. Kalshi, Polymarket, Metaculus, sports odds and esports. AI finds where the market is wrong.',
     images: [`${siteUrl}/og-image.png`],
   },
   icons: { icon: '/favicon.svg' },

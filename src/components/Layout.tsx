@@ -10,6 +10,8 @@ import Logo from './Logo'
 import AppFooter from './AppFooter'
 import { IconMoon, IconSun } from './icons'
 import { SearchOverlay } from './search/SearchOverlay'
+import { useLang } from '../contexts/LanguageContext'
+import { useT } from '../lib/i18n'
 
 interface Alert {
   id: string
@@ -30,25 +32,27 @@ function BellIcon({ size = 16 }: { size?: number }) {
 
 type ScanStatus = 'connecting' | 'live' | 'updating' | 'stale' | 'offline'
 
-const STATUS_CONFIG: Record<ScanStatus, { dotClass: string; textClass: string; label: string }> = {
-  connecting: { dotClass: 'bg-text-muted animate-pulse',      textClass: 'text-text-muted',      label: 'CONNECTING' },
-  live:       { dotClass: 'bg-accent animate-pulse',          textClass: 'text-accent',           label: 'LIVE' },
-  updating:   { dotClass: 'bg-watch animate-pulse',           textClass: 'text-watch',            label: 'UPDATING' },
-  stale:      { dotClass: 'bg-text-muted',                    textClass: 'text-text-muted',       label: 'STALE' },
-  offline:    { dotClass: 'bg-danger animate-pulse',          textClass: 'text-danger',           label: 'OFFLINE' },
+const STATUS_CONFIG: Record<ScanStatus, { dotClass: string; textClass: string; labelKey: 'status.connecting' | 'status.live' | 'status.updating' | 'status.stale' | 'status.offline' }> = {
+  connecting: { dotClass: 'bg-text-muted animate-pulse',      textClass: 'text-text-muted',      labelKey: 'status.connecting' },
+  live:       { dotClass: 'bg-accent animate-pulse',          textClass: 'text-accent',           labelKey: 'status.live' },
+  updating:   { dotClass: 'bg-watch animate-pulse',           textClass: 'text-watch',            labelKey: 'status.updating' },
+  stale:      { dotClass: 'bg-text-muted',                    textClass: 'text-text-muted',       labelKey: 'status.stale' },
+  offline:    { dotClass: 'bg-danger animate-pulse',          textClass: 'text-danger',           labelKey: 'status.offline' },
 }
 
-const NAV_LINKS = [
-  { to: '/feed',      label: 'FEED' },
-  { to: '/markets',   label: 'MARKETS' },
-  { to: '/sport',     label: 'SPORT' },
-  { to: '/dashboard', label: 'DASHBOARD' },
-]
+const NAV_KEYS = [
+  { to: '/feed',    key: 'nav.feed'    },
+  { to: '/markets', key: 'nav.markets' },
+  { to: '/sport',   key: 'nav.sport'   },
+  { to: '/dota',    key: 'nav.esports' },
+] as const
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const { theme, setTheme } = useTheme()
+  const { lang, setLang } = useLang()
+  const tr = useT(lang)
   const [scanStatus, setScanStatus] = useState<ScanStatus>('connecting')
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [alertsOpen, setAlertsOpen] = useState(false)
@@ -103,7 +107,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const email = user?.email ?? ''
   const initials = email.slice(0, 2).toUpperCase()
   const plan = profile?.plan ?? (profile?.is_pro ? 'pro' : 'free')
-  const { dotClass, textClass, label } = STATUS_CONFIG[scanStatus]
+  const { dotClass, textClass, labelKey } = STATUS_CONFIG[scanStatus]
 
   return (
     <div className="min-h-screen bg-bg-base flex flex-col">
@@ -125,7 +129,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
           {/* Nav — centred absolutely so right panel doesn't shift it */}
           <nav className="absolute left-1/2 -translate-x-1/2 flex items-center gap-0.5">
-            {NAV_LINKS.map(({ to, label: navLabel }) => {
+            {NAV_KEYS.map(({ to, key }) => {
               const path = pathname ?? ''
               const isActive = path === to || path.startsWith(`${to}/`)
               return (
@@ -140,7 +144,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     }`
                   }
                 >
-                  {navLabel}
+                  {tr(key)}
                 </Link>
               )
             })}
@@ -152,7 +156,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             {/* Live status */}
             <div className="hidden sm:flex items-center gap-1.5">
               <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotClass}`} />
-              <span className={`text-[10px] font-mono font-bold tracking-widest ${textClass}`}>{label}</span>
+              <span className={`text-[10px] font-mono font-bold tracking-widest ${textClass}`}>{tr(labelKey)}</span>
             </div>
 
             {/* Divider */}
@@ -178,6 +182,30 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   }}
                 >
                   {t === 'dark' ? <IconMoon size={14} /> : <IconSun size={14} />}
+                </button>
+              ))}
+            </div>
+
+            {/* Language toggle */}
+            <div
+              className="hidden sm:flex items-center rounded-md p-0.5 gap-0.5"
+              style={{
+                background: 'rgb(var(--bg-elevated))',
+                border: '1px solid rgb(var(--bg-border))',
+              }}
+            >
+              {(['en', 'ru'] as const).map((l) => (
+                <button
+                  key={l}
+                  onClick={() => setLang(l)}
+                  className="px-2 h-6 font-mono text-[10px] font-bold rounded transition-all duration-150"
+                  style={{
+                    background: lang === l ? 'rgb(var(--bg-border))' : 'transparent',
+                    color: lang === l ? 'rgb(var(--text-primary))' : 'rgb(var(--text-muted))',
+                    boxShadow: lang === l ? '0 1px 2px rgb(0 0 0 / 0.15)' : 'none',
+                  }}
+                >
+                  {l.toUpperCase()}
                 </button>
               ))}
             </div>

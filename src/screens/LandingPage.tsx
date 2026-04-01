@@ -158,15 +158,6 @@ function useCountUp(target: number, duration: number, trigger: boolean) {
   return value
 }
 
-function useNextScanMins() {
-  const cycleMs = 120 * 60 * 1000
-  const [mins, setMins] = useState(() => Math.ceil((cycleMs - (Date.now() % cycleMs)) / 60000))
-  useEffect(() => {
-    const id = setInterval(() => setMins(Math.ceil((cycleMs - (Date.now() % cycleMs)) / 60000)), 30000)
-    return () => clearInterval(id)
-  }, [cycleMs])
-  return mins
-}
 
 // ── Section 1 — Stats strip ──────────────────────────────────────────────────
 function StatsSection() {
@@ -628,8 +619,8 @@ function TwoPillarsSection() {
 const HOW_IT_WORKS_STEPS = [
   {
     num: '01',
-    title: 'AI scans four asset classes',
-    desc: 'Every 2 hours Prescio scans Polymarket, Kalshi, Metaculus, live football odds, esports matches, and crypto coin markets — filtering hundreds of signals down to the ones worth watching.',
+    title: 'Aggregates four market types',
+    desc: 'Prescio aggregates Polymarket, Kalshi, Metaculus, live football odds, esports matches, and crypto markets — filtering hundreds of signals down to the ones worth watching.',
     illustration: (
       <div className="flex flex-col gap-2">
         {['POLYMARKET / KALSHI', 'SPORT', 'ESPORTS', 'CRYPTO'].map((p) => (
@@ -890,7 +881,6 @@ function WhyPrescioSection() {
 // ── Section 5 — Final CTA ─────────────────────────────────────────────────────
 function CtaSection({ onSignup }: { onSignup: () => void }) {
   const { ref, inView } = useInView(0.2)
-  const nextScan = useNextScanMins()
 
   return (
     <section
@@ -901,17 +891,6 @@ function CtaSection({ onSignup }: { onSignup: () => void }) {
       }}
     >
       <div ref={ref} className="mx-auto text-center" style={{ maxWidth: '600px', padding: '0 clamp(16px, 4vw, 48px)' }}>
-        {/* Live counter */}
-        <div
-          className="inline-flex items-center gap-2 mb-8"
-          style={scrollFade(inView)}
-        >
-          <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: 'rgb(var(--accent))' }} />
-          <span className="font-mono text-sm" style={{ color: 'rgb(var(--text-secondary))' }}>
-            247 analyses run today
-          </span>
-        </div>
-
         {/* Headline */}
         <h2
           className="font-mono font-bold mb-4"
@@ -950,13 +929,6 @@ function CtaSection({ onSignup }: { onSignup: () => void }) {
           </button>
         </div>
 
-        {/* Countdown */}
-        <p
-          className="font-mono mt-6"
-          style={{ ...scrollFade(inView, 400), fontSize: '12px', color: 'rgb(var(--text-muted))' }}
-        >
-          Next scan in ~{nextScan} minutes
-        </p>
       </div>
     </section>
   )
@@ -1079,15 +1051,10 @@ export default function LandingPage() {
         >
           <div style={{ paddingLeft: 'clamp(24px, 8%, 8%)', paddingRight: 'clamp(16px, 5%, 5%)',  }}>
             {/* Hero logo block */}
-            <div className="flex items-center gap-3 mb-8">
-              <Logo size={40} showText={false} />
-              <div>
-                <div className="font-mono text-[20px] font-bold tracking-widest text-text-primary uppercase leading-none">
-                  Prescio
-                </div>
-                <div className="font-mono text-[10px] text-text-muted tracking-[0.08em] mt-0.5 uppercase">
-                  markets · sports · esports · crypto
-                </div>
+            <div className="flex flex-col gap-1.5 mb-8">
+              <Logo size={40} textSize={20} showText />
+              <div className="font-mono text-[10px] text-text-muted tracking-[0.08em] uppercase" style={{ paddingLeft: '52px' }}>
+                markets · sports · esports · crypto
               </div>
             </div>
 
@@ -1189,15 +1156,6 @@ export default function LandingPage() {
             {MOCK_CARDS.map((card, i) => (
               <HeroCard key={i} card={card} index={i} />
             ))}
-          </div>
-
-          {/* Footer */}
-          <div
-            className="flex items-center justify-between px-8 py-2.5 border-t text-[9px] font-mono text-text-muted"
-            style={{ borderColor: 'rgb(var(--bg-surface))' }}
-          >
-            <span>Scan interval: ~2 hours</span>
-            <span>Next scan in 48 min</span>
           </div>
 
           {/* Bottom gradient fade */}
