@@ -3,6 +3,8 @@ import { getSiteUrl } from '@/lib/site'
 import { supabase } from '@/lib/supabase'
 import SportEventPage from '@/screens/SportEventPage'
 
+export const revalidate = 120 // sport events change fast
+
 interface Props { params: Promise<{ id: string }> }
 
 async function fetchSportMeta(id: string) {

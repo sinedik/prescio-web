@@ -3,6 +3,8 @@ import { getSiteUrl } from '@/lib/site'
 import { supabase } from '@/lib/supabase'
 import MarketDetailPage from '@/screens/MarketDetailPage'
 
+export const revalidate = 300
+
 interface Props { params: Promise<{ slug: string }> }
 
 async function fetchMarketMeta(slug: string) {

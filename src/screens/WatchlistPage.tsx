@@ -1,3 +1,4 @@
+'use client'
 import { useState, useCallback } from 'react'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { useRouter } from 'next/navigation'

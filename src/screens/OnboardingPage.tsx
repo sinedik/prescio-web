@@ -1,3 +1,4 @@
+'use client'
 import React, { useState, useLayoutEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthContext } from '../contexts/AuthContext'

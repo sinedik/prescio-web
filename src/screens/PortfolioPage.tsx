@@ -1,3 +1,4 @@
+'use client'
 import { useState, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { usePageTitle } from '../hooks/usePageTitle'

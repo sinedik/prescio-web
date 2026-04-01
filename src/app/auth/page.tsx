@@ -1,7 +1,11 @@
-'use client'
-
+import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import AuthPage from '@/screens/AuthPage'
+
+export const metadata: Metadata = {
+  title: 'Sign in',
+  robots: { index: false, follow: false },
+}
 
 function AuthFallback() {
   return (

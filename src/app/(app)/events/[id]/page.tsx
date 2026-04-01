@@ -3,6 +3,8 @@ import { getSiteUrl } from '@/lib/site'
 import { supabase } from '@/lib/supabase'
 import EventDetailPage from '@/screens/EventDetailPage'
 
+export const revalidate = 300 // ISR: revalidate metadata every 5 min
+
 interface Props { params: Promise<{ id: string }> }
 
 async function fetchEventMeta(id: string) {

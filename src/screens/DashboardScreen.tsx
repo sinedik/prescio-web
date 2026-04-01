@@ -94,12 +94,14 @@ function EdgeEventRow({ event }: { event: UnifiedEvent }) {
   )
 }
 
-function TopEdgeSection() {
+function TopEdgeSection({ initial = [] }: { initial?: UnifiedEvent[] }) {
   const router = useRouter()
   const { lang } = useLang()
   const tr = useT(lang)
   const { data, loading } = usePolling(() => feedApi.getEvents({ sort: 'score' }, 5), 5 * 60_000)
-  const events: UnifiedEvent[] = (data as { events?: UnifiedEvent[] } | null)?.events ?? []
+  const events: UnifiedEvent[] =
+    (data as { events?: UnifiedEvent[] } | null)?.events ??
+    (loading ? initial : [])
 
   return (
     <div>
@@ -281,7 +283,7 @@ function UsageBar({ used, total, label }: { used: number; total: number; label: 
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
-export function DashboardScreen() {
+export function DashboardScreen({ initialTopEdge = [] }: { initialTopEdge?: UnifiedEvent[] }) {
   usePageTitle('Dashboard')
   const router = useRouter()
   const { profile } = useAuthContext()
@@ -342,7 +344,7 @@ export function DashboardScreen() {
 
       {/* Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <TopEdgeSection />
+        <TopEdgeSection initial={initialTopEdge} />
         <WatchlistSection />
         <RecentAnalysesSection plan={plan} />
       </div>

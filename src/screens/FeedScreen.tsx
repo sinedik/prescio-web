@@ -10,7 +10,11 @@ import { useLang } from '../contexts/LanguageContext'
 import { useT } from '../lib/i18n'
 import type { FeedFilters as Filters, UnifiedEvent } from '../types/index'
 
-export function FeedScreen() {
+interface Props {
+  initialEvents?: UnifiedEvent[]
+}
+
+export function FeedScreen({ initialEvents = [] }: Props) {
   const { profile } = useAuthContext()
   const { lang } = useLang()
   const tr = useT(lang)
@@ -24,7 +28,10 @@ export function FeedScreen() {
     JSON.stringify(filters),
   )
 
-  const events: UnifiedEvent[] = (data as { events?: UnifiedEvent[] } | null)?.events ?? []
+  // Use server-provided initial events until client fetch completes
+  const events: UnifiedEvent[] =
+    (data as { events?: UnifiedEvent[] } | null)?.events ??
+    (loading && filters.sort === 'recent' ? initialEvents : [])
 
   return (
     <div className="flex flex-col">
