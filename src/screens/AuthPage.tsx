@@ -6,49 +6,13 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuthContext } from '../contexts/AuthContext'
 import Logo from '../components/Logo'
 import { api } from '../lib/api'
-
-// ── Feature bullets ────────────────────────────────────────────────────────────
-const FEATURES = [
-  {
-    icon: (
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.4"/>
-        <path d="M4.5 7l1.8 1.8L9.5 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    ),
-    text: 'Prediction markets — Polymarket, Kalshi & Metaculus',
-  },
-  {
-    icon: (
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <path d="M7 2C4.24 2 2 4.24 2 7s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5z" stroke="currentColor" strokeWidth="1.4" fill="none"/>
-        <path d="M5 7.5l1.5 1.5L9 5.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    ),
-    text: 'Sports — football value bets across 15+ leagues',
-  },
-  {
-    icon: (
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <rect x="2" y="4" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.4" fill="none"/>
-        <path d="M5 4V3a2 2 0 014 0v1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-        <circle cx="7" cy="7.5" r="1" fill="currentColor"/>
-      </svg>
-    ),
-    text: 'Esports — Dota 2 live match AI predictions',
-  },
-  {
-    icon: (
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <path d="M2 10l3-3 2 2 3-4 2 2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    ),
-    text: 'Crypto — AI signals on coin markets & trends',
-  },
-]
+import { useLang } from '../contexts/LanguageContext'
+import { useT } from '../lib/i18n'
+import { IconMoon, IconSun } from '../components/icons'
+import { useTheme } from '../contexts/ThemeContext'
 
 // ── Back arrow ────────────────────────────────────────────────────────────────
-function BackArrow({ onClick }: { onClick: () => void }) {
+function BackArrow({ onClick, label }: { onClick: () => void; label: string }) {
   return (
     <button
       onClick={onClick}
@@ -60,7 +24,7 @@ function BackArrow({ onClick }: { onClick: () => void }) {
       <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
         <path d="M8 1L3 6L8 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
-      Back to Prescio
+      {label}
     </button>
   )
 }
@@ -158,6 +122,48 @@ export default function AuthPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user, signIn, signUp, signInWithGoogle, signInWithTwitter } = useAuthContext()
+  const { lang, setLang } = useLang()
+  const tr = useT(lang)
+  const { theme, setTheme } = useTheme()
+
+  const FEATURES = [
+    {
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.4"/>
+          <path d="M4.5 7l1.8 1.8L9.5 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      ),
+      text: tr('auth.f1'),
+    },
+    {
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M7 2C4.24 2 2 4.24 2 7s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5z" stroke="currentColor" strokeWidth="1.4" fill="none"/>
+          <path d="M5 7.5l1.5 1.5L9 5.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      ),
+      text: tr('auth.f2'),
+    },
+    {
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <rect x="2" y="4" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.4" fill="none"/>
+          <path d="M5 4V3a2 2 0 014 0v1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+          <circle cx="7" cy="7.5" r="1" fill="currentColor"/>
+        </svg>
+      ),
+      text: tr('auth.f3'),
+    },
+    {
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M2 10l3-3 2 2 3-4 2 2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      ),
+      text: tr('auth.f4'),
+    },
+  ]
 
   const initialMode = searchParams?.get('mode') === 'signup' ? 'signup' : 'signin'
   const [mode, setMode] = useState<'signin' | 'signup'>(initialMode)
@@ -244,7 +250,7 @@ export default function AuthPage() {
       >
         {/* Back */}
         <div className="mb-10">
-          <BackArrow onClick={() => router.push('/')} />
+          <BackArrow onClick={() => router.push('/')} label={tr('auth.back')} />
         </div>
 
         {/* Logo + tagline */}
@@ -252,7 +258,7 @@ export default function AuthPage() {
           <Logo size={32} textSize={20} />
         </div>
         <p className="font-mono text-xs tracking-wider mb-8" style={{ color: 'rgb(var(--text-muted))' }}>
-          markets · sports · esports · crypto
+          {tr('auth.subtitle')}
         </p>
 
         {/* Headline */}
@@ -260,11 +266,11 @@ export default function AuthPage() {
           className="font-mono font-bold leading-tight mb-3"
           style={{ fontSize: 'clamp(22px, 2.4vw, 30px)', color: 'rgb(var(--text-primary))' }}
         >
-          Markets are wrong.<br />
-          <span style={{ color: 'rgb(var(--accent))' }}>Prescio shows you where.</span>
+          {tr('auth.headline1')}<br />
+          <span style={{ color: 'rgb(var(--accent))' }}>{tr('auth.headline2')}</span>
         </h1>
         <p className="text-sm mb-10" style={{ color: 'rgb(var(--text-secondary))', lineHeight: 1.7 }}>
-          AI-powered intelligence across prediction markets, sports, esports, and crypto. One platform to find mispriced probability before the crowd corrects it.
+          {tr('auth.desc')}
         </p>
 
         {/* Feature bullets */}
@@ -295,9 +301,9 @@ export default function AuthPage() {
           style={{ borderTop: '1px solid rgb(var(--bg-border))' }}
         >
           {[
-            { value: '4', label: 'Asset classes' },
-            { value: String(analysesCount ?? 247), label: 'Analyses today' },
-            { value: '$500M+', label: 'Volume tracked' },
+            { value: '4', label: tr('auth.stat_assets') },
+            { value: String(analysesCount ?? 247), label: tr('auth.stat_analyses') },
+            { value: '$500M+', label: tr('auth.stat_volume') },
           ].map(({ value, label }, i) => (
             <div key={label} className="relative">
               {i > 0 && (
@@ -330,9 +336,59 @@ export default function AuthPage() {
         className="flex-1 flex flex-col items-center justify-center px-6 py-12 relative"
         style={panelStyle('right')}
       >
+        {/* Theme + Language toggles */}
+        <div className="absolute top-5 right-5 flex items-center gap-2">
+          {/* Theme toggle */}
+          <div
+            className="flex items-center rounded-md p-0.5 gap-0.5"
+            style={{
+              background: 'rgb(var(--bg-elevated))',
+              border: '1px solid rgb(var(--bg-border))',
+            }}
+          >
+            {(['dark', 'light'] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTheme(t)}
+                title={t === 'dark' ? 'Dark mode' : 'Light mode'}
+                className="w-6 h-6 flex items-center justify-center rounded text-[13px] transition-all duration-150"
+                style={{
+                  background: theme === t ? 'rgb(var(--bg-border))' : 'transparent',
+                  boxShadow: theme === t ? '0 1px 2px rgb(0 0 0 / 0.15)' : 'none',
+                }}
+              >
+                {t === 'dark' ? <IconMoon size={14} /> : <IconSun size={14} />}
+              </button>
+            ))}
+          </div>
+
+          {/* Language toggle */}
+          <div
+            className="flex items-center rounded-md p-0.5 gap-0.5"
+            style={{
+              background: 'rgb(var(--bg-elevated))',
+              border: '1px solid rgb(var(--bg-border))',
+            }}
+          >
+            {(['en', 'ru'] as const).map((l) => (
+              <button
+                key={l}
+                onClick={() => setLang(l)}
+                className="px-2 h-6 font-mono text-[10px] font-bold rounded transition-all duration-150"
+                style={{
+                  background: lang === l ? 'rgb(var(--bg-border))' : 'transparent',
+                  color: lang === l ? 'rgb(var(--text-primary))' : 'rgb(var(--text-muted))',
+                  boxShadow: lang === l ? '0 1px 2px rgb(0 0 0 / 0.15)' : 'none',
+                }}
+              >
+                {l.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
         {/* Mobile: back + logo */}
         <div className="lg:hidden absolute top-5 left-5">
-          <BackArrow onClick={() => router.push('/')} />
+          <BackArrow onClick={() => router.push('/')} label={tr('auth.back')} />
         </div>
         <div className="lg:hidden mb-8">
           <Logo size={28} textSize={18} />
@@ -345,7 +401,7 @@ export default function AuthPage() {
             className="font-mono text-[10px] font-bold tracking-widest mb-4"
             style={{ color: 'rgb(var(--text-muted))' }}
           >
-            {mode === 'signin' ? 'WELCOME BACK' : 'CREATE ACCOUNT'}
+            {mode === 'signin' ? tr('auth.welcome_back') : tr('auth.create_account')}
           </p>
 
           {/* Mode tabs */}
@@ -374,7 +430,7 @@ export default function AuthPage() {
                       }
                 }
               >
-                {m === 'signin' ? 'SIGN IN' : 'SIGN UP'}
+                {m === 'signin' ? tr('auth.sign_in_tab') : tr('auth.sign_up_tab')}
               </button>
             ))}
           </div>
@@ -382,7 +438,7 @@ export default function AuthPage() {
           {/* Form */}
           <form key={formKey} onSubmit={handleSubmit} className="flex flex-col gap-4">
             <Field
-              label="EMAIL"
+              label={tr('auth.email_label')}
               type="email"
               value={email}
               onChange={setEmail}
@@ -392,7 +448,7 @@ export default function AuthPage() {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-[10px] font-mono font-bold tracking-widest" style={{ color: 'rgb(var(--text-muted))' }}>
-                  PASSWORD
+                  {tr('auth.password_label')}
                 </label>
                 {mode === 'signin' && (
                   <Link
@@ -402,7 +458,7 @@ export default function AuthPage() {
                     onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'rgb(var(--text-secondary))' }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'rgb(var(--text-muted))' }}
                   >
-                    Forgot password?
+                    {tr('auth.forgot_password')}
                   </Link>
                 )}
               </div>
@@ -426,7 +482,7 @@ export default function AuthPage() {
 
             {mode === 'signup' && (
               <Field
-                label="CONFIRM PASSWORD"
+                label={tr('auth.confirm_password')}
                 type="password"
                 value={confirm}
                 onChange={setConfirm}
@@ -461,43 +517,43 @@ export default function AuthPage() {
               onMouseEnter={(e) => { if (!loading) (e.currentTarget as HTMLButtonElement).style.background = 'rgb(var(--accent-hover))' }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgb(var(--accent))' }}
             >
-              {loading ? 'LOADING...' : mode === 'signin' ? 'SIGN IN →' : 'CREATE ACCOUNT →'}
+              {loading ? tr('auth.btn_loading') : mode === 'signin' ? tr('auth.btn_sign_in') : tr('auth.btn_create')}
             </button>
           </form>
 
           {/* Divider */}
           <div className="flex items-center gap-3 my-5">
             <div className="flex-1 h-px" style={{ background: 'rgb(var(--bg-border))' }} />
-            <span className="text-[10px] font-mono" style={{ color: 'rgb(var(--text-muted))' }}>or</span>
+            <span className="text-[10px] font-mono" style={{ color: 'rgb(var(--text-muted))' }}>{tr('auth.or')}</span>
             <div className="flex-1 h-px" style={{ background: 'rgb(var(--bg-border))' }} />
           </div>
 
           {/* Social */}
           <div className="flex flex-col gap-2.5">
-            <SocialBtn icon={<GoogleIcon />} label="Continue with Google" onClick={handleGoogle} />
-            <SocialBtn icon={<XIcon />} label="Continue with Twitter / X" onClick={handleTwitter} />
+            <SocialBtn icon={<GoogleIcon />} label={tr('auth.google')} onClick={handleGoogle} />
+            <SocialBtn icon={<XIcon />} label={tr('auth.twitter')} onClick={handleTwitter} />
           </div>
 
           {/* Switch mode link */}
           <p className="mt-6 text-center text-[11px] font-mono" style={{ color: 'rgb(var(--text-muted))' }}>
             {mode === 'signin' ? (
-              <>Don't have an account?{' '}
+              <>{tr('auth.no_account')}{' '}
                 <button
                   onClick={() => handleModeChange('signup')}
                   className="font-bold transition-colors"
                   style={{ color: 'rgb(var(--accent))' }}
                 >
-                  Sign up
+                  {tr('auth.sign_up_link')}
                 </button>
               </>
             ) : (
-              <>Already have an account?{' '}
+              <>{tr('auth.has_account')}{' '}
                 <button
                   onClick={() => handleModeChange('signin')}
                   className="font-bold transition-colors"
                   style={{ color: 'rgb(var(--accent))' }}
                 >
-                  Sign in
+                  {tr('auth.sign_in_link')}
                 </button>
               </>
             )}
