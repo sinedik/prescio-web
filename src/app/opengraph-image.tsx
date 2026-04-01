@@ -5,6 +5,8 @@ export const alt = 'Prescio — AI Edge Detection for Prediction Markets'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
+const ACCENT = '#00ff88'
+
 export default async function Image() {
   return new ImageResponse(
     (
@@ -23,48 +25,61 @@ export default async function Image() {
           overflow: 'hidden',
         }}
       >
-        {/* Accent glow */}
+        {/* Accent glow top-right */}
         <div
           style={{
             position: 'absolute',
-            top: '-120px',
-            right: '-120px',
-            width: '500px',
-            height: '500px',
+            top: '-160px',
+            right: '-160px',
+            width: '560px',
+            height: '560px',
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(0,255,136,0.08) 0%, transparent 70%)',
+            background: `radial-gradient(circle, rgba(0,255,136,0.07) 0%, transparent 70%)`,
+            display: 'flex',
           }}
         />
 
-        {/* Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '32px' }}>
-          <div
-            style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '10px',
-              background: 'rgba(0,255,136,0.12)',
-              border: '1.5px solid rgba(0,255,136,0.3)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
+        {/* ── Logo row ── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '36px' }}>
+
+          {/* Eye-with-crosshair SVG — matches Logo.tsx exactly, scaled to 48px */}
+          <svg
+            viewBox="0 0 80 80"
+            width={48}
+            height={48}
+            fill="none"
           >
-            <div style={{ width: '20px', height: '20px', background: '#00ff88', borderRadius: '4px' }} />
+            <path d="M10 40 Q40 10 70 40" stroke={ACCENT} strokeWidth="3.5" strokeLinecap="round" />
+            <path d="M10 40 Q40 70 70 40" stroke={ACCENT} strokeWidth="1.8" strokeLinecap="round" opacity="0.5" />
+            <circle cx="40" cy="40" r="11" stroke={ACCENT} strokeWidth="2" />
+            <line x1="40" y1="25" x2="40" y2="31" stroke={ACCENT} strokeWidth="2.5" strokeLinecap="round" />
+            <line x1="40" y1="49" x2="40" y2="55" stroke={ACCENT} strokeWidth="2.5" strokeLinecap="round" />
+            <line x1="25" y1="40" x2="31" y2="40" stroke={ACCENT} strokeWidth="2.5" strokeLinecap="round" />
+            <line x1="49" y1="40" x2="55" y2="40" stroke={ACCENT} strokeWidth="2.5" strokeLinecap="round" />
+            <circle cx="40" cy="40" r="4.5" fill={ACCENT} />
+          </svg>
+
+          {/* Wordmark: Presc white, io accent */}
+          <div style={{ display: 'flex', alignItems: 'baseline' }}>
+            <span style={{ fontSize: '32px', fontWeight: 700, color: '#ffffff', letterSpacing: '0.06em' }}>
+              PRESC
+            </span>
+            <span style={{ fontSize: '32px', fontWeight: 700, color: ACCENT, letterSpacing: '0.06em' }}>
+              IO
+            </span>
           </div>
-          <span style={{ fontSize: '28px', fontWeight: 700, color: '#ffffff', letterSpacing: '-0.02em' }}>
-            PRESCIO
-          </span>
+
+          {/* AI badge */}
           <div
             style={{
-              marginLeft: '8px',
+              display: 'flex',
               padding: '4px 10px',
               borderRadius: '6px',
               background: 'rgba(0,255,136,0.1)',
-              border: '1px solid rgba(0,255,136,0.25)',
+              border: `1px solid rgba(0,255,136,0.25)`,
               fontSize: '11px',
               fontWeight: 700,
-              color: '#00ff88',
+              color: ACCENT,
               letterSpacing: '0.1em',
             }}
           >
@@ -72,50 +87,53 @@ export default async function Image() {
           </div>
         </div>
 
-        {/* Headline */}
+        {/* ── Headline ── */}
         <div
           style={{
-            fontSize: '56px',
+            display: 'flex',
+            flexDirection: 'column',
+            fontSize: '54px',
             fontWeight: 800,
-            color: '#ffffff',
             lineHeight: 1.1,
             letterSpacing: '-0.03em',
             marginBottom: '24px',
-            maxWidth: '800px',
           }}
         >
-          Markets are wrong.{' '}
-          <span style={{ color: '#00ff88' }}>Prescio shows you where.</span>
+          <span style={{ color: '#ffffff' }}>Markets are wrong.</span>
+          <span style={{ color: ACCENT }}>Prescio shows you where.</span>
         </div>
 
-        {/* Description */}
+        {/* ── Description ── */}
         <div
           style={{
+            display: 'flex',
             fontSize: '20px',
             color: '#888888',
             lineHeight: 1.5,
             marginBottom: '48px',
-            maxWidth: '720px',
+            maxWidth: '760px',
           }}
         >
-          AI edge detection across Kalshi, Polymarket, Metaculus, sports, esports &amp; crypto.
-          Free to track — Pro to get the edge.
+          AI edge detection across prediction markets, sports, esports &amp; crypto.
+          Kalshi · Polymarket · Metaculus · Football · Dota 2 · CS2.
+          Free to track — Pro to act.
         </div>
 
-        {/* Pills */}
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-          {['Prediction Markets', 'Sports Analytics', 'Esports', 'Crypto Signals'].map((label) => (
+        {/* ── Pills ── */}
+        <div style={{ display: 'flex', gap: '12px' }}>
+          {['Prediction Markets', 'Sports', 'Esports', 'Crypto'].map((label) => (
             <div
               key={label}
               style={{
-                padding: '8px 16px',
+                display: 'flex',
+                padding: '7px 16px',
                 borderRadius: '8px',
                 background: 'rgba(255,255,255,0.05)',
                 border: '1px solid rgba(255,255,255,0.1)',
                 fontSize: '13px',
                 fontWeight: 600,
                 color: '#aaaaaa',
-                letterSpacing: '0.02em',
+                letterSpacing: '0.04em',
               }}
             >
               {label}
@@ -123,29 +141,31 @@ export default async function Image() {
           ))}
         </div>
 
-        {/* Bottom divider line */}
+        {/* ── Bottom bar ── */}
         <div
           style={{
             position: 'absolute',
-            bottom: '48px',
-            left: '80px',
-            right: '80px',
-            height: '1px',
-            background: 'rgba(255,255,255,0.06)',
+            bottom: '0',
+            left: '0',
+            right: '0',
+            height: '4px',
+            background: `linear-gradient(to right, transparent, ${ACCENT}, transparent)`,
             display: 'flex',
+            opacity: 0.4,
           }}
         />
         <div
           style={{
             position: 'absolute',
-            bottom: '24px',
-            left: '80px',
-            fontSize: '13px',
-            color: '#444444',
-            letterSpacing: '0.05em',
+            bottom: '22px',
+            right: '80px',
+            display: 'flex',
+            alignItems: 'baseline',
+            gap: '0px',
           }}
         >
-          prescio.io
+          <span style={{ fontSize: '13px', color: '#444444', letterSpacing: '0.05em' }}>presc</span>
+          <span style={{ fontSize: '13px', color: `rgba(0,255,136,0.4)`, letterSpacing: '0.05em' }}>io.io</span>
         </div>
       </div>
     ),

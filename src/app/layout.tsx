@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     template: '%s | Prescio',
   },
   description:
-    'Prescio aggregates Kalshi, Polymarket and Metaculus in one place and uses AI to find where the market is wrong. Free to track, Pro to get the edge.',
+    'AI edge detection across prediction markets, sports, esports & crypto. Kalshi, Polymarket, Metaculus, football odds, Dota 2, CS2 — one platform. Free to track, Pro to act.',
   keywords: [
     'prediction markets', 'kalshi', 'polymarket', 'metaculus',
     'prediction market analysis', 'AI betting', 'esports analytics',
