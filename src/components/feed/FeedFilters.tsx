@@ -1,6 +1,7 @@
 'use client'
-import type { TopCategory, FeedFilters } from '../../types/index'
+import type { TopCategory, SourceName, FeedFilters } from '../../types/index'
 import { CATEGORIES } from '../../lib/categories'
+import { CryptoTicker } from './CryptoTicker'
 
 interface Props { filters: FeedFilters; onChange: (f: FeedFilters) => void }
 
@@ -8,6 +9,39 @@ const SORT_OPTIONS = [
   { value: 'recent',    label: 'Recent'   },
   { value: 'score',     label: 'Top Edge' },
   { value: 'starts_at', label: 'Starting' },
+]
+
+const SOURCES: { value: SourceName; label: string; color: string; icon: React.ReactNode }[] = [
+  {
+    value: 'polymarket',
+    label: 'Poly',
+    color: '#9b72f5',
+    icon: <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><polygon points="12,2 22,8 22,16 12,22 2,16 2,8" /></svg>,
+  },
+  {
+    value: 'kalshi',
+    label: 'Kalshi',
+    color: '#34c975',
+    icon: <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="12" width="4" height="10" rx="1" /><rect x="10" y="7" width="4" height="15" rx="1" /><rect x="18" y="2" width="4" height="20" rx="1" /></svg>,
+  },
+  {
+    value: 'metaculus',
+    label: 'Meta',
+    color: '#4d9eff',
+    icon: <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></svg>,
+  },
+  {
+    value: 'odds_api',
+    label: 'Odds',
+    color: '#f5a623',
+    icon: <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17" /></svg>,
+  },
+  {
+    value: 'pandascore',
+    label: 'Panda',
+    color: '#ff7a45',
+    icon: <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a5 5 0 0 0-5 5c0 1.5.66 2.84 1.7 3.77A7 7 0 0 0 5 17v2h14v-2a7 7 0 0 0-3.7-6.23A5 5 0 1 0 12 2z" /></svg>,
+  },
 ]
 
 // Иконки для топ-категорий
@@ -97,6 +131,35 @@ export function FeedFilters({ filters, onChange }: Props) {
         </div>
       )}
 
+      {/* Крипто тикер — показываем когда выбрана крипто категория */}
+      {filters.category === 'crypto' && (
+        <div className="mt-1 mb-1">
+          <CryptoTicker />
+        </div>
+      )}
+
+      {/* Source filter */}
+      <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-hide">
+        <SourceTab
+          active={!filters.source_name}
+          color="var(--text-muted)"
+          onClick={() => onChange({ ...filters, source_name: undefined })}
+        >
+          All Sources
+        </SourceTab>
+        {SOURCES.map(s => (
+          <SourceTab
+            key={s.value}
+            active={filters.source_name === s.value}
+            color={s.color}
+            icon={s.icon}
+            onClick={() => onChange({ ...filters, source_name: s.value })}
+          >
+            {s.label}
+          </SourceTab>
+        ))}
+      </div>
+
       {/* Сортировка */}
       <div className="flex gap-1">
         {SORT_OPTIONS.map(opt => (
@@ -138,6 +201,36 @@ function Tab({ children, active, onClick, small = false, muted = false, icon }: 
     >
       {icon && !small && (
         <span style={{ opacity: active ? 0.9 : 0.45, display: 'flex', alignItems: 'center' }}>
+          {icon}
+        </span>
+      )}
+      {children}
+    </button>
+  )
+}
+
+function SourceTab({ children, active, color, icon, onClick }: {
+  children: React.ReactNode
+  active: boolean
+  color: string
+  icon?: React.ReactNode
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex-shrink-0 flex items-center gap-1.5 rounded-md transition-all"
+      style={{
+        padding: '3px 9px 3px 7px',
+        fontSize: '11px',
+        fontWeight: active ? 700 : 500,
+        background: active ? `${color}22` : 'var(--bg-elevated)',
+        color: active ? color : 'var(--text-muted)',
+        border: `1px solid ${active ? color + '66' : 'var(--border)'}`,
+      }}
+    >
+      {icon && (
+        <span style={{ opacity: active ? 1 : 0.5, display: 'flex', alignItems: 'center', color: active ? color : 'currentColor' }}>
           {icon}
         </span>
       )}
