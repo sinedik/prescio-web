@@ -11,6 +11,7 @@ export async function fetchMarketsForSitemap(): Promise<MarketRow[]> {
   try {
     const res = await fetch(`${origin}/api/markets?limit=500`, {
       next: { revalidate: 3600 },
+      signal: AbortSignal.timeout(5000),
     })
     if (!res.ok) return []
     const data = (await res.json()) as MarketRow[] | { markets?: MarketRow[] }
