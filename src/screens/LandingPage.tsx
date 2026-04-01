@@ -3,6 +3,8 @@ import { usePageTitle } from '../hooks/usePageTitle'
 import { useRouter } from 'next/navigation'
 import { useAuthContext } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
+import { useLang } from '../contexts/LanguageContext'
+import { useT } from '../lib/i18n'
 import Logo from '../components/Logo'
 import AppFooter from '../components/AppFooter'
 import { IconMoon, IconSun } from '../components/icons'
@@ -161,14 +163,16 @@ function useCountUp(target: number, duration: number, trigger: boolean) {
 
 // ── Section 1 — Stats strip ──────────────────────────────────────────────────
 function StatsSection() {
+  const { lang } = useLang()
+  const tr = useT(lang)
   const { ref, inView } = useInView(0.3)
   const vol = useCountUp(500, 1800, inView)
   const leagues = useCountUp(15, 1200, inView)
 
   const stats = [
-    { display: `$${vol}M+`, label: 'Prediction market volume' },
-    { display: `${leagues}+`, label: 'Football leagues covered' },
-    { display: '4', label: 'Asset classes' },
+    { display: `$${vol}M+`, label: tr('landing.stats.volume') },
+    { display: `${leagues}+`, label: tr('landing.stats.leagues') },
+    { display: '4', label: tr('landing.stats.assets') },
   ]
 
   return (
@@ -212,6 +216,8 @@ const SPORTS_OUTCOMES = [
 ]
 
 function TwoPillarsSection() {
+  const { lang } = useLang()
+  const tr = useT(lang)
   const { ref, inView } = useInView(0.1)
 
   return (
@@ -221,10 +227,10 @@ function TwoPillarsSection() {
         {/* Header */}
         <div className="text-center mb-14" style={scrollFade(inView)}>
           <h2 className="font-mono font-bold text-text-primary mb-3" style={{ fontSize: 'clamp(22px, 3vw, 32px)' }}>
-            One platform. Four markets.
+            {tr('landing.pillars.headline')}
           </h2>
           <p className="font-mono" style={{ fontSize: '14px', color: 'rgb(var(--text-secondary))' }}>
-            AI finds mispriced probability — whether it&apos;s a Polymarket question, a Champions League match, a Dota 2 tournament, or a crypto coin.
+            {tr('landing.pillars.sub')}
           </p>
         </div>
 
@@ -254,10 +260,10 @@ function TwoPillarsSection() {
                 PREDICTION MARKETS
               </span>
               <h3 className="font-mono font-bold text-text-primary mt-4 mb-2" style={{ fontSize: '18px' }}>
-                Find mispriced markets
+                {tr('landing.pillars.pm_title')}
               </h3>
               <p style={{ fontSize: '13px', color: 'rgb(var(--text-secondary))', lineHeight: 1.75 }}>
-                Polymarket, Kalshi, and Metaculus — scanned every 2 hours. AI cross-references primary sources to find where crowd probability diverges from reality.
+                {tr('landing.pillars.pm_desc')}
               </p>
             </div>
 
@@ -320,9 +326,9 @@ function TwoPillarsSection() {
             {/* Bullets */}
             <div className="flex flex-col gap-2">
               {[
-                'Resolution criteria analysis — read the fine print',
-                'ISW · AP · BBC · official briefings',
-                'Kelly-optimal position sizing',
+                tr('landing.pillars.pm_b1'),
+                tr('landing.pillars.pm_b2'),
+                tr('landing.pillars.pm_b3'),
               ].map((item) => (
                 <div key={item} className="flex items-start gap-2">
                   <span className="font-mono text-xs mt-0.5 shrink-0" style={{ color: 'rgb(var(--accent))' }}>→</span>
@@ -353,10 +359,10 @@ function TwoPillarsSection() {
                 SPORTS ANALYTICS
               </span>
               <h3 className="font-mono font-bold text-text-primary mt-4 mb-2" style={{ fontSize: '18px' }}>
-                Spot value in football odds
+                {tr('landing.pillars.sports_title')}
               </h3>
               <p style={{ fontSize: '13px', color: 'rgb(var(--text-secondary))', lineHeight: 1.75 }}>
-                AI models match form, injuries, and historical data to find where bookmaker odds diverge from real probability — across the top 15+ football leagues.
+                {tr('landing.pillars.sports_desc')}
               </p>
             </div>
 
@@ -416,9 +422,9 @@ function TwoPillarsSection() {
             {/* Bullets */}
             <div className="flex flex-col gap-2">
               {[
-                'Form, injuries, head-to-head, venue stats',
-                'Expected goals (xG) model',
-                'Value bet detection across 15+ leagues',
+                tr('landing.pillars.sports_b1'),
+                tr('landing.pillars.sports_b2'),
+                tr('landing.pillars.sports_b3'),
               ].map((item) => (
                 <div key={item} className="flex items-start gap-2">
                   <span className="font-mono text-xs mt-0.5 shrink-0" style={{ color: 'rgb(var(--accent))' }}>→</span>
@@ -449,10 +455,10 @@ function TwoPillarsSection() {
                 ESPORTS
               </span>
               <h3 className="font-mono font-bold text-text-primary mt-4 mb-2" style={{ fontSize: '18px' }}>
-                Dota 2 match intelligence
+                {tr('landing.pillars.esports_title')}
               </h3>
               <p style={{ fontSize: '13px', color: 'rgb(var(--text-secondary))', lineHeight: 1.75 }}>
-                Live Dota 2 match tracking with AI win probability. Draft analysis, team form, tournament context — everything in one feed.
+                {tr('landing.pillars.esports_desc')}
               </p>
             </div>
 
@@ -509,9 +515,9 @@ function TwoPillarsSection() {
             {/* Bullets */}
             <div className="flex flex-col gap-2">
               {[
-                'Live match tracking with win probability',
-                'Draft analysis & team form',
-                'Tournament context & historical data',
+                tr('landing.pillars.esports_b1'),
+                tr('landing.pillars.esports_b2'),
+                tr('landing.pillars.esports_b3'),
               ].map((item) => (
                 <div key={item} className="flex items-start gap-2">
                   <span className="font-mono text-xs mt-0.5 shrink-0" style={{ color: 'rgb(var(--accent))' }}>→</span>
@@ -542,10 +548,10 @@ function TwoPillarsSection() {
                 CRYPTO MARKETS
               </span>
               <h3 className="font-mono font-bold text-text-primary mt-4 mb-2" style={{ fontSize: '18px' }}>
-                AI signals on coin markets
+                {tr('landing.pillars.crypto_title')}
               </h3>
               <p style={{ fontSize: '13px', color: 'rgb(var(--text-secondary))', lineHeight: 1.75 }}>
-                Track major coins with AI-generated market signals. Prescio aggregates on-chain data, volume patterns, and market structure to highlight what's worth watching.
+                {tr('landing.pillars.crypto_desc')}
               </p>
             </div>
 
@@ -598,9 +604,9 @@ function TwoPillarsSection() {
             {/* Bullets */}
             <div className="flex flex-col gap-2">
               {[
-                'On-chain data · volume · market structure',
-                'AI sentiment and trend signals',
-                'Available in the same Markets feed',
+                tr('landing.pillars.crypto_b1'),
+                tr('landing.pillars.crypto_b2'),
+                tr('landing.pillars.crypto_b3'),
               ].map((item) => (
                 <div key={item} className="flex items-start gap-2">
                   <span className="font-mono text-xs mt-0.5 shrink-0" style={{ color: 'rgb(var(--accent))' }}>→</span>
@@ -616,67 +622,69 @@ function TwoPillarsSection() {
 }
 
 // ── Section 3 — How it works ──────────────────────────────────────────────────
-const HOW_IT_WORKS_STEPS = [
-  {
-    num: '01',
-    title: 'Aggregates four market types',
-    desc: 'Prescio aggregates Polymarket, Kalshi, Metaculus, live football odds, esports matches, and crypto markets — filtering hundreds of signals down to the ones worth watching.',
-    illustration: (
-      <div className="flex flex-col gap-2">
-        {['POLYMARKET / KALSHI', 'SPORT', 'ESPORTS', 'CRYPTO'].map((p) => (
-          <div
-            key={p}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg"
-            style={{ background: 'rgb(var(--bg-elevated))', border: '1px solid rgb(var(--bg-border))' }}
-          >
-            <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: 'rgb(var(--accent))' }} />
-            <span className="font-mono text-xs" style={{ color: 'rgb(var(--text-secondary))' }}>{p}</span>
-          </div>
-        ))}
-      </div>
-    ),
-  },
-  {
-    num: '02',
-    title: 'Cross-references curated data',
-    desc: 'For prediction markets: ISW, AP, BBC, official briefings. For sports: match stats, xG models, injury reports, head-to-head history. Not Twitter. Not Reddit. The signal, not the noise.',
-    illustration: (
-      <div className="flex flex-col gap-2">
-        {['ISW · AP · BBC', 'Match stats · xG', 'Injury reports'].map((s) => (
-          <div
-            key={s}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg"
-            style={{ background: 'rgb(var(--bg-elevated))', border: '1px solid rgb(var(--bg-border))' }}
-          >
-            <div className="w-1.5 h-1.5 rounded-full" style={{ background: 'rgb(var(--watch))' }} />
-            <span className="font-mono text-xs font-bold" style={{ color: 'rgb(var(--text-secondary))' }}>{s}</span>
-          </div>
-        ))}
-      </div>
-    ),
-  },
-  {
-    num: '03',
-    title: 'Free: track everything. Pro: act with edge.',
-    desc: 'Free users track prediction markets and sports live — prices, odds, and resolution dates. Pro users get AI edge analysis, fair value estimates, and Kelly-optimal position sizing.',
-    illustration: (
-      <div
-        className="rounded-xl p-3"
-        style={{ background: 'rgb(var(--bg-elevated))', border: '1px solid rgb(var(--bg-border))' }}
-      >
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-lg text-accent bg-accent/10">ENTER</span>
-          <span className="text-[9px] font-mono" style={{ color: 'rgb(var(--text-muted))' }}>+26pp edge</span>
-        </div>
-        <p className="font-mono text-xs font-bold text-text-primary mb-1 line-clamp-1">Will US enter Iran...</p>
-        <p className="font-mono text-[10px]" style={{ color: 'rgb(var(--text-secondary))' }}>Bet 25% Kelly · 35% fair</p>
-      </div>
-    ),
-  },
-]
-
 function HowItWorksSection({ sectionId }: { sectionId: string }) {
+  const { lang } = useLang()
+  const tr = useT(lang)
   const { ref, inView } = useInView(0.1)
+
+  const HOW_IT_WORKS_STEPS = [
+    {
+      num: '01',
+      title: tr('landing.how.s1_title'),
+      desc: tr('landing.how.s1_desc'),
+      illustration: (
+        <div className="flex flex-col gap-2">
+          {['POLYMARKET / KALSHI', 'SPORT', 'ESPORTS', 'CRYPTO'].map((p) => (
+            <div
+              key={p}
+              className="flex items-center gap-3 px-3 py-2 rounded-lg"
+              style={{ background: 'rgb(var(--bg-elevated))', border: '1px solid rgb(var(--bg-border))' }}
+            >
+              <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: 'rgb(var(--accent))' }} />
+              <span className="font-mono text-xs" style={{ color: 'rgb(var(--text-secondary))' }}>{p}</span>
+            </div>
+          ))}
+        </div>
+      ),
+    },
+    {
+      num: '02',
+      title: tr('landing.how.s2_title'),
+      desc: tr('landing.how.s2_desc'),
+      illustration: (
+        <div className="flex flex-col gap-2">
+          {['ISW · AP · BBC', 'Match stats · xG', 'Injury reports'].map((s) => (
+            <div
+              key={s}
+              className="flex items-center gap-3 px-3 py-2 rounded-lg"
+              style={{ background: 'rgb(var(--bg-elevated))', border: '1px solid rgb(var(--bg-border))' }}
+            >
+              <div className="w-1.5 h-1.5 rounded-full" style={{ background: 'rgb(var(--watch))' }} />
+              <span className="font-mono text-xs font-bold" style={{ color: 'rgb(var(--text-secondary))' }}>{s}</span>
+            </div>
+          ))}
+        </div>
+      ),
+    },
+    {
+      num: '03',
+      title: tr('landing.how.s3_title'),
+      desc: tr('landing.how.s3_desc'),
+      illustration: (
+        <div
+          className="rounded-xl p-3"
+          style={{ background: 'rgb(var(--bg-elevated))', border: '1px solid rgb(var(--bg-border))' }}
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-lg text-accent bg-accent/10">ENTER</span>
+            <span className="text-[9px] font-mono" style={{ color: 'rgb(var(--text-muted))' }}>+26pp edge</span>
+          </div>
+          <p className="font-mono text-xs font-bold text-text-primary mb-1 line-clamp-1">Will US enter Iran...</p>
+          <p className="font-mono text-[10px]" style={{ color: 'rgb(var(--text-secondary))' }}>Bet 25% Kelly · 35% fair</p>
+        </div>
+      ),
+    },
+  ]
 
   return (
     <section
@@ -687,10 +695,10 @@ function HowItWorksSection({ sectionId }: { sectionId: string }) {
         {/* Header */}
         <div className="text-center mb-16" style={scrollFade(inView)}>
           <h2 className="font-mono font-bold text-text-primary mb-3" style={{ fontSize: 'clamp(22px, 3vw, 32px)' }}>
-            How it works
+            {tr('landing.how.title')}
           </h2>
           <p className="font-mono" style={{ fontSize: '14px', color: 'rgb(var(--text-secondary))' }}>
-            Three steps, every two hours.
+            {tr('landing.how.subtitle')}
           </p>
         </div>
 
@@ -762,60 +770,62 @@ function HowItWorksSection({ sectionId }: { sectionId: string }) {
 }
 
 // ── Section 4 — Why Prescio ───────────────────────────────────────────────────
-const WHY_CARDS = [
-  {
-    icon: (
-      <svg className="text-accent" width="28" height="28" viewBox="0 0 28 28" fill="none">
-        <path d="M4 20l6-8 5 5 4-6 5 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-        <circle cx="22" cy="7" r="3" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-        <path d="M22 10v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
-    ),
-    title: 'Value where others see noise',
-    desc: 'In prediction markets: the crowd prices fear, not resolution criteria. In football: bookmakers price narratives, not xG. Prescio surfaces the gap.',
-    badge: 'CORE FEATURE',
-    featured: false,
-  },
-  {
-    icon: (
-      <svg className="text-accent" width="28" height="28" viewBox="0 0 28 28" fill="none">
-        <path d="M14 4v3M14 21v3M4 14H7M21 14h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-        <circle cx="14" cy="14" r="4" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-        <path d="M7.5 7.5l2 2M18.5 18.5l2 2M7.5 20.5l2-2M18.5 9.5l2-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
-    ),
-    title: 'Curated data, not aggregated noise',
-    desc: 'Prediction markets: ISW, AP, BBC, official briefings. Sports: match stats, xG models, injury reports, head-to-head history. No Twitter. No Reddit.',
-    badge: null,
-    featured: true,
-    sub: 'ISW · AP · xG · Injuries',
-  },
-  {
-    icon: (
-      <svg className="text-accent" width="28" height="28" viewBox="0 0 28 28" fill="none">
-        <rect x="4" y="8" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-        <path d="M9 14h10M9 17.5h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-        <path d="M10 8V6a4 4 0 018 0v2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
-    ),
-    title: 'Mathematically optimal sizing',
-    desc: 'Quarter Kelly by default. Half Kelly when you have a track record. Never guessing, never overbet. Position size that survives variance — for both markets.',
-    badge: null,
-    featured: false,
-    formula: 'f* = (bp − q) / b',
-  },
-]
-
 function WhyPrescioSection() {
+  const { lang } = useLang()
+  const tr = useT(lang)
   const { ref, inView } = useInView(0.1)
   const [hovered, setHovered] = useState<number | null>(null)
+
+  const WHY_CARDS = [
+    {
+      icon: (
+        <svg className="text-accent" width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <path d="M4 20l6-8 5 5 4-6 5 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+          <circle cx="22" cy="7" r="3" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+          <path d="M22 10v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      ),
+      title: tr('landing.why.c1_title'),
+      desc: tr('landing.why.c1_desc'),
+      badge: 'CORE FEATURE',
+      featured: false,
+    },
+    {
+      icon: (
+        <svg className="text-accent" width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <path d="M14 4v3M14 21v3M4 14H7M21 14h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          <circle cx="14" cy="14" r="4" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+          <path d="M7.5 7.5l2 2M18.5 18.5l2 2M7.5 20.5l2-2M18.5 9.5l2-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      ),
+      title: tr('landing.why.c2_title'),
+      desc: tr('landing.why.c2_desc'),
+      badge: null,
+      featured: true,
+      sub: 'ISW · AP · xG · Injuries',
+    },
+    {
+      icon: (
+        <svg className="text-accent" width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <rect x="4" y="8" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+          <path d="M9 14h10M9 17.5h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          <path d="M10 8V6a4 4 0 018 0v2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      ),
+      title: tr('landing.why.c3_title'),
+      desc: tr('landing.why.c3_desc'),
+      badge: null,
+      featured: false,
+      formula: 'f* = (bp − q) / b',
+    },
+  ]
 
   return (
     <section style={{ padding: '120px 0' }}>
       <div ref={ref} className="mx-auto" style={{ maxWidth: '1100px', padding: '0 clamp(16px, 4vw, 48px)' }}>
         <div className="text-center mb-14" style={scrollFade(inView)}>
           <h2 className="font-mono font-bold text-text-primary mb-3" style={{ fontSize: 'clamp(22px, 3vw, 32px)' }}>
-            Why Prescio
+            {tr('landing.why.title')}
           </h2>
         </div>
 
@@ -880,6 +890,8 @@ function WhyPrescioSection() {
 
 // ── Section 5 — Final CTA ─────────────────────────────────────────────────────
 function CtaSection({ onSignup }: { onSignup: () => void }) {
+  const { lang } = useLang()
+  const tr = useT(lang)
   const { ref, inView } = useInView(0.2)
 
   return (
@@ -896,15 +908,15 @@ function CtaSection({ onSignup }: { onSignup: () => void }) {
           className="font-mono font-bold mb-4"
           style={{ ...scrollFade(inView, 100), fontSize: 'clamp(28px, 5vw, 48px)', lineHeight: 1.1, color: 'rgb(var(--text-primary))' }}
         >
-          Stop guessing.<br />
-          <span style={{ color: 'rgb(var(--accent))' }}>Start seeing.</span>
+          {tr('landing.cta.headline1')}<br />
+          <span style={{ color: 'rgb(var(--accent))' }}>{tr('landing.cta.headline2')}</span>
         </h2>
 
         <p
           className="font-mono mb-10"
           style={{ ...scrollFade(inView, 200), fontSize: '14px', color: 'rgb(var(--text-secondary))' }}
         >
-          Free to track. Pro to get the edge. No credit card required to start.
+          {tr('landing.cta.desc')}
         </p>
 
         {/* CTA button */}
@@ -925,7 +937,7 @@ function CtaSection({ onSignup }: { onSignup: () => void }) {
             onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.02)' }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)' }}
           >
-            Get started for free →
+            {tr('landing.cta.button')}
           </button>
         </div>
 
@@ -940,6 +952,8 @@ export default function LandingPage() {
   const router = useRouter()
   const { user, profile, loading, signOut } = useAuthContext()
   const { theme, setTheme } = useTheme()
+  const { lang, setLang } = useLang()
+  const tr = useT(lang)
 
   useLayoutEffect(() => {
     if (loading || !user || !profile) return
@@ -986,13 +1000,13 @@ export default function LandingPage() {
               onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
               className="hidden sm:block text-xs font-mono text-text-muted hover:text-text-secondary transition-colors"
             >
-              How it works
+              {tr('landing.nav.how_it_works')}
             </button>
             <a
               href="/pricing"
               className="hidden sm:block text-xs font-mono text-text-muted hover:text-text-secondary transition-colors"
             >
-              Pricing
+              {tr('landing.nav.pricing')}
             </a>
 
             {/* Theme toggle */}
@@ -1020,12 +1034,36 @@ export default function LandingPage() {
               ))}
             </div>
 
+            {/* Language toggle */}
+            <div
+              className="hidden sm:flex items-center rounded-md p-0.5 gap-0.5"
+              style={{
+                background: 'rgb(var(--bg-elevated))',
+                border: '1px solid rgb(var(--bg-border))',
+              }}
+            >
+              {(['en', 'ru'] as const).map((l) => (
+                <button
+                  key={l}
+                  onClick={() => setLang(l)}
+                  className="px-2 h-6 font-mono text-[10px] font-bold rounded transition-all duration-150"
+                  style={{
+                    background: lang === l ? 'rgb(var(--bg-border))' : 'transparent',
+                    color: lang === l ? 'rgb(var(--text-primary))' : 'rgb(var(--text-muted))',
+                    boxShadow: lang === l ? '0 1px 2px rgb(0 0 0 / 0.15)' : 'none',
+                  }}
+                >
+                  {l.toUpperCase()}
+                </button>
+              ))}
+            </div>
+
             <button
               onClick={() => router.push('/auth?mode=signin')}
               className="text-xs font-mono text-text-secondary hover:text-text-primary transition-colors
                 border border-bg-border rounded px-3 py-1.5 hover:border-text-muted"
             >
-              Sign In
+              {tr('landing.nav.sign_in')}
             </button>
           </div>
         </div>
@@ -1054,7 +1092,7 @@ export default function LandingPage() {
             <div className="flex flex-col gap-1.5 mb-8">
               <Logo size={40} textSize={20} showText />
               <div className="font-mono text-[10px] text-text-muted tracking-[0.08em] uppercase" style={{ paddingLeft: '52px' }}>
-                markets · sports · esports · crypto
+                {tr('landing.hero.subtitle')}
               </div>
             </div>
 
@@ -1062,7 +1100,7 @@ export default function LandingPage() {
             <div className="inline-flex items-center gap-2 bg-accent/10 border border-accent/20
               rounded-full px-3 py-1 mb-5">
               <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-              <span className="text-[10px] font-mono text-accent tracking-wider">AI-POWERED INTELLIGENCE PLATFORM</span>
+              <span className="text-[10px] font-mono text-accent tracking-wider">{tr('landing.hero.badge')}</span>
             </div>
 
             {/* Heading */}
@@ -1070,21 +1108,23 @@ export default function LandingPage() {
               className="font-mono font-bold text-text-primary leading-tight mb-4"
               style={{ fontSize: 'clamp(1.6rem, 3.2vw, 2.8rem)' }}
             >
-              Markets are wrong.<br />
-              <span className="text-accent">Prescio shows you where.</span>
+              {tr('landing.hero.headline1')}<br />
+              <span className="text-accent">{tr('landing.hero.headline2')}</span>
             </h1>
 
             {/* Description */}
             <p className="text-text-muted mb-6" style={{ fontSize: '14px', lineHeight: 1.7 }}>
-              AI-powered analytics for <span className="text-text-secondary">prediction markets, sports, esports, and crypto</span>.
-              One platform to track everything —
-              Pro users get AI edge analysis{' '}
-              <span className="text-accent">before the crowd corrects them.</span>
+              {tr('landing.hero.desc')}
             </p>
 
             {/* Feature pills */}
             <div className="flex flex-wrap gap-2 mb-6">
-              {['Prediction markets', 'Sports analytics', 'Esports', 'Crypto signals'].map((f) => (
+              {[
+                tr('landing.hero.pill_markets'),
+                tr('landing.hero.pill_sports'),
+                tr('landing.hero.pill_esports'),
+                tr('landing.hero.pill_crypto'),
+              ].map((f) => (
                 <span key={f} className="text-[10px] font-mono text-text-muted border border-bg-border px-2 py-1 rounded-md">
                   {f}
                 </span>
@@ -1098,18 +1138,18 @@ export default function LandingPage() {
                 className="px-6 py-2.5 bg-accent text-bg-base text-sm font-mono font-bold rounded-lg
                   hover:bg-accent/90 transition-colors whitespace-nowrap"
               >
-                Start for free →
+                {tr('landing.hero.cta_free')}
               </button>
               <button
                 onClick={() => router.push('/auth?mode=signin')}
                 className="px-4 py-2.5 text-sm font-mono text-text-secondary border border-bg-border rounded-lg
                   hover:border-text-muted hover:text-text-primary transition-colors whitespace-nowrap"
               >
-                Sign in
+                {tr('landing.hero.sign_in')}
               </button>
             </div>
             <p className="text-[11px] font-mono text-text-muted">
-              No credit card required to start
+              {tr('landing.hero.no_card')}
             </p>
           </div>
         </div>
