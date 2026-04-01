@@ -56,7 +56,7 @@ export function usePortfolio() {
       try {
         const data = await api.getPortfolio() as Position[] | { positions: Position[] }
         if (cancelled) return
-        const rows = (Array.isArray(data) ? data : ((data as { positions: Position[] }).positions ?? [])) as Record<string, unknown>[]
+        const rows = (Array.isArray(data) ? data : ((data as { positions: Position[] }).positions ?? [])) as unknown as Record<string, unknown>[]
         const remote = rows.map(apiRowToPosition)
         setPositions(remote)
         saveLocal(remote)

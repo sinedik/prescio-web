@@ -101,7 +101,7 @@ export default function DotaLiveCard({ series, onClick }: Props) {
 
   return (
     <div
-      className="rounded-xl overflow-hidden cursor-pointer transition-all duration-150 hover:opacity-90 bg-bg-surface border border-bg-border"
+      className="w-full rounded-xl overflow-hidden cursor-pointer transition-all duration-150 hover:opacity-90 bg-bg-surface border border-bg-border"
       style={{ borderColor: 'rgba(255,61,61,0.2)' }}
       onClick={onClick}
     >

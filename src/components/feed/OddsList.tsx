@@ -13,7 +13,7 @@ export function OddsList({ odds, plan }: Props) {
   return (
     <div className="flex flex-col gap-2">
       {sorted.map((odd) => (
-        <div key={odd.id} className="flex flex-col gap-1">
+        <div key={`${odd.bookmaker}-${odd.market_type}`} className="flex flex-col gap-1">
           <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
             {odd.market_type} · {odd.bookmaker}
           </span>

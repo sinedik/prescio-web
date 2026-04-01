@@ -1,5 +1,8 @@
+'use client'
+
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useAuthContext } from '../contexts/AuthContext'
 import Logo from './Logo'
 
@@ -9,7 +12,7 @@ interface AuthFormProps {
 }
 
 export default function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
-  const navigate = useNavigate()
+  const router = useRouter()
   const { signIn, signUp, signInWithGoogle, signInWithTwitter } = useAuthContext()
   const [mode, setMode] = useState<'signin' | 'signup'>(initialMode)
   const [formKey, setFormKey] = useState(0)
@@ -34,10 +37,10 @@ export default function AuthForm({ initialMode = 'signin', onClose }: AuthFormPr
     try {
       if (mode === 'signin') {
         await signIn(email, password)
-        navigate('/markets', { replace: true })
+        router.replace('/markets')
       } else {
         await signUp(email, password)
-        navigate('/onboarding', { replace: true })
+        router.replace('/onboarding')
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Authentication failed')
@@ -130,7 +133,7 @@ export default function AuthForm({ initialMode = 'signin', onClose }: AuthFormPr
         {mode === 'signin' && (
           <div className="text-right -mt-1">
             <Link
-              to="/forgot-password"
+              href="/forgot-password"
               className="text-[10px] font-mono text-text-muted hover:text-text-secondary transition-colors"
             >
               Forgot password?

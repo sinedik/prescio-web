@@ -1,3 +1,12 @@
+/** Слаг из вопроса рынка (как в URL `/market/:slug`). */
+export function slugifyQuestion(question: string): string {
+  return question
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .slice(0, 60)
+    .replace(/(^-|-$)/g, '')
+}
+
 export function formatProb(p: number): string {
   const pct = p > 1 ? p : p * 100
   return `${Math.round(pct)}%`

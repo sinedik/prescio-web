@@ -56,7 +56,7 @@ export default function DotaMatchCard({ match, onClick }: Props) {
 
   return (
     <div
-      className="flex items-center gap-3 px-3 py-3 rounded-lg cursor-pointer transition-colors bg-bg-surface border border-bg-border hover:bg-bg-elevated"
+      className="w-full flex items-center gap-3 px-3 py-3 rounded-lg cursor-pointer transition-colors bg-bg-surface border border-bg-border hover:bg-bg-elevated"
       onClick={onClick}
     >
       {/* Radiant side */}

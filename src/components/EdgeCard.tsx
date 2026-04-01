@@ -1,4 +1,7 @@
-import { useNavigate } from 'react-router-dom'
+'use client'
+
+import { useRouter } from 'next/navigation'
+import { stashMarketNavItem } from '../lib/marketNavCache'
 import type { MarketOpportunity } from '../types'
 import { formatEdge, formatProb, formatVolume, platformColor, edgeColor, actionColor } from '../utils'
 import { IconLock } from './icons'
@@ -19,7 +22,7 @@ interface Props {
 }
 
 export default function EdgeCard({ item, rank, isPro = true, onPaywall }: Props) {
-  const navigate = useNavigate()
+  const router = useRouter()
   const { market, analysis } = item
   const absEdge = Math.abs(analysis.edge)
 
@@ -37,7 +40,11 @@ export default function EdgeCard({ item, rank, isPro = true, onPaywall }: Props)
 
   return (
     <div
-      onClick={() => navigate(`/market/${slugify(market.question)}`, { state: { item } })}
+      onClick={() => {
+        const s = slugify(market.question)
+        stashMarketNavItem(s, item)
+        router.push(`/market/${s}`)
+      }}
       className="group relative bg-bg-surface border border-bg-border rounded-lg p-5 cursor-pointer
         hover:border-accent/20 hover:bg-bg-elevated/60
         transition-all duration-200 animate-slide-up"
