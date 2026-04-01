@@ -26,12 +26,12 @@ export default function DotaScreen() {
   const matches: DotaProMatch[] = (recentData as { matches?: DotaProMatch[] })?.matches ?? []
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-6">
+    <div className="w-full max-w-5xl mx-auto px-6 py-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="text-lg font-mono font-bold text-text-primary tracking-wider">DOTA 2</h1>
-          <p className="text-[10px] font-mono text-text-muted mt-0.5">Pro matches · Live · OpenDota + STRATZ</p>
+          <p className="text-[10px] font-mono text-text-muted mt-0.5">Pro matches · Live · Steam + OpenDota</p>
         </div>
         <div className="flex items-center gap-2">
           {tab === 'live' && series.length > 0 && (
@@ -93,11 +93,12 @@ export default function DotaScreen() {
                   series={s}
                   onClick={() => {
                     const liveGame = s.games.find(g => g.isLive)
-                    if (liveGame) {
-                      const params = liveGame.serverSteamId
+                    const target = liveGame ?? [...s.games].sort((a, b) => b.gameNumber - a.gameNumber)[0]
+                    if (target) {
+                      const params = liveGame?.serverSteamId
                         ? `?server_steam_id=${liveGame.serverSteamId}`
                         : ''
-                      router.push(`/dota/${liveGame.matchId}${params}`)
+                      router.push(`/dota/${target.matchId}${params}`)
                     }
                   }}
                 />

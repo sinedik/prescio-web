@@ -154,7 +154,7 @@ export default function DotaLiveCard({ series, onClick }: Props) {
             </span>
           )}
           {betweenGames && (
-            <span className="text-[9px] font-mono text-text-muted">ПЕРЕРЫВ</span>
+            <span className="text-[9px] font-mono text-text-muted">BREAK</span>
           )}
           <div className="flex items-baseline gap-1">
             <span

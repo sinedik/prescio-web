@@ -8,6 +8,13 @@ export interface DotaHero {
   icon: string
 }
 
+export interface DotaItem {
+  id: number
+  name: string
+  displayName: string
+  img: string
+}
+
 export interface DotaTeam {
   id: number | null
   name: string
@@ -16,33 +23,27 @@ export interface DotaTeam {
 }
 
 export interface DotaLivePlayer {
-  // Core — available from both STRATZ and Valve Realtime
   steamAccountId: number
   heroId: number
+  heroImg: string | null
   isRadiant: boolean
   name: string | null
   numKills: number
   numDeaths: number
   numAssists: number
   numLastHits: number
+  numDenies: number
   gold: number
+  goldPerMinute: number
+  experiencePerMinute: number
   networth: number
   level: number
   respawnTimer: number
+  ultimateState: number
+  ultimateCooldown: number
+  items: number[]
   posX: number | null
   posY: number | null
-  // STRATZ-only (may be absent when using Valve Realtime fallback)
-  playerSlot?: number
-  numDenies?: number
-  goldPerMinute?: number
-  experiencePerMinute?: number
-  heroDamage?: number
-  towerDamage?: number
-  items?: number[]
-  ultimateState?: number
-  ultimateCooldown?: number
-  position?: string | null
-  baseWinRateValue?: number | null
 }
 
 export interface DotaPickBan {
@@ -77,7 +78,12 @@ export interface DotaLiveMatch {
   radiantLead: number
   spectators: number
   liveWinRates: Array<{ time: number; winRate: number }>
-  buildingState: DotaBuildingState | null
+  // Raw Steam bitmasks for minimap buildings
+  radiantTowerState: number
+  radiantBarracksState: number
+  direTowerState: number
+  direBarracksState: number
+  roshanRespawnTimer: number
   players: DotaLivePlayer[]
   pickBans: DotaPickBan[]
   roshanEvents: DotaRoshanEvent[]

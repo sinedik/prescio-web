@@ -5,7 +5,7 @@ import type {
 } from '../types/index'
 import type {
   DotaSeries, DotaLiveMatch, DotaProMatch,
-  DotaMatchDetail, DotaHero,
+  DotaMatchDetail, DotaHero, DotaItem,
 } from '../types/dota'
 
 async function getAuthHeader(): Promise<Record<string, string>> {
@@ -180,6 +180,8 @@ export const api = {
     apiFetch<DotaMatchDetail>(`/dota/matches/${matchId}`),
   getDotaHeroes: () =>
     apiFetch<{ heroes: DotaHero[] }>('/dota/heroes'),
+  getDotaItems: () =>
+    apiFetch<{ items: DotaItem[] }>('/dota/items'),
 
   // Paddle
   activatePro: (transactionId: string) =>
