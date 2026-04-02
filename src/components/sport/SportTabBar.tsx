@@ -1,9 +1,10 @@
-import { LogoDota2, LogoCS2, LogoLoL, LogoValorant, LogoFootball, LogoBasketball, LogoTennis, LogoMMA } from '../icons/games'
+import { LogoDota2, LogoCS2, LogoLoL, LogoValorant, LogoFootball, LogoBasketball, LogoTennis, LogoBaseball, LogoMMA } from '../icons/games'
 
 export const SPORT_TABS = [
   { value: 'football',   label: 'Football',   icon: <LogoFootball size={13} />   },
   { value: 'basketball', label: 'Basketball', icon: <LogoBasketball size={13} /> },
   { value: 'tennis',     label: 'Tennis',     icon: <LogoTennis size={13} />     },
+  { value: 'baseball',   label: 'Baseball',   icon: <LogoBaseball size={13} />   },
   { value: 'mma',        label: 'MMA',        icon: <LogoMMA size={13} />        },
 ]
 

@@ -7,6 +7,7 @@ import type {
   DotaSeries, DotaLiveMatch, DotaProMatch,
   DotaMatchDetail, DotaHero, DotaItem,
 } from '../types/dota'
+import type { EsportsMatch, EsportsMatchDetail } from '../types'
 
 async function getAuthHeader(): Promise<Record<string, string>> {
   const { data } = await supabase.auth.getSession()
@@ -182,6 +183,12 @@ export const api = {
     apiFetch<{ heroes: DotaHero[] }>('/dota/heroes'),
   getDotaItems: () =>
     apiFetch<{ items: DotaItem[] }>('/dota/items'),
+
+  // Esports (GRID)
+  getEsportsMatches: (game: string, window: string) =>
+    apiFetch<{ matches: EsportsMatch[]; total: number }>(`/esports/matches${toSearch({ game, window })}`),
+  getEsportsMatch: (seriesId: string) =>
+    apiFetch<EsportsMatchDetail>(`/esports/matches/${seriesId}`),
 
   // Paddle
   activatePro: (transactionId: string) =>

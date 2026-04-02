@@ -26,9 +26,10 @@ const PLATFORM_OPTIONS: { value: FilterPlatform; label: string }[] = [
   { value: 'all', label: 'ALL' },
   { value: 'polymarket', label: 'POLY' },
   { value: 'kalshi', label: 'KALSHI' },
+  { value: 'grid', label: 'ESPORTS' },
 ]
 
-const CATEGORY_OPTIONS = ['GEOPOLITICS', 'CRYPTO', 'ELECTIONS', 'US_POLITICS', 'POLICY']
+const CATEGORY_OPTIONS = ['GEOPOLITICS', 'CRYPTO', 'ELECTIONS', 'US_POLITICS', 'POLICY', 'ESPORTS']
 
 const HORIZON_OPTIONS: { value: string; label: string }[] = [
   { value: 'any', label: 'ANY' },
@@ -122,7 +123,10 @@ export default function MarketsPage() {
 
     try {
       if (viewMode === 'markets') {
-        const markets = await getMarkets({ limit: 50 })
+        const params: Record<string, string | number> = { limit: 50 }
+        if (platform !== 'all') params.platform = platform
+        if (platform === 'grid') params.sort = 'resolution'
+        const markets = await getMarkets(params)
         moduleCache.markets = markets
         moduleCache.marketsAt = Date.now()
         setRawMarkets(markets)
@@ -153,9 +157,10 @@ export default function MarketsPage() {
     } finally {
       if (!isPolling) setLoading(false)
     }
-  }, [viewMode, stopPolling])
+  }, [viewMode, platform, stopPolling])
 
   useEffect(() => {
+    moduleCache.marketsAt = 0  // инвалидируем кеш при смене платформы или режима
     load()
     return stopPolling
   }, [load, stopPolling])
@@ -164,7 +169,7 @@ export default function MarketsPage() {
   const filteredMarkets = rawMarkets
     .filter((m) => {
       if (platform !== 'all' && !m.platform?.toLowerCase().includes(platform.toLowerCase())) return false
-      if (categories.length > 0 && !categories.includes(m.category ?? '')) return false
+      if (categories.length > 0 && !categories.includes((m.category ?? '').toUpperCase())) return false
       if (search && !m.question.toLowerCase().includes(search.toLowerCase())) return false
       return true
     })
@@ -200,7 +205,7 @@ export default function MarketsPage() {
   const allEdgeFiltered = edgeItems
     .filter((item) => {
       if (platform !== 'all' && !item.market.platform?.toLowerCase().includes(platform.toLowerCase())) return false
-      if (categories.length > 0 && !categories.includes(item.analysis.category ?? '')) return false
+      if (categories.length > 0 && !categories.includes((item.analysis.category ?? '').toUpperCase())) return false
       if (horizon !== 'any' && item.analysis.horizon?.toUpperCase() !== horizon) return false
       if (highConfOnly && getConfScore(item) < 70) return false
       if (search && !item.market.question.toLowerCase().includes(search.toLowerCase())) return false

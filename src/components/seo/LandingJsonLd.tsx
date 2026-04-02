@@ -20,7 +20,6 @@ export function LandingJsonLd() {
         '@id': `${url}/#organization`,
         name: 'Prescio',
         url,
-        logo: `${url}/og-image.png`,
       },
     ],
   }

@@ -55,6 +55,17 @@ const SOURCE_CONFIG: Record<string, { label: string; bg: string; color: string; 
       </svg>
     ),
   },
+  grid: {
+    label: 'GRID',
+    bg: 'rgba(50, 220, 120, 0.12)',
+    color: '#34d47a',
+    icon: (
+      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 8l4 4-4 4M8 12h8" />
+      </svg>
+    ),
+  },
   user_search: {
     label: 'Mine',
     bg: 'rgba(255, 255, 255, 0.06)',

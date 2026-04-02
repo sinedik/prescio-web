@@ -72,8 +72,9 @@ export default function MarketCard({ market, rank, isPro, onClick, onAnalyze, an
     ELECTIONS: 'text-purple-400 border-purple-400/30 bg-purple-400/5',
     US_POLITICS: 'text-red-400 border-red-400/30 bg-red-400/5',
     POLICY: 'text-cyan-400 border-cyan-400/30 bg-cyan-400/5',
+    ESPORTS: 'text-green-400 border-green-400/30 bg-green-400/5',
   }
-  const catStyle = market.category ? (CATEGORY_COLORS[market.category] ?? 'text-text-muted border-bg-border bg-bg-surface') : ''
+  const catStyle = market.category ? (CATEGORY_COLORS[market.category.toUpperCase()] ?? 'text-text-muted border-bg-border bg-bg-surface') : ''
 
   const ev = market.event
   const showImage = ev?.enrichment_status === 'ready' && !!ev.image_url

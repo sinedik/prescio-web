@@ -5,10 +5,33 @@ import { sportApi } from '../lib/api'
 import { useAuthContext } from '../contexts/AuthContext'
 import { OddsList } from '../components/feed/OddsList'
 import { PaywallBanner } from '../components/paywall/PaywallBanner'
-import type { SportEvent, SubscriptionPlan } from '../types/index'
+import type { SportEvent, SportOdds, SubscriptionPlan } from '../types/index'
 
-export default function SportEventPage() {
-  const { id } = useParams<{ id: string }>()
+function extractH2H(odds?: SportOdds[]): { home: number; away: number; homePrice: number; awayPrice: number } | null {
+  const h2h = odds?.find(o => o.market_type === 'h2h')
+  if (!h2h || h2h.outcomes.length < 2) return null
+  const nonDraw = h2h.outcomes.filter(o => o.name !== 'Draw' && o.name !== 'draw')
+  if (nonDraw.length < 2) return null
+  const raw0 = 100 / nonDraw[0].price
+  const raw1 = 100 / nonDraw[1].price
+  const sum = raw0 + raw1
+  return {
+    home: Math.round((raw0 / sum) * 100),
+    away: Math.round((raw1 / sum) * 100),
+    homePrice: nonDraw[0].price,
+    awayPrice: nonDraw[1].price,
+  }
+}
+
+function abbr(name: string): string {
+  const words = (name ?? '').trim().split(/\s+/).filter(Boolean)
+  if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase()
+  return (name ?? '--').slice(0, 2).toUpperCase()
+}
+
+export default function SportEventPage({ id: idProp, onBack }: { id?: string; onBack?: () => void }) {
+  const params = useParams<{ id: string }>()
+  const id = idProp ?? params?.id ?? ''
   const router = useRouter()
   const { profile } = useAuthContext()
   const plan: SubscriptionPlan = profile?.plan ?? (profile?.is_pro ? 'pro' : 'free')
@@ -20,18 +43,20 @@ export default function SportEventPage() {
   )
   const event = data as SportEvent | null
 
-  const isLive = event?.status === 'live'
+  const isLive     = event?.status === 'live'
   const isFinished = event?.status === 'finished'
-  const hasScore = event?.home_score != null && event?.away_score != null
+  const hasScore   = event?.home_score != null && event?.away_score != null
+
+  const h2h = extractH2H(event?.sport_odds)
 
   if (loading && !event) {
     return (
-      <div className="max-w-2xl mx-auto px-6 py-6">
-        <div className="h-4 w-24 bg-bg-elevated rounded animate-pulse mb-6" />
-        <div className="bg-bg-surface border border-bg-border rounded-xl p-6 animate-pulse space-y-4">
-          <div className="h-3 w-20 bg-bg-elevated rounded" />
-          <div className="h-6 w-3/4 bg-bg-elevated rounded" />
-          <div className="h-6 w-1/2 bg-bg-elevated rounded" />
+      <div className="flex flex-col gap-4 animate-pulse">
+        <div className="h-3 w-32 bg-bg-elevated rounded" />
+        <div className="bg-bg-surface border border-bg-border rounded-xl p-6 space-y-4">
+          <div className="h-3 w-24 bg-bg-elevated rounded" />
+          <div className="h-8 w-3/4 bg-bg-elevated rounded" />
+          <div className="h-8 w-1/2 bg-bg-elevated rounded" />
         </div>
       </div>
     )
@@ -39,10 +64,10 @@ export default function SportEventPage() {
 
   if (!event) {
     return (
-      <div className="max-w-2xl mx-auto px-6 py-16 text-center">
+      <div className="flex flex-col items-center justify-center py-24 text-center">
         <p className="text-sm font-mono text-text-muted mb-4">Event not found</p>
         <button
-          onClick={() => router.back()}
+          onClick={() => onBack ? onBack() : router.back()}
           className="text-xs font-mono text-accent hover:text-accent/80 transition-colors"
         >
           ← Go back
@@ -52,11 +77,11 @@ export default function SportEventPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-6">
+    <div className="flex flex-col gap-4">
       {/* Back */}
       <button
-        onClick={() => router.back()}
-        className="flex items-center gap-1.5 text-xs font-mono text-text-muted hover:text-text-secondary transition-colors mb-6"
+        onClick={() => onBack ? onBack() : router.back()}
+        className="flex items-center gap-1.5 text-xs font-mono text-text-muted hover:text-text-secondary transition-colors self-start"
       >
         <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M19 12H5M12 5l-7 7 7 7" />
@@ -64,65 +89,120 @@ export default function SportEventPage() {
         Back
       </button>
 
-      <div className="bg-bg-surface border border-bg-border rounded-xl overflow-hidden">
+      {/* Match card */}
+      <div className="bg-bg-surface border border-bg-border rounded-xl overflow-hidden"
+        style={isLive ? { borderColor: 'rgba(255,50,50,0.25)' } : undefined}>
+
         {/* Status bar */}
-        <div className={`px-5 py-2.5 flex items-center gap-2 border-b border-bg-border ${isLive ? 'bg-accent/5' : ''}`}>
+        <div className={`px-5 py-2.5 flex items-center gap-2 border-b border-bg-border ${isLive ? 'bg-red-500/[0.04]' : ''}`}>
           {isLive && (
-            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-accent text-bg-base">LIVE</span>
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider"
+                style={{ background: 'rgba(255,50,50,0.12)', color: '#ff5252' }}>
+                LIVE
+              </span>
+            </div>
           )}
           {isFinished && (
-            <span className="text-[9px] font-mono text-text-muted uppercase">Finished</span>
+            <span className="text-[9px] font-mono text-text-muted uppercase tracking-widest px-1.5 py-0.5 rounded border border-bg-border">
+              Finished
+            </span>
+          )}
+          {!isLive && !isFinished && (
+            <span className="text-[9px] font-mono text-text-muted uppercase tracking-widest">
+              Upcoming
+            </span>
           )}
           {event.league && (
-            <span className="text-[10px] font-mono text-text-muted">{event.league}</span>
+            <span className="text-[10px] font-mono text-text-muted/70 ml-1">{event.league}</span>
           )}
-          <span className="text-[10px] font-mono text-text-muted ml-auto">
+          <span className="text-[10px] font-mono text-text-muted/50 ml-auto">
             {new Date(event.starts_at).toLocaleDateString('en-US', {
               month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
             })}
           </span>
         </div>
 
-        {/* Teams + score */}
-        <div className="px-5 py-5">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex flex-col gap-2.5 flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-base font-medium text-text-primary truncate">{event.home_team}</span>
-                {hasScore && (
-                  <span className={`text-2xl font-mono font-bold shrink-0 ${isLive ? 'text-accent' : 'text-text-primary'}`}>
+        {/* Scoreboard */}
+        <div className="px-6 py-6">
+          <div className="grid gap-4" style={{ gridTemplateColumns: '1fr auto 1fr' }}>
+            {/* Home */}
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-14 h-14 rounded-xl flex items-center justify-center text-sm font-bold bg-bg-elevated border border-bg-border text-text-muted">
+                {abbr(event.home_team)}
+              </div>
+              <p className="text-sm font-semibold text-text-primary text-center leading-tight">{event.home_team}</p>
+              {h2h && (
+                <div className="flex flex-col items-center gap-0.5">
+                  <span className="text-[11px] font-mono text-text-muted/50">Win prob</span>
+                  <span className="text-base font-mono font-bold"
+                    style={{ color: h2h.home >= h2h.away ? 'var(--accent)' : undefined }}>
+                    {h2h.home}%
+                  </span>
+                  <span className="text-[10px] font-mono text-text-muted/50">
+                    {h2h.homePrice.toFixed(2)}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Center score / vs */}
+            <div className="flex flex-col items-center justify-center gap-2 px-4">
+              {hasScore ? (
+                <div className="flex items-center gap-3">
+                  <span className={`text-4xl font-mono font-bold ${isLive ? 'text-red-400' : 'text-text-primary'}`}>
                     {event.home_score}
                   </span>
-                )}
-              </div>
-              <div className="h-px bg-bg-border" />
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-base font-medium text-text-primary truncate">{event.away_team}</span>
-                {hasScore && (
-                  <span className={`text-2xl font-mono font-bold shrink-0 ${isLive ? 'text-accent' : 'text-text-primary'}`}>
+                  <span className="text-xl font-mono text-text-muted/30">:</span>
+                  <span className={`text-4xl font-mono font-bold ${isLive ? 'text-red-400' : 'text-text-primary'}`}>
                     {event.away_score}
                   </span>
-                )}
+                </div>
+              ) : (
+                <span className="text-sm font-mono text-text-muted/40 tracking-widest">VS</span>
+              )}
+              {h2h && (
+                <div className="w-[120px] h-[4px] rounded-full overflow-hidden bg-bg-elevated mt-1">
+                  <div className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${h2h.home}%`, background: 'var(--accent)' }} />
+                </div>
+              )}
+            </div>
+
+            {/* Away */}
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-14 h-14 rounded-xl flex items-center justify-center text-sm font-bold bg-bg-elevated border border-bg-border text-text-muted">
+                {abbr(event.away_team)}
               </div>
+              <p className="text-sm font-semibold text-text-primary text-center leading-tight">{event.away_team}</p>
+              {h2h && (
+                <div className="flex flex-col items-center gap-0.5">
+                  <span className="text-[11px] font-mono text-text-muted/50">Win prob</span>
+                  <span className="text-base font-mono font-bold"
+                    style={{ color: h2h.away > h2h.home ? 'var(--accent)' : undefined }}>
+                    {h2h.away}%
+                  </span>
+                  <span className="text-[10px] font-mono text-text-muted/50">
+                    {h2h.awayPrice.toFixed(2)}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Odds */}
-        {(event.sport_odds?.length ?? 0) > 0 && (
-          <div className="px-5 pb-5 border-t border-bg-border pt-4">
-            <p className="text-[10px] font-mono text-text-muted tracking-widest mb-3">ODDS & AI VALUE</p>
+        {/* Odds & AI Value */}
+        <div className="border-t border-bg-border px-5 py-4">
+          <p className="text-[10px] font-mono text-text-muted/50 tracking-widest mb-3">ODDS &amp; AI VALUE</p>
+          {(event.sport_odds?.length ?? 0) > 0 ? (
             <PaywallBanner requiredPlan="pro" currentPlan={plan} feature="Bookmaker odds and AI value analysis">
               <OddsList odds={event.sport_odds!} plan={plan} />
             </PaywallBanner>
-          </div>
-        )}
-
-        {(event.sport_odds?.length ?? 0) === 0 && (
-          <div className="px-5 pb-5 border-t border-bg-border pt-4">
-            <p className="text-[10px] font-mono text-text-muted">No odds available yet</p>
-          </div>
-        )}
+          ) : (
+            <p className="text-[11px] font-mono text-text-muted/50">No odds available yet</p>
+          )}
+        </div>
       </div>
     </div>
   )

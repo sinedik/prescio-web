@@ -94,7 +94,46 @@ export interface FeedResponse {
 }
 
 export type SortField = 'edge' | 'volume' | 'confidence' | 'resolution'
-export type FilterPlatform = 'all' | 'polymarket' | 'metaculus' | 'kalshi'
+export type FilterPlatform = 'all' | 'polymarket' | 'metaculus' | 'kalshi' | 'grid'
+
+// ---- Esports (GRID) ----
+export interface EsportsTeam { id?: string; name: string; score?: number | null }
+export interface EsportsGame {
+  seq: number
+  map: string | null
+  started: boolean
+  finished: boolean
+  teamA: { name?: string; won?: boolean; score?: number } | null
+  teamB: { name?: string; won?: boolean; score?: number } | null
+}
+export interface EsportsMatch {
+  id: string
+  marketId: string
+  teamA: EsportsTeam
+  teamB: EsportsTeam
+  tournament: string
+  format: string
+  startsAt: string
+  yesPrice: number
+  noPrice: number
+  status: 'upcoming' | 'live' | 'finished'
+  games: EsportsGame[]
+  steamData: { seriesId: number; games: unknown[] } | null
+}
+
+export interface EsportsMarket {
+  id: string
+  type: string
+  yesPrice: number
+  noPrice: number
+  question?: string
+}
+
+export interface EsportsMatchDetail extends EsportsMatch {
+  subcategory: string
+  markets: EsportsMarket[]
+  liveState: { startedAt?: string; duration?: string; updatedAt?: string } | null
+}
 
 // ---- Portfolio types ----
 

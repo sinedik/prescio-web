@@ -40,11 +40,11 @@ const STATUS_CONFIG: Record<ScanStatus, { dotClass: string; textClass: string; l
   offline:    { dotClass: 'bg-danger animate-pulse',          textClass: 'text-danger',           labelKey: 'status.offline' },
 }
 
-const NAV_KEYS = [
-  { to: '/feed',    key: 'nav.feed'    },
-  { to: '/markets', key: 'nav.markets' },
-  { to: '/sport',   key: 'nav.sport'   },
-  { to: '/dota',    key: 'nav.esports' },
+const NAV_BASES = [
+  { to: '/feed',       key: 'nav.feed'    },
+  { to: '/markets',    key: 'nav.markets' },
+  { to: '/sport',      key: 'nav.sport'   },
+  { to: '/cybersport', key: 'nav.esports' },
 ] as const
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -104,10 +104,43 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [alertsOpen])
 
+  const [lastSportPath, setLastSportPath] = useState('/sport/football')
+  const [lastCybersportPath, setLastCybersportPath] = useState('/cybersport/cs2')
+
+  useEffect(() => {
+    setLastSportPath(localStorage.getItem('lastSportPath') ?? '/sport/football')
+    setLastCybersportPath(localStorage.getItem('lastCybersportPath') ?? '/cybersport/cs2')
+  }, [])
+
+  useEffect(() => {
+    const path = pathname ?? ''
+    if (path.startsWith('/sport/')) {
+      setLastSportPath(path)
+      localStorage.setItem('lastSportPath', path)
+    } else if (path.startsWith('/cybersport/')) {
+      setLastCybersportPath(path)
+      localStorage.setItem('lastCybersportPath', path)
+    }
+  }, [pathname])
+
   const email = user?.email ?? ''
   const initials = email.slice(0, 2).toUpperCase()
   const plan = profile?.plan ?? (profile?.is_pro ? 'pro' : 'free')
   const { dotClass, textClass, labelKey } = STATUS_CONFIG[scanStatus]
+
+  const LIVE_ACCENTS: Record<string, string> = {
+    '/sport/football':   '232 192 50',
+    '/sport/basketball': '230 100 20',
+    '/sport/tennis':     '77 159 255',
+    '/sport/mma':        '224 32 32',
+    '/cybersport/dota2': '192 57 43',
+    '/cybersport/cs2':   '230 100 20',
+    '/cybersport':       '230 100 20',
+    '/sport':            '232 192 50',
+  }
+  const liveAccentRgb = Object.entries(LIVE_ACCENTS).find(([prefix]) =>
+    (pathname ?? '').startsWith(prefix)
+  )?.[1] ?? null
 
   return (
     <div className="min-h-screen bg-bg-base flex flex-col">
@@ -118,6 +151,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           height: '52px',
           background: 'rgb(var(--bg-surface))',
           borderColor: 'rgb(var(--bg-border))',
+          ...(liveAccentRgb ? { '--accent': liveAccentRgb } as React.CSSProperties : {}),
         }}
       >
         <div className="h-full flex items-center px-5 gap-0">
@@ -129,13 +163,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
           {/* Nav — centred absolutely so right panel doesn't shift it */}
           <nav className="absolute left-1/2 -translate-x-1/2 flex items-center gap-0.5">
-            {NAV_KEYS.map(({ to, key }) => {
+            {NAV_BASES.map(({ to, key }) => {
               const path = pathname ?? ''
               const isActive = path === to || path.startsWith(`${to}/`)
+              const href = to === '/sport' ? lastSportPath : to === '/cybersport' ? lastCybersportPath : to
               return (
                 <Link
                   key={to}
-                  href={to}
+                  href={href}
                   className={
                     `px-3 py-1.5 text-[11px] font-mono tracking-widest rounded-md transition-colors ${
                       isActive
@@ -344,9 +379,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {/* Main */}
       <main className="flex-1 overflow-auto">
         {children}
+        {!pathname.startsWith('/sport') && !pathname.startsWith('/cybersport') && (
+          <AppFooter />
+        )}
       </main>
-
-      <AppFooter />
 
       <SearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} plan={planForSearch} />
     </div>

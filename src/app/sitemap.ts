@@ -45,11 +45,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date()
 
   const staticEntries: MetadataRoute.Sitemap = [
-    { url: base,               lastModified: now, changeFrequency: 'weekly',  priority: 1 },
-    { url: `${base}/markets`,  lastModified: now, changeFrequency: 'hourly',  priority: 0.9 },
-    { url: `${base}/pricing`,  lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
-    { url: `${base}/privacy`,  lastModified: now, changeFrequency: 'monthly', priority: 0.3 },
-    { url: `${base}/terms`,    lastModified: now, changeFrequency: 'monthly', priority: 0.3 },
+    { url: base,                              lastModified: now, changeFrequency: 'weekly',  priority: 1 },
+    { url: `${base}/markets`,                 lastModified: now, changeFrequency: 'hourly',  priority: 0.9 },
+    { url: `${base}/sport/football`,          lastModified: now, changeFrequency: 'hourly',  priority: 0.85 },
+    { url: `${base}/sport/basketball`,        lastModified: now, changeFrequency: 'hourly',  priority: 0.85 },
+    { url: `${base}/sport/tennis`,            lastModified: now, changeFrequency: 'hourly',  priority: 0.8 },
+    { url: `${base}/sport/mma`,               lastModified: now, changeFrequency: 'hourly',  priority: 0.8 },
+    { url: `${base}/cybersport/cs2`,          lastModified: now, changeFrequency: 'hourly',  priority: 0.85 },
+    { url: `${base}/cybersport/dota2`,        lastModified: now, changeFrequency: 'hourly',  priority: 0.85 },
+    { url: `${base}/pricing`,                 lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${base}/privacy`,                 lastModified: now, changeFrequency: 'monthly', priority: 0.3 },
+    { url: `${base}/terms`,                   lastModified: now, changeFrequency: 'monthly', priority: 0.3 },
   ]
 
   // Unified events (prediction markets)

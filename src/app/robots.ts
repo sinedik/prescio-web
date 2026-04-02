@@ -28,8 +28,6 @@ export default function robots(): MetadataRoute.Robots {
           '/profile',
           '/watchlist',
           '/feed',
-          '/dota',
-          '/sport',
         ],
       },
     ],

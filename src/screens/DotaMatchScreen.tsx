@@ -590,9 +590,10 @@ function FinishedView({ matchId }: { matchId: string }) {
 
 interface Props {
   matchId: string
+  onBack?: () => void
 }
 
-export default function DotaMatchScreen({ matchId }: Props) {
+export default function DotaMatchScreen({ matchId, onBack }: Props) {
   usePageTitle(`Match ${matchId}`)
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -604,13 +605,13 @@ export default function DotaMatchScreen({ matchId }: Props) {
     <div className="max-w-3xl mx-auto px-4 py-6 text-text-primary">
       {/* Back */}
       <button
-        onClick={() => router.push('/sport')}
+        onClick={() => onBack ? onBack() : router.back()}
         className="flex items-center gap-1.5 text-[11px] font-mono mb-5 text-text-muted hover:text-text-secondary transition-colors"
       >
         <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M19 12H5M12 5l-7 7 7 7" />
         </svg>
-        BACK TO SPORT
+        BACK
       </button>
 
       {/* Tab: Live / Stats */}
