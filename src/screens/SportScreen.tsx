@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useEffect, useMemo } from 'react'
+import { flushSync } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { usePolling } from '../hooks/usePolling'
 import { usePageTitle } from '../hooks/usePageTitle'
@@ -86,8 +87,8 @@ function paginateGroups(groups: LeagueGroup[]): LeagueGroup[][] {
   return pages
 }
 
-function Pagination({ current, total, onChange }: {
-  current: number; total: number; onChange: (p: number) => void
+function Pagination({ current, total, onChange, accent }: {
+  current: number; total: number; onChange: (p: number) => void; accent?: string
 }) {
   if (total <= 1) return null
   const pages: (number | '...')[] = []
@@ -100,6 +101,7 @@ function Pagination({ current, total, onChange }: {
     if (current < total - 2) pages.push('...')
     pages.push(total)
   }
+  const a = accent ?? 'rgba(0,200,150,1)'
   return (
     <div className="flex items-center justify-center gap-1 pt-5 pb-2">
       <button onClick={() => onChange(current - 1)} disabled={current === 1}
@@ -113,7 +115,7 @@ function Pagination({ current, total, onChange }: {
           <button key={p} onClick={() => onChange(p as number)}
             className="w-7 h-7 flex items-center justify-center rounded text-[11px] font-mono transition-all"
             style={p === current
-              ? { background: 'rgba(0,200,150,0.1)', color: 'var(--accent)', border: '1px solid rgba(0,200,150,0.25)' }
+              ? { background: `${a}18`, color: a, border: `1px solid ${a}44` }
               : { color: 'rgb(var(--text-muted))', border: '1px solid transparent' }
             }>{p}</button>
         )
@@ -381,7 +383,9 @@ export function SportScreen({ initialSport, eventId }: { initialSport?: Sport; e
       <main className="flex-1 min-w-0 px-6 pb-5 pt-0">
 
         {/* Page header */}
-        <div className="flex items-center gap-3 mb-5">
+        <div className="flex items-center gap-3 mb-5"
+          style={{ position: 'sticky', top: 200, zIndex: 15, background: 'rgba(8,8,8,0.75)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', marginLeft: -24, marginRight: -24, paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12 }}
+        >
           <h1 className="text-xl font-bold tracking-wider uppercase text-text-primary" style={{ fontFamily: 'var(--font-sans)' }}>
             {sportLabel}
           </h1>
@@ -464,7 +468,17 @@ export function SportScreen({ initialSport, eventId }: { initialSport?: Sport; e
                 <Pagination
                   current={currentPage}
                   total={totalPages}
-                  onChange={p => { setCurrentPage(p); document.getElementById('live-content')?.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                  accent={accent}
+                  onChange={p => {
+                    flushSync(() => setCurrentPage(p))
+                    requestAnimationFrame(() => {
+                      const el = document.getElementById('live-content')
+                      if (!el) return
+                      if (el.scrollTop === 0 && el.scrollHeight > el.clientHeight)
+                        el.scrollTop = Math.min(80, el.scrollHeight - el.clientHeight)
+                      el.scrollTo({ top: 0, behavior: 'smooth' })
+                    })
+                  }}
                 />
               </>
             )}

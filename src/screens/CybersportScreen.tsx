@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
+import { flushSync } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { usePolling } from '../hooks/usePolling'
 import { usePageTitle } from '../hooks/usePageTitle'
@@ -50,7 +51,7 @@ const TIME_LABELS: Record<TimeWin, string> = {
 }
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
-const PAGE_SIZE = 40
+const PAGE_SIZE = 20
 
 function paginateGroups(
   groups: { tournament: string; matches: EsportsMatch[] }[],
@@ -74,47 +75,40 @@ function totalMatches(groups: { tournament: string; matches: EsportsMatch[] }[])
   return groups.reduce((s, g) => s + g.matches.length, 0)
 }
 
-function getPaginationRange(page: number, total: number): (number | '...')[] {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
-  const result: (number | '...')[] = [1]
-  if (page > 3) result.push('...')
-  for (let p = Math.max(2, page - 1); p <= Math.min(total - 1, page + 1); p++) result.push(p)
-  if (page < total - 2) result.push('...')
-  result.push(total)
-  return result
-}
-
-function Pagination({ page, total, pageSize, onChange }: {
-  page: number; total: number; pageSize: number; onChange: (p: number) => void
+function Pagination({ current, total, onChange, accent }: {
+  current: number; total: number; onChange: (p: number) => void; accent: string
 }) {
-  const pages = Math.ceil(total / pageSize)
-  if (pages <= 1) return null
-  const range = getPaginationRange(page, pages)
+  if (total <= 1) return null
+  const pages: (number | '...')[] = []
+  if (total <= 7) {
+    for (let i = 1; i <= total; i++) pages.push(i)
+  } else {
+    pages.push(1)
+    if (current > 3) pages.push('...')
+    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) pages.push(i)
+    if (current < total - 2) pages.push('...')
+    pages.push(total)
+  }
   return (
-    <div className="flex items-center justify-center gap-1 pt-6 pb-2">
-      <button
-        disabled={page <= 1}
-        onClick={() => onChange(page - 1)}
-        className="px-3 py-1.5 text-[11px] font-mono rounded border border-bg-border text-text-muted hover:text-text-primary disabled:opacity-30 transition-colors"
-      >←</button>
-      {range.map((p, i) =>
+    <div className="flex items-center justify-center gap-1 pt-5 pb-2">
+      <button onClick={() => onChange(current - 1)} disabled={current === 1}
+        className="w-7 h-7 flex items-center justify-center rounded text-text-muted hover:text-text-primary transition-colors disabled:opacity-25 disabled:cursor-not-allowed">
+        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      {pages.map((p, i) =>
         p === '...'
-          ? <span key={`dots-${i}`} className="px-2 text-[11px] font-mono text-text-muted/40">…</span>
-          : <button
-              key={p}
-              onClick={() => onChange(p)}
-              className={`px-3 py-1.5 text-[11px] font-mono rounded border transition-colors ${
-                p === page
-                  ? 'border-text-muted/40 text-text-primary bg-bg-elevated'
-                  : 'border-bg-border text-text-muted hover:text-text-secondary'
-              }`}
-            >{p}</button>
+          ? <span key={`e${i}`} className="w-7 h-7 flex items-center justify-center text-[10px] font-mono text-text-muted/40">···</span>
+          : <button key={p} onClick={() => onChange(p as number)}
+              className="w-7 h-7 flex items-center justify-center rounded text-[11px] font-mono transition-all"
+              style={p === current
+                ? { background: `${accent}18`, color: accent, border: `1px solid ${accent}44` }
+                : { color: 'rgb(var(--text-muted))', border: '1px solid transparent' }
+              }>{p}</button>
       )}
-      <button
-        disabled={page >= pages}
-        onClick={() => onChange(page + 1)}
-        className="px-3 py-1.5 text-[11px] font-mono rounded border border-bg-border text-text-muted hover:text-text-primary disabled:opacity-30 transition-colors"
-      >→</button>
+      <button onClick={() => onChange(current + 1)} disabled={current === total}
+        className="w-7 h-7 flex items-center justify-center rounded text-text-muted hover:text-text-primary transition-colors disabled:opacity-25 disabled:cursor-not-allowed">
+        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
     </div>
   )
 }
@@ -173,7 +167,7 @@ function EsportsRow({ match, accent, onClick }: {
   return (
     <div
       onClick={onClick}
-      className="rounded-lg px-4 py-3 flex items-center gap-3 cursor-pointer transition-all"
+      className="rounded-lg px-3.5 py-2 flex items-center gap-3 cursor-pointer transition-all"
       style={{
         background: 'rgba(8,8,8,0.55)',
         backdropFilter: 'blur(2px)',
@@ -281,7 +275,9 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId }: { ini
       <main className="flex-1 min-w-0 px-6 pb-5 pt-0">
         {/* Time filter bar */}
         {!matchId && (
-          <div className="flex items-center gap-1.5 mb-4 pt-3">
+          <div className="flex items-center gap-1.5 mb-4 pt-3 px-0"
+            style={{ position: 'sticky', top: 200, zIndex: 15, background: 'rgba(8,8,8,0.75)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', marginLeft: -24, marginRight: -24, paddingLeft: 24, paddingRight: 24 }}
+          >
             {(['live', '1h', '3h', '12h', 'all'] as TimeWin[]).map(tw => (
               <button
                 key={tw}
@@ -343,11 +339,11 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId }: { ini
 
             {!showSkeleton && pageGroups.length > 0 && (
               <>
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-1.5">
                   {pageGroups.map(({ tournament, matches }, idx) => (
                     <div key={tournament}>
                       <TournamentDivider name={tournament} count={matches.length} first={idx === 0} />
-                      <div className="flex flex-col gap-2">
+                      <div className="flex flex-col gap-1">
                         {matches.map(m => (
                           <EsportsRow
                             key={m.id}
@@ -361,10 +357,19 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId }: { ini
                   ))}
                 </div>
                 <Pagination
-                  page={currentPage}
-                  total={total}
-                  pageSize={PAGE_SIZE}
-                  onChange={p => { setCurrentPage(p); document.getElementById('live-content')?.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                  current={currentPage}
+                  total={Math.ceil(total / PAGE_SIZE)}
+                  accent={accent}
+                  onChange={p => {
+                    flushSync(() => setCurrentPage(p))
+                    requestAnimationFrame(() => {
+                      const el = document.getElementById('live-content')
+                      if (!el) return
+                      if (el.scrollTop === 0 && el.scrollHeight > el.clientHeight)
+                        el.scrollTop = Math.min(80, el.scrollHeight - el.clientHeight)
+                      el.scrollTo({ top: 0, behavior: 'smooth' })
+                    })
+                  }}
                 />
               </>
             )}
