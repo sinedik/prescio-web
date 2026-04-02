@@ -157,7 +157,7 @@ function LiveLayoutInner({ children }: { children: React.ReactNode }) {
         <div
           id="live-content"
           className="flex-1 min-w-0"
-          style={{ opacity: isPending ? 0.45 : 1, transition: 'opacity 0.25s ease', position: 'relative', overflowY: 'auto', backdropFilter: 'blur(6px)', WebkitBackdropзаFilter: 'blur(6px)', background: 'rgba(8,8,8,0.35)' }}
+          style={{ opacity: isPending ? 0.45 : 1, transition: 'opacity 0.25s ease', position: 'relative', overflowY: 'auto', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)', background: 'rgba(8,8,8,0.35)' }}
         >
           {/* Progress bar */}
           {isPending && (
