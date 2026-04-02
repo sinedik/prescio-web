@@ -19,10 +19,10 @@ function getDiscipline(pathname: string): Discipline {
 
 // ─── Nav items ────────────────────────────────────────────────────────────────
 const SPORT_ITEMS = [
-  { href: '/sport/football',   label: 'Football',   icon: <LogoFootball size={16} />,   d: 'football'   as Discipline },
-  { href: '/sport/basketball', label: 'Basketball', icon: <LogoBasketball size={16} />, d: 'basketball' as Discipline },
-  { href: '/sport/tennis',     label: 'Tennis',     icon: <LogoTennis size={16} />,     d: 'tennis'     as Discipline },
-  { href: '/sport/mma',        label: 'MMA',        icon: <LogoMMA size={16} />,        d: 'mma'        as Discipline },
+  { href: '/sport/football',   label: 'Football',   icon: <LogoFootball size={16} />,   d: 'football'   as Discipline, disabled: false },
+  { href: '/sport/basketball', label: 'Basketball', icon: <LogoBasketball size={16} />, d: 'basketball' as Discipline, disabled: false },
+  { href: '/sport/tennis',     label: 'Tennis',     icon: <LogoTennis size={16} />,     d: 'tennis'     as Discipline, disabled: false },
+  { href: '/sport/mma',        label: 'MMA',        icon: <LogoMMA size={16} />,        d: 'mma'        as Discipline, disabled: false },
 ]
 
 const GAME_ITEMS = [
