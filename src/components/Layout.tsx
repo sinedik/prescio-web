@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, useTransition } from 'react'
 import { api } from '../lib/api'
 import { useAuthContext } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
@@ -61,6 +61,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const alertsRef = useRef<HTMLDivElement>(null)
   const { user, profile } = useAuthContext()
   const planForSearch = profile?.plan ?? (profile?.is_pro ? 'pro' : 'free')
+  const [isNavPending, startNavTransition] = useTransition()
 
   const checkHealth = useCallback(async () => {
     try {
@@ -131,7 +132,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const LIVE_ACCENTS: Record<string, string> = {
     '/sport/football':   '232 192 50',
     '/sport/basketball': '230 100 20',
-    '/sport/tennis':     '77 159 255',
+    '/sport/tennis':     '200 230 60',
     '/sport/mma':        '224 32 32',
     '/cybersport/dota2': '192 57 43',
     '/cybersport/cs2':   '230 100 20',
@@ -147,7 +148,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {/* ── Header ─────────────────────────────────────────── */}
       <header
         className="shrink-0 border-b"
-        style={{
+        style={{ position: 'relative',
           height: '52px',
           background: 'rgb(var(--bg-surface))',
           borderColor: 'rgb(var(--bg-border))',
@@ -167,6 +168,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               const path = pathname ?? ''
               const isActive = path === to || path.startsWith(`${to}/`)
               const href = to === '/sport' ? lastSportPath : to === '/cybersport' ? lastCybersportPath : to
+              const isSectionSwitch = (to === '/sport' && path.startsWith('/cybersport')) || (to === '/cybersport' && path.startsWith('/sport'))
+              if (isSectionSwitch) {
+                return (
+                  <button
+                    key={to}
+                    onClick={() => startNavTransition(() => router.push(href))}
+                    className={`px-3 py-1.5 text-[11px] font-mono tracking-widest rounded-md transition-colors text-text-muted font-medium hover:text-text-secondary`}
+                  >
+                    {tr(key)}
+                  </button>
+                )
+              }
               return (
                 <Link
                   key={to}
@@ -374,6 +387,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </button>
           </div>
         </div>
+        {/* Nav transition progress bar */}
+        {isNavPending && (
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, overflow: 'hidden' }}>
+            <div style={{
+              height: '100%',
+              width: '45%',
+              background: `linear-gradient(90deg, transparent, rgb(${liveAccentRgb ?? '232 192 50'}), transparent)`,
+              animation: 'nav-progress 1.1s ease infinite',
+            }} />
+          </div>
+        )}
       </header>
 
       {/* Main */}

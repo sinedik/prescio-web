@@ -10,7 +10,7 @@ export type Discipline =
 export const ACCENT: Record<Discipline, string> = {
   football:   '#e8c032',
   basketball: '#e66414',
-  tennis:     '#4d9fff',
+  tennis:     '#C8E63C',
   mma:        '#e02020',
   cs2:        '#e66414',
   dota2:      '#c0392b',

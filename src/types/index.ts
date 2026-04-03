@@ -44,7 +44,9 @@ export interface SportEvent {
   status: 'scheduled' | 'live' | 'finished' | 'canceled'
   home_score?: number
   away_score?: number
+  raw_data?: Record<string, unknown> | null
   sport_odds?: SportOdds[]
+  linked_prediction_markets?: { id: string; source_id: string; source_name: string; title: string }[]
 }
 
 export interface SportOdds {
@@ -61,6 +63,79 @@ export interface OddsOutcome {
   name: string
   price: number
   point?: number
+}
+
+export interface SportPrediction {
+  id: string
+  fixture_id: number
+  sport_event_id: string
+  winner_name: string | null
+  winner_comment: string | null
+  advice: string | null
+  home_pct: number
+  draw_pct: number
+  away_pct: number
+  comparison: {
+    form:                { home: string; away: string }
+    att:                 { home: string; away: string }
+    def:                 { home: string; away: string }
+    poisson_distribution:{ home: string; away: string }
+    h2h:                 { home: string; away: string }
+    goals:               { home: string; away: string }
+    total:               { home: string; away: string }
+  } | null
+  home_last5: {
+    played: number; form: string; att: string; def: string
+    goals: { for: { total: number; average: string }; against: { total: number; average: string } }
+  } | null
+  away_last5: {
+    played: number; form: string; att: string; def: string
+    goals: { for: { total: number; average: string }; against: { total: number; average: string } }
+  } | null
+  h2h: Array<{
+    fixture: { id: number; date: string }
+    teams: { home: { id: number; name: string; logo: string }; away: { id: number; name: string; logo: string } }
+    goals: { home: number | null; away: number | null }
+    score: { fulltime: { home: number | null; away: number | null } }
+  }> | null
+  fetched_at: string
+}
+
+export interface SportStanding {
+  id: string
+  team_external_id: number
+  league_id: number
+  season: number
+  rank: number
+  points: number
+  wins: number
+  draws: number
+  losses: number
+  goals_for: number
+  goals_against: number
+  goal_diff: number
+  form: string
+  played: number
+  description: string | null
+  team_name: string
+  team_logo: string | null
+  home_wins: number; home_draws: number; home_losses: number
+  away_wins: number; away_draws: number; away_losses: number
+}
+
+export interface SportInjury {
+  id: string
+  league_id: number
+  season: number
+  player_id: number
+  player_name: string | null
+  player_photo: string | null
+  team_external_id: number | null
+  team_name: string | null
+  team_logo: string | null
+  reason: string | null
+  type: string | null
+  fixture_date: string | null
 }
 
 export interface AiValue {

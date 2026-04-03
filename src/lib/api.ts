@@ -2,6 +2,7 @@ import { supabase } from './supabase'
 import type {
   UnifiedEvent, SportEvent, UserProfile,
   UserInterest, UserSearch, FeedFilters,
+  SportPrediction, SportStanding, SportInjury,
 } from '../types/index'
 import type {
   DotaSeries, DotaLiveMatch, DotaProMatch,
@@ -83,7 +84,15 @@ export const eventsApi = {
 export const sportApi = {
   getEvents: (params: { subcategory?: string; status?: string; limit?: number; offset?: number }) =>
     apiFetch<{ events: SportEvent[] }>(`/sport/events${toSearch(params)}`),
-  getEvent: (id: string) => apiFetch<SportEvent>(`/sport/events/${id}`),
+  getEvent:       (id: string) => apiFetch<SportEvent>(`/sport/events/${id}`),
+  getForm:        (id: string) => apiFetch<{
+    home_form: { result: 'W'|'D'|'L'; home: string; away: string; score: string; date: string }[] | null
+    away_form: { result: 'W'|'D'|'L'; home: string; away: string; score: string; date: string }[] | null
+  }>(`/sport/events/${id}/form`),
+  getPredictions: (id: string) => apiFetch<SportPrediction | null>(`/sport/events/${id}/predictions`),
+  getStandings:   (leagueId: number) => apiFetch<SportStanding[]>(`/sport/standings/${leagueId}`),
+  getInjuries:    (params: { leagueId?: number; teamId?: number }) =>
+    apiFetch<SportInjury[]>(`/sport/injuries${toSearch(params)}`),
 }
 
 export const searchApi = {

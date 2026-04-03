@@ -108,8 +108,8 @@ function BasketballHero({ liveCount, totalCount }: { liveCount: number; totalCou
 function TennisHero({ liveCount, totalCount }: { liveCount: number; totalCount: number }) {
   return (
     <div style={{ position:'relative', width:'100%', height:200, overflow:'hidden', borderRadius:'12px 12px 0 0' }}>
-      <div style={{ position:'absolute', top:-30, left:'15%', width:180, height:250, background:'conic-gradient(from 78deg at 50% 0%,transparent,rgba(160,200,255,0.07) 14deg,rgba(140,190,255,0.11) 22deg,rgba(160,200,255,0.07) 30deg,transparent 44deg)', zIndex:1 }} />
-      <div style={{ position:'absolute', top:-30, right:'10%', width:180, height:250, background:'conic-gradient(from 70deg at 50% 0%,transparent,rgba(160,200,255,0.06) 14deg,rgba(140,190,255,0.09) 22deg,rgba(160,200,255,0.06) 30deg,transparent 44deg)', zIndex:1 }} />
+      <div style={{ position:'absolute', top:-30, left:'15%', width:180, height:250, background:'conic-gradient(from 78deg at 50% 0%,transparent,rgba(200,230,60,0.07) 14deg,rgba(200,230,60,0.11) 22deg,rgba(200,230,60,0.07) 30deg,transparent 44deg)', zIndex:1 }} />
+      <div style={{ position:'absolute', top:-30, right:'10%', width:180, height:250, background:'conic-gradient(from 70deg at 50% 0%,transparent,rgba(200,230,60,0.06) 14deg,rgba(200,230,60,0.09) 22deg,rgba(200,230,60,0.06) 30deg,transparent 44deg)', zIndex:1 }} />
       <div style={{ position:'absolute', bottom:-8, left:'-5%', right:'-5%', height:68, zIndex:2, background:'linear-gradient(180deg,rgba(6,8,9,0.4),rgba(6,8,9,0.75))', clipPath:'polygon(8% 0%,92% 0%,100% 100%,0% 100%)' }} />
       <div style={{ position:'absolute', bottom:28, left:'10%', right:'10%', height:24, zIndex:4, borderTop:'1px solid rgba(255,255,255,0.12)', backgroundImage:'repeating-linear-gradient(90deg,rgba(255,255,255,0.04) 0px,rgba(255,255,255,0.04) 1px,transparent 1px,transparent 8px)', clipPath:'polygon(2% 0%,98% 0%,100% 100%,0% 100%)' }} />
       <div style={{ position:'absolute', inset:0, zIndex:5, background:'linear-gradient(90deg,rgba(6,8,9,0.92),rgba(6,8,9,0.7) 25%,transparent 60%)' }} />
@@ -118,40 +118,40 @@ function TennisHero({ liveCount, totalCount }: { liveCount: number; totalCount: 
         <line x1="600" y1="134" x2="600" y2="192" stroke="rgba(255,255,255,0.06)" strokeWidth="0.7"/>
         <rect x="310" y="134" width="580" height="34" stroke="rgba(255,255,255,0.05)" strokeWidth="0.6" fill="none"/>
         <line x1="200" y1="155" x2="1000" y2="155" stroke="rgba(255,255,255,0.1)" strokeWidth="0.8"/>
-        <circle cx="160" cy="6" r="4" fill="rgba(180,210,255,0.5)"/>
-        <circle cx="160" cy="6" r="9" fill="rgba(160,200,255,0.1)"/>
-        <circle cx="1040" cy="6" r="4" fill="rgba(180,210,255,0.5)"/>
-        <circle cx="1040" cy="6" r="9" fill="rgba(160,200,255,0.1)"/>
+        <circle cx="160" cy="6" r="4" fill="rgba(200,230,60,0.5)"/>
+        <circle cx="160" cy="6" r="9" fill="rgba(200,230,60,0.1)"/>
+        <circle cx="1040" cy="6" r="4" fill="rgba(200,230,60,0.5)"/>
+        <circle cx="1040" cy="6" r="9" fill="rgba(200,230,60,0.1)"/>
       </svg>
-      <div style={{ position:'absolute', bottom:0, left:'25%', right:'25%', height:28, zIndex:9, background:'radial-gradient(ellipse,rgba(77,159,255,0.1),transparent 70%)' }} />
-      <div style={{ position:'absolute', bottom:0, left:0, right:0, height:2, zIndex:10, background:'linear-gradient(90deg,transparent,rgba(77,159,255,0) 10%,rgba(77,159,255,0.7) 50%,rgba(77,159,255,0) 90%,transparent)' }} />
+      <div style={{ position:'absolute', bottom:0, left:'25%', right:'25%', height:28, zIndex:9, background:'radial-gradient(ellipse,rgba(200,230,60,0.1),transparent 70%)' }} />
+      <div style={{ position:'absolute', bottom:0, left:0, right:0, height:2, zIndex:10, background:'linear-gradient(90deg,transparent,rgba(200,230,60,0) 10%,rgba(200,230,60,0.7) 50%,rgba(200,230,60,0) 90%,transparent)' }} />
       <div style={{ position:'absolute', inset:0, zIndex:10, display:'flex', alignItems:'center', padding:'0 44px', gap:28 }}>
-        <div style={{ width:56, height:56, borderRadius:12, flexShrink:0, background:'rgba(40,120,255,0.1)', border:'1px solid rgba(40,120,255,0.3)', display:'flex', alignItems:'center', justifyContent:'center', color:'#4d9fff' }}>
+        <div style={{ width:56, height:56, borderRadius:12, flexShrink:0, background:'rgba(200,230,60,0.1)', border:'1px solid rgba(200,230,60,0.3)', display:'flex', alignItems:'center', justifyContent:'center', color:'#C8E63C' }}>
           <LogoTennis size={32} />
         </div>
         <div style={{ flex:1 }}>
-          <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:'rgba(100,160,255,0.7)', marginBottom:7 }}>Tennis · Prediction Markets</div>
+          <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:'rgba(200,230,60,0.7)', marginBottom:7 }}>Tennis · Prediction Markets</div>
           <div style={{ fontFamily:'"Barlow Condensed",sans-serif', fontSize:54, fontWeight:800, lineHeight:0.9, textTransform:'uppercase', letterSpacing:'0.05em', color:'#e8edf8', whiteSpace:'nowrap' }}>
-            TEN<span style={{ color:'#4d9fff' }}>NIS</span>
+            TEN<span style={{ color:'#C8E63C' }}>NIS</span>
           </div>
           <div style={{ marginTop:10, display:'flex', alignItems:'center', gap:8 }}>
-            <div style={{ height:1, width:24, background:'rgba(40,120,255,0.3)' }} />
-            <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, color:'rgba(100,150,220,0.35)', letterSpacing:'0.12em', textTransform:'uppercase' }}>ATP · WTA · Grand Slams</div>
+            <div style={{ height:1, width:24, background:'rgba(200,230,60,0.3)' }} />
+            <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, color:'rgba(200,230,60,0.35)', letterSpacing:'0.12em', textTransform:'uppercase' }}>ATP · WTA · Grand Slams</div>
           </div>
         </div>
         <div style={{ display:'flex', gap:20, alignItems:'center', flexShrink:0 }}>
           <div style={{ textAlign:'center' }}>
-            <div style={{ fontFamily:'"Barlow Condensed",sans-serif', fontSize:22, fontWeight:700, color:'#4d9fff', lineHeight:1 }}>{liveCount}</div>
-            <div style={{ fontSize:8, color:'rgba(100,150,220,0.35)', letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'"JetBrains Mono",monospace' }}>Live</div>
+            <div style={{ fontFamily:'"Barlow Condensed",sans-serif', fontSize:22, fontWeight:700, color:'#C8E63C', lineHeight:1 }}>{liveCount}</div>
+            <div style={{ fontSize:8, color:'rgba(200,230,60,0.35)', letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'"JetBrains Mono",monospace' }}>Live</div>
           </div>
-          <div style={{ width:1, height:32, background:'rgba(40,120,255,0.1)' }} />
+          <div style={{ width:1, height:32, background:'rgba(200,230,60,0.1)' }} />
           <div style={{ textAlign:'center' }}>
             <div style={{ fontFamily:'"Barlow Condensed",sans-serif', fontSize:22, fontWeight:700, color:'#dce8f8', lineHeight:1 }}>{totalCount}</div>
-            <div style={{ fontSize:8, color:'rgba(100,150,220,0.35)', letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'"JetBrains Mono",monospace' }}>Сегодня</div>
+            <div style={{ fontSize:8, color:'rgba(200,230,60,0.35)', letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'"JetBrains Mono",monospace' }}>Сегодня</div>
           </div>
         </div>
-        <div style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(40,120,255,0.08)', border:'1px solid rgba(40,120,255,0.28)', borderRadius:6, padding:'5px 12px', fontSize:10, fontWeight:700, letterSpacing:'0.12em', color:'#4d9fff', textTransform:'uppercase', flexShrink:0, fontFamily:'"JetBrains Mono",monospace' }}>
-          <span className="animate-pulse" style={{ width:5, height:5, borderRadius:'50%', background:'#4d9fff', display:'inline-block', boxShadow:'0 0 6px rgba(77,159,255,0.8)' }} />
+        <div style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(200,230,60,0.08)', border:'1px solid rgba(200,230,60,0.28)', borderRadius:6, padding:'5px 12px', fontSize:10, fontWeight:700, letterSpacing:'0.12em', color:'#C8E63C', textTransform:'uppercase', flexShrink:0, fontFamily:'"JetBrains Mono",monospace' }}>
+          <span className="animate-pulse" style={{ width:5, height:5, borderRadius:'50%', background:'#C8E63C', display:'inline-block', boxShadow:'0 0 6px rgba(200,230,60,0.8)' }} />
           Live
         </div>
       </div>

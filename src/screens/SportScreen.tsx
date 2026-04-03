@@ -15,17 +15,34 @@ import { useLiveLayout } from '../contexts/LiveLayoutContext'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export type Sport = 'football' | 'basketball' | 'tennis' | 'mma'
-type TimeWin = 'live' | '1h' | '3h' | '12h' | 'all'
+type DateFilter = 'live' | 'today' | 'tomorrow' | 'all'
 
-const TIME_LABELS: Record<TimeWin, string> = { live: 'LIVE', '1h': '1H', '3h': '3H', '12h': '12H', all: 'ALL' }
+const DATE_LABELS: Record<DateFilter, string> = {
+  live: 'Live',
+  today: 'Сегодня',
+  tomorrow: 'Завтра',
+  all: 'Все',
+}
 
-function filterByTimeWin(events: SportEvent[], tw: TimeWin): SportEvent[] {
-  if (tw === 'all') return events
-  if (tw === 'live') return events.filter(e => e.status === 'live')
-  const now = Date.now()
-  const hours = tw === '1h' ? 1 : tw === '3h' ? 3 : 12
-  const cutoff = now + hours * 3_600_000
-  return events.filter(e => e.status === 'live' || new Date(e.starts_at).getTime() <= cutoff)
+function isTodayLocal(iso: string): boolean {
+  const d = new Date(iso)
+  const now = new Date()
+  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()
+}
+
+function isTomorrowLocal(iso: string): boolean {
+  const d = new Date(iso)
+  const tmr = new Date()
+  tmr.setDate(tmr.getDate() + 1)
+  return d.getFullYear() === tmr.getFullYear() && d.getMonth() === tmr.getMonth() && d.getDate() === tmr.getDate()
+}
+
+function filterByDate(events: SportEvent[], df: DateFilter): SportEvent[] {
+  if (df === 'all') return events
+  if (df === 'live') return events.filter(e => e.status === 'live')
+  if (df === 'today') return events.filter(e => e.status === 'live' || isTodayLocal(e.starts_at))
+  if (df === 'tomorrow') return events.filter(e => isTomorrowLocal(e.starts_at))
+  return events
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -35,6 +52,13 @@ const SPORTS: { key: Sport; label: string; icon: React.ReactNode }[] = [
   { key: 'tennis',     label: 'Tennis',     icon: <LogoTennis size={16} />     },
   { key: 'mma',        label: 'MMA',        icon: <LogoMMA size={16} />        },
 ]
+
+const SPORT_ACCENT: Record<Sport, string> = {
+  football:   '#e8c032',
+  basketball: '#e66414',
+  tennis:     '#C8E63C',
+  mma:        '#e02020',
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function abbr(name: string): string {
@@ -51,22 +75,51 @@ function formatTime(iso: string): string {
   return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
 }
 
-function extractH2H(odds?: SportOdds[]): { home: number; away: number } | null {
+// Odds extraction
+interface Odds3Way { home: number; draw: number | null; away: number }
+interface Odds2Way { home: number; away: number }
+
+function extractOdds(odds?: SportOdds[], sport?: Sport): Odds3Way | null {
   const h2h = odds?.find(o => o.market_type === 'h2h')
   if (!h2h || h2h.outcomes.length < 2) return null
-  const nonDraw = h2h.outcomes.filter(o => o.name !== 'Draw' && o.name !== 'draw')
-  if (nonDraw.length < 2) return null
-  const raw0 = 100 / nonDraw[0].price
-  const raw1 = 100 / nonDraw[1].price
-  const sum = raw0 + raw1
+
+  const homeOut = h2h.outcomes.find(o => {
+    const n = o.name.toLowerCase()
+    return n === 'home' || n === '1'
+  })
+  const awayOut = h2h.outcomes.find(o => {
+    const n = o.name.toLowerCase()
+    return n === 'away' || n === '2'
+  })
+  const drawOut = h2h.outcomes.find(o => {
+    const n = o.name.toLowerCase()
+    return n === 'draw' || n === 'x'
+  })
+
+  // Fallback: use first two non-draw
+  const nonDraw = h2h.outcomes.filter(o => {
+    const n = o.name.toLowerCase()
+    return n !== 'draw' && n !== 'x'
+  })
+
+  const home = homeOut ?? nonDraw[0]
+  const away = awayOut ?? nonDraw[1]
+  if (!home || !away) return null
+
+  const rawHome = 100 / home.price
+  const rawAway = 100 / away.price
+  const rawDraw = drawOut && sport === 'football' ? 100 / drawOut.price : null
+
+  const sum = rawHome + rawAway + (rawDraw ?? 0)
   return {
-    home: Math.round((raw0 / sum) * 100),
-    away: Math.round((raw1 / sum) * 100),
+    home: Math.round((rawHome / sum) * 100),
+    draw: rawDraw != null ? Math.round((rawDraw / sum) * 100) : null,
+    away: Math.round((rawAway / sum) * 100),
   }
 }
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
-const EVENTS_PER_PAGE = 25
+const EVENTS_PER_PAGE = 30
 type LeagueGroup = { league: string; events: SportEvent[] }
 
 function paginateGroups(groups: LeagueGroup[]): LeagueGroup[][] {
@@ -149,12 +202,21 @@ function groupByLeague(events: SportEvent[]): LeagueGroup[] {
     })
 }
 
-function LeagueDivider({ name, count, first }: { name: string; count: number; first?: boolean }) {
+function LeagueDivider({ name, count, liveCount, first }: {
+  name: string; count: number; liveCount: number; first?: boolean
+}) {
   return (
-    <div className={`flex items-center gap-3 ${first ? 'pt-0' : 'pt-4'} pb-1.5`}>
+    <div className={`flex items-center gap-2 ${first ? 'pt-0' : 'pt-5'} pb-1.5`}>
       <span className="text-[10px] font-mono font-bold tracking-[0.1em] uppercase shrink-0 max-w-[55%] truncate text-text-muted">
         {name}
       </span>
+      {liveCount > 0 && (
+        <span className="flex items-center gap-1 text-[8px] font-bold px-1.5 py-0.5 rounded shrink-0"
+          style={{ background: 'rgba(255,50,50,0.1)', color: '#ff5252', border: '1px solid rgba(255,50,50,0.2)' }}>
+          <span className="w-1 h-1 rounded-full bg-red-500 animate-pulse" />
+          {liveCount}
+        </span>
+      )}
       <div className="flex-1 h-px bg-bg-border" />
       <span className="text-[9px] font-mono shrink-0 px-1.5 py-0.5 rounded border border-bg-border text-text-muted/50">
         {count}
@@ -163,155 +225,303 @@ function LeagueDivider({ name, count, first }: { name: string; count: number; fi
   )
 }
 
-// ─── Match Row ────────────────────────────────────────────────────────────────
-function SportRow({ event, onClick }: { event: SportEvent; onClick?: () => void }) {
-  const isLive     = event.status === 'live'
-  const isFinished = event.status === 'finished'
-  const hasScore   = event.home_score != null && event.away_score != null
+// ─── Team logo (list) ─────────────────────────────────────────────────────────
+function TeamLogo({ logo, abbr, size, accent }: { logo?: string | null; abbr: string; size: number; accent: string }) {
+  const [err, setErr] = useState(false)
+  if (logo && !err) return (
+    <div className="shrink-0 flex items-center justify-center rounded overflow-hidden border border-bg-border"
+      style={{ width: size, height: size, background: `${accent}08` }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={logo} alt="" onError={() => setErr(true)} style={{ width: size * 0.8, height: size * 0.8, objectFit: 'contain' }} />
+    </div>
+  )
+  return (
+    <div className="shrink-0 flex items-center justify-center rounded text-[8px] font-bold bg-bg-elevated border border-bg-border text-text-muted"
+      style={{ width: size, height: size }}>
+      {abbr}
+    </div>
+  )
+}
 
-  const odds = extractH2H(event.sport_odds)
-  const pctHome = odds?.home ?? null
-  const pctAway = odds?.away ?? null
+// ─── Odds bar ─────────────────────────────────────────────────────────────────
+function OddsBar({ odds, accent, sport }: { odds: Odds3Way; accent: string; sport: Sport }) {
+  const showDraw = sport === 'football' && odds.draw != null
+  const homeW = odds.home
+  const drawW = odds.draw ?? 0
+  const awayW = odds.away
 
-  const abbrHome = abbr(event.home_team)
-  const abbrAway = abbr(event.away_team)
+  const homeWins = odds.home > odds.away
+  const awayWins = odds.away > odds.home
 
   return (
-    <div
-      onClick={onClick}
-      className="grid items-center gap-3 px-3.5 py-2.5 rounded-lg transition-all group relative overflow-hidden"
-      style={{
-        gridTemplateColumns: '58px 1fr 120px',
-        cursor: onClick ? 'pointer' : undefined,
-        background: 'rgba(8,8,8,0.55)',
-        backdropFilter: 'blur(2px)',
-        border: `1px solid ${isLive ? 'rgba(255,50,50,0.2)' : 'rgba(255,255,255,0.06)'}`,
-      }}
-    >
-      {/* Left accent bar */}
-      <div className="absolute left-0 top-0 bottom-0 w-[2px] rounded-l-lg"
-        style={{ background: isLive ? '#ff5252' : 'transparent' }} />
-      <div className="absolute left-0 top-0 bottom-0 w-[2px] rounded-l-lg opacity-0 group-hover:opacity-100 transition-opacity"
-        style={{ background: isLive ? 'transparent' : 'var(--accent)' }} />
-
-      {/* Time */}
-      <div className="flex flex-col items-center gap-1 pl-1.5">
-        {isLive ? (
-          <>
-            {hasScore && (
-              <span className="text-[11px] font-mono text-text-primary">
-                {event.home_score}:{event.away_score}
-              </span>
-            )}
-            <span className="text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider"
-              style={{ background: 'rgba(255,50,50,0.12)', color: '#ff5252' }}>
-              Live
-            </span>
-          </>
-        ) : isFinished && hasScore ? (
-          <>
-            <span className="text-[11px] font-mono text-text-primary">
-              {event.home_score}:{event.away_score}
-            </span>
-            <span className="text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider text-text-muted"
-              style={{ background: 'rgba(255,255,255,0.05)' }}>
-              Fin
-            </span>
-          </>
-        ) : (
-          <>
-            <span className="text-[11px] font-mono text-text-primary leading-tight">
-              {formatTime(event.starts_at)}
-            </span>
-            <span className="text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider text-text-muted"
-              style={{ background: 'rgba(255,255,255,0.05)' }}>
-              сег
-            </span>
-          </>
-        )}
+    <div className="flex gap-1 items-stretch">
+      {/* Home */}
+      <div
+        className="flex flex-col items-center px-2 py-1.5 rounded-md border transition-all min-w-[42px]"
+        style={homeWins
+          ? { borderColor: `${accent}55`, background: `${accent}10` }
+          : { borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.03)' }
+        }
+      >
+        <span className="text-[7px] font-mono text-text-muted/60 uppercase tracking-wide mb-0.5">H</span>
+        <span className="text-[12px] font-mono font-semibold leading-none"
+          style={{ color: homeWins ? accent : 'rgba(255,255,255,0.55)' }}>
+          {homeW}%
+        </span>
       </div>
 
-      {/* Teams */}
-      <div className="flex items-center min-w-0">
-        {/* Home team */}
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <div className="w-7 h-7 rounded-md flex items-center justify-center text-[9px] font-bold shrink-0 bg-bg-elevated border border-bg-border text-text-muted">
-            {abbrHome}
-          </div>
-          <div className="min-w-0">
-            <p className="text-[13px] font-semibold text-text-primary truncate leading-tight">
-              {event.home_team}
-            </p>
-            {event.league && (
-              <p className="text-[9px] font-mono text-text-muted/60 truncate">{event.league}</p>
-            )}
-          </div>
+      {/* Draw (football only) */}
+      {showDraw && (
+        <div
+          className="flex flex-col items-center px-2 py-1.5 rounded-md border transition-all min-w-[38px]"
+          style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)' }}
+        >
+          <span className="text-[7px] font-mono text-text-muted/60 uppercase tracking-wide mb-0.5">D</span>
+          <span className="text-[12px] font-mono font-semibold leading-none text-text-muted/70">
+            {drawW}%
+          </span>
         </div>
+      )}
 
-        {/* VS + prob bar */}
-        <div className="flex flex-col items-center px-3 shrink-0 gap-1.5">
-          <span className="text-[9px] font-mono text-text-muted/50 tracking-wider">VS</span>
-          {pctHome != null ? (
-            <div className="flex w-[72px] h-[3px] rounded-full overflow-hidden bg-bg-elevated">
-              <div className="h-full transition-all duration-500 rounded-full"
-                style={{ width: `${pctHome}%`, background: 'var(--accent)' }} />
-            </div>
-          ) : (
-            <div className="w-[72px] h-[3px] rounded-full bg-bg-elevated/50" />
-          )}
-        </div>
-
-        {/* Away team */}
-        <div className="flex items-center gap-2 flex-1 min-w-0 flex-row-reverse">
-          <div className="w-7 h-7 rounded-md flex items-center justify-center text-[9px] font-bold shrink-0 bg-bg-elevated border border-bg-border text-text-muted">
-            {abbrAway}
-          </div>
-          <div className="min-w-0 text-right">
-            <p className="text-[13px] font-semibold text-text-primary truncate leading-tight">
-              {event.away_team}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Odds */}
-      <div className="flex gap-1 justify-end">
-        {pctHome != null && pctAway != null ? (
-          <>
-            <div
-              className="flex flex-col items-center min-w-[46px] px-2 py-1.5 rounded-md border bg-bg-elevated transition-all"
-              style={pctHome >= pctAway
-                ? { borderColor: 'rgba(0,200,150,0.3)' }
-                : { borderColor: 'rgba(255,255,255,0.06)' }}
-            >
-              <span className="text-[8px] text-text-muted uppercase tracking-wide mb-0.5">{abbrHome}</span>
-              <span className="text-[12px] font-mono font-medium"
-                style={{ color: pctHome >= pctAway ? 'var(--accent)' : undefined }}>
-                {pctHome}%
-              </span>
-            </div>
-            <div
-              className="flex flex-col items-center min-w-[46px] px-2 py-1.5 rounded-md border bg-bg-elevated transition-all"
-              style={pctAway > pctHome
-                ? { borderColor: 'rgba(0,200,150,0.3)' }
-                : { borderColor: 'rgba(255,255,255,0.06)' }}
-            >
-              <span className="text-[8px] text-text-muted uppercase tracking-wide mb-0.5">{abbrAway}</span>
-              <span className="text-[12px] font-mono font-medium"
-                style={{ color: pctAway > pctHome ? 'var(--accent)' : undefined }}>
-                {pctAway}%
-              </span>
-            </div>
-          </>
-        ) : (
-          <div className="flex flex-col items-center justify-center min-w-[96px] px-2 py-1.5 rounded-md border border-bg-border bg-bg-elevated">
-            <span className="text-[9px] font-mono text-text-muted/50">No odds</span>
-          </div>
-        )}
+      {/* Away */}
+      <div
+        className="flex flex-col items-center px-2 py-1.5 rounded-md border transition-all min-w-[42px]"
+        style={awayWins
+          ? { borderColor: `${accent}55`, background: `${accent}10` }
+          : { borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.03)' }
+        }
+      >
+        <span className="text-[7px] font-mono text-text-muted/60 uppercase tracking-wide mb-0.5">A</span>
+        <span className="text-[12px] font-mono font-semibold leading-none"
+          style={{ color: awayWins ? accent : 'rgba(255,255,255,0.55)' }}>
+          {awayW}%
+        </span>
       </div>
     </div>
   )
 }
+
+// ─── Match Row ────────────────────────────────────────────────────────────────
+function SportRow({ event, sport, accent, onClick }: {
+  event: SportEvent; sport: Sport; accent: string; onClick?: () => void
+}) {
+  const [expanded, setExpanded] = useState(false)
+
+  const isLive     = event.status === 'live'
+  const isFinished = event.status === 'finished'
+  const hasScore   = event.home_score != null && event.away_score != null
+
+  // Elapsed time from raw_data
+  const elapsed = (event.raw_data as Record<string, unknown> | null)?.elapsed as number | null | undefined
+
+  const odds = extractOdds(event.sport_odds, sport)
+
+  const abbrHome = abbr(event.home_team)
+  const abbrAway = abbr(event.away_team)
+  const raw = event.raw_data as Record<string, unknown> | null
+  const homeLogo = raw?.home_logo as string | null | undefined
+  const awayLogo = raw?.away_logo as string | null | undefined
+
+  // Win probability bar width
+  const homeBarPct = odds ? (odds.draw != null ? odds.home : odds.home) : null
+
+  function handleClick() {
+    if (onClick) {
+      onClick()
+    }
+  }
+
+  function handleExpand(e: React.MouseEvent) {
+    e.stopPropagation()
+    setExpanded(v => !v)
+  }
+
+  return (
+    <div className="rounded-lg overflow-hidden" style={{ border: `1px solid ${isLive ? 'rgba(255,50,50,0.2)' : 'rgba(255,255,255,0.06)'}` }}>
+      {/* Main row */}
+      <div
+        onClick={handleClick}
+        className="grid items-center gap-3 px-3.5 py-2.5 transition-all group relative"
+        style={{
+          gridTemplateColumns: '60px 1fr auto',
+          cursor: onClick ? 'pointer' : undefined,
+          background: isLive ? 'rgba(255,50,50,0.04)' : 'rgba(8,8,8,0.55)',
+          backdropFilter: 'blur(2px)',
+        }}
+      >
+        {/* Left accent bar */}
+        <div className="absolute left-0 top-0 bottom-0 w-[2px]"
+          style={{ background: isLive ? '#ff5252' : 'transparent' }} />
+        <div className="absolute left-0 top-0 bottom-0 w-[2px] opacity-0 group-hover:opacity-100 transition-opacity"
+          style={{ background: isLive ? 'transparent' : accent }} />
+
+        {/* Time / Score */}
+        <div className="flex flex-col items-center gap-0.5 pl-1.5">
+          {isLive ? (
+            <>
+              {hasScore && (
+                <span className="text-[13px] font-mono font-bold text-text-primary leading-none">
+                  {event.home_score}:{event.away_score}
+                </span>
+              )}
+              <div className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                <span className="text-[9px] font-mono font-bold" style={{ color: '#ff5252' }}>
+                  {elapsed != null ? `${elapsed}'` : 'Live'}
+                </span>
+              </div>
+            </>
+          ) : isFinished && hasScore ? (
+            <>
+              <span className="text-[13px] font-mono font-bold text-text-primary leading-none">
+                {event.home_score}:{event.away_score}
+              </span>
+              <span className="text-[8px] font-mono text-text-muted/40 uppercase">Fin</span>
+            </>
+          ) : (
+            <>
+              <span className="text-[12px] font-mono text-text-primary leading-none">
+                {formatTime(event.starts_at)}
+              </span>
+              <span className="text-[8px] font-mono text-text-muted/40 uppercase">
+                {isTomorrowLocal(event.starts_at) ? 'Завтра' : ''}
+              </span>
+            </>
+          )}
+        </div>
+
+        {/* Teams */}
+        <div className="flex flex-col gap-1.5 min-w-0">
+          {/* Win probability bar */}
+          {homeBarPct != null && (
+            <div className="flex w-full h-[2px] rounded-full overflow-hidden bg-bg-elevated/60">
+              <div className="h-full transition-all duration-500"
+                style={{ width: `${homeBarPct}%`, background: accent, opacity: 0.7 }} />
+            </div>
+          )}
+          {/* Rich data indicator */}
+          {!homeLogo && (
+            <div className="absolute right-10 top-1.5 w-1.5 h-1.5 rounded-full bg-bg-border opacity-50" title="Базовые данные" />
+          )}
+          {/* Home */}
+          <div className="flex items-center gap-2 min-w-0">
+            <TeamLogo logo={homeLogo} abbr={abbrHome} size={24} accent={accent} />
+            <span className="text-[13px] font-semibold text-text-primary truncate leading-tight">
+              {event.home_team}
+            </span>
+          </div>
+          {/* Away */}
+          <div className="flex items-center gap-2 min-w-0">
+            <TeamLogo logo={awayLogo} abbr={abbrAway} size={24} accent={accent} />
+            <span className="text-[13px] font-semibold text-text-primary truncate leading-tight">
+              {event.away_team}
+            </span>
+          </div>
+        </div>
+
+        {/* Odds + expand */}
+        <div className="flex items-center gap-2 shrink-0">
+          {odds ? (
+            <OddsBar odds={odds} accent={accent} sport={sport} />
+          ) : (
+            <div className="flex items-center justify-center px-3 py-1.5 rounded-md border border-bg-border bg-bg-elevated min-w-[90px]">
+              <span className="text-[9px] font-mono text-text-muted/40">Нет коэф.</span>
+            </div>
+          )}
+
+          {/* Expand toggle */}
+          <button
+            onClick={handleExpand}
+            className="w-6 h-6 flex items-center justify-center rounded text-text-muted/40 hover:text-text-muted transition-colors shrink-0"
+          >
+            <svg className="w-3 h-3 transition-transform" style={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
+              viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Expanded detail */}
+      {expanded && (
+        <div className="px-4 py-3 border-t border-bg-border/50 bg-bg-elevated/30">
+          <MatchDetail event={event} sport={sport} accent={accent} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Match detail (expanded) ──────────────────────────────────────────────────
+function MatchDetail({ event, sport, accent }: { event: SportEvent; sport: Sport; accent: string }) {
+  const allOdds = event.sport_odds ?? []
+
+  if (allOdds.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-3">
+        <span className="text-[10px] font-mono text-text-muted/40">Коэффициенты недоступны</span>
+      </div>
+    )
+  }
+
+  // Group by market_type
+  const byMarket = new Map<string, SportOdds[]>()
+  for (const o of allOdds) {
+    if (!byMarket.has(o.market_type)) byMarket.set(o.market_type, [])
+    byMarket.get(o.market_type)!.push(o)
+  }
+
+  const MARKET_LABELS: Record<string, string> = {
+    h2h: sport === 'football' ? '1X2' : 'Победитель',
+    spreads: 'Форы',
+    totals: 'Тотал',
+    btts: 'Обе забьют',
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {/* Event meta */}
+      <div className="flex items-center gap-3 text-[10px] font-mono text-text-muted/50">
+        {event.league && <span>{event.league}</span>}
+        {(event.raw_data as Record<string, unknown> | null)?.season != null && (
+          <>
+            <span className="text-text-muted/20">·</span>
+            <span>Сезон {String((event.raw_data as Record<string, unknown>).season)}</span>
+          </>
+        )}
+        <span className="text-text-muted/20">·</span>
+        <span>{new Date(event.starts_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+      </div>
+
+      {/* Markets */}
+      <div className="flex flex-col gap-2">
+        {Array.from(byMarket.entries()).map(([marketType, marketOdds]) => (
+          <div key={marketType}>
+            <p className="text-[8px] font-mono font-bold tracking-[0.1em] uppercase text-text-muted/40 mb-1">
+              {MARKET_LABELS[marketType] ?? marketType}
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {marketOdds.flatMap(m => m.outcomes).map((outcome, i) => (
+                <div key={i}
+                  className="flex flex-col items-center px-2.5 py-1.5 rounded border min-w-[52px]"
+                  style={{ borderColor: 'rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)' }}
+                >
+                  <span className="text-[9px] font-mono text-text-muted/50 truncate max-w-[80px] text-center leading-tight mb-0.5">
+                    {outcome.name}
+                  </span>
+                  <span className="text-[13px] font-mono font-semibold" style={{ color: accent }}>
+                    {outcome.price.toFixed(2)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ─── Main screen ──────────────────────────────────────────────────────────────
 export function SportScreen({ initialSport, eventId }: { initialSport?: Sport; eventId?: string } = {}) {
   usePageTitle('Sport')
@@ -320,17 +530,12 @@ export function SportScreen({ initialSport, eventId }: { initialSport?: Sport; e
   const _plan = (profile?.plan ?? (profile?.is_pro ? 'pro' : 'free')) as SubscriptionPlan
 
   const sport = initialSport ?? 'football'
-  const [timeWin, setTimeWin] = useState<TimeWin>('all')
+  const [dateFilter, setDateFilter] = useState<DateFilter>('today')
   const [currentPage, setCurrentPage] = useState(1)
 
   const { selectedLeague, setSelectedLeague, setLeagues, setLiveCount, setTotalCount } = useLiveLayout()
 
-  const SPORT_ACCENT: Record<Sport, string> = {
-    football:   '#e8c032',
-    basketball: '#e66414',
-    tennis:     '#4d9fff',
-    mma:        '#e02020',
-  }
+  const accent = SPORT_ACCENT[sport]
 
   const { data, loading, isRefreshing } = usePolling(
     () => sportApi.getEvents({
@@ -344,7 +549,7 @@ export function SportScreen({ initialSport, eventId }: { initialSport?: Sport; e
   const [isStale, setIsStale] = useState(false)
   useEffect(() => { setIsStale(true) }, [sport])
   useEffect(() => { if (data !== null) setIsStale(false) }, [data])
-  useEffect(() => { setCurrentPage(1) }, [sport, timeWin, selectedLeague])
+  useEffect(() => { setCurrentPage(1) }, [sport, dateFilter, selectedLeague])
 
   const showSkeleton = loading || isStale
   const events = useMemo<SportEvent[]>(
@@ -366,9 +571,9 @@ export function SportScreen({ initialSport, eventId }: { initialSport?: Sport; e
     let result = selectedLeague
       ? events.filter(e => (e.league || e.subcategory || '') === selectedLeague)
       : events
-    result = filterByTimeWin(result, timeWin)
+    result = filterByDate(result, dateFilter)
     return result
-  }, [events, selectedLeague, timeWin])
+  }, [events, selectedLeague, dateFilter])
 
   const allGroups  = groupByLeague(filteredEvents)
   const pages      = paginateGroups(allGroups)
@@ -376,14 +581,13 @@ export function SportScreen({ initialSport, eventId }: { initialSport?: Sport; e
   const pageGroups = pages[currentPage - 1] ?? []
 
   const sportLabel = SPORTS.find(s => s.key === sport)?.label ?? 'Sport'
-  const accent = SPORT_ACCENT[sport]
 
   return (
     <ErrorBoundary>
       <main className="flex-1 min-w-0 px-6 pb-5 pt-0">
 
         {/* Page header */}
-        <div className="flex items-center gap-3 mb-5"
+        <div className="flex items-center gap-3 mb-4"
           style={{ position: 'sticky', top: 200, zIndex: 15, background: 'rgba(8,8,8,0.75)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', marginLeft: -24, marginRight: -24, paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12 }}
         >
           <h1 className="text-xl font-bold tracking-wider uppercase text-text-primary" style={{ fontFamily: 'var(--font-sans)' }}>
@@ -402,17 +606,20 @@ export function SportScreen({ initialSport, eventId }: { initialSport?: Sport; e
             </svg>
           )}
           <div className="ml-auto flex items-center gap-1">
-            {(['live', '1h', '3h', '12h', 'all'] as TimeWin[]).map(tw => (
+            {(['live', 'today', 'tomorrow', 'all'] as DateFilter[]).map(df => (
               <button
-                key={tw}
-                onClick={() => { setTimeWin(tw); setCurrentPage(1) }}
-                className="px-2.5 py-1 rounded text-[9px] font-mono font-bold tracking-wider uppercase transition-all"
-                style={timeWin === tw
+                key={df}
+                onClick={() => { setDateFilter(df); setCurrentPage(1) }}
+                className="px-2.5 py-1 rounded text-[9px] font-mono font-bold tracking-wider transition-all"
+                style={dateFilter === df
                   ? { background: `${accent}18`, border: `1px solid ${accent}55`, color: accent }
                   : { background: 'transparent', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.3)' }
                 }
               >
-                {TIME_LABELS[tw]}
+                {df === 'live' && liveCount > 0
+                  ? <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse inline-block" />{liveCount}</span>
+                  : DATE_LABELS[df]
+                }
               </button>
             ))}
           </div>
@@ -430,7 +637,7 @@ export function SportScreen({ initialSport, eventId }: { initialSport?: Sport; e
               <div className="flex flex-col gap-1.5">
                 {[0,1,2,3,4,5].map(i => (
                   <div key={i} className="rounded-lg animate-pulse bg-bg-surface border border-bg-border"
-                    style={{ height: 56, animationDelay: `${i * 50}ms` }} />
+                    style={{ height: 72, animationDelay: `${i * 50}ms` }} />
                 ))}
               </div>
             )}
@@ -447,23 +654,46 @@ export function SportScreen({ initialSport, eventId }: { initialSport?: Sport; e
               </div>
             )}
 
-            {!showSkeleton && events.length > 0 && (
+            {!showSkeleton && filteredEvents.length === 0 && events.length > 0 && (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <p className="text-sm font-mono text-text-muted">Нет событий для выбранного фильтра</p>
+                <button
+                  onClick={() => setDateFilter('all')}
+                  className="mt-3 text-[10px] font-mono px-3 py-1.5 rounded border transition-all"
+                  style={{ borderColor: `${accent}44`, color: accent }}
+                >
+                  Показать все
+                </button>
+              </div>
+            )}
+
+            {!showSkeleton && filteredEvents.length > 0 && (
               <>
-                <div className="flex flex-col">
-                  {pageGroups.map(({ league, events: group }, idx) => (
-                    <div key={league}>
-                      <LeagueDivider name={league} count={group.length} first={idx === 0} />
-                      <div className="flex flex-col gap-1">
-                        {group.map(e => (
-                          <SportRow
-                            key={e.id}
-                            event={e}
-                            onClick={() => router.push(`/sport/${sport}/${e.id}`)}
-                          />
-                        ))}
+                <div className="flex flex-col gap-0">
+                  {pageGroups.map(({ league, events: group }, idx) => {
+                    const leagueLiveCount = group.filter(e => e.status === 'live').length
+                    return (
+                      <div key={league}>
+                        <LeagueDivider
+                          name={league}
+                          count={group.length}
+                          liveCount={leagueLiveCount}
+                          first={idx === 0}
+                        />
+                        <div className="flex flex-col gap-1">
+                          {group.map(e => (
+                            <SportRow
+                              key={e.id}
+                              event={e}
+                              sport={sport}
+                              accent={accent}
+                              onClick={() => router.push(`/sport/${sport}/${e.id}`)}
+                            />
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
                 <Pagination
                   current={currentPage}

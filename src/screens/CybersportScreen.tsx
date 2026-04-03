@@ -208,8 +208,8 @@ function EsportsRow({ match, accent, onClick }: {
         </div>
       )}
 
-      {/* Odds */}
-      {match.yesPrice > 0 && (
+      {/* Odds — показываем только если есть реальные Polymarket данные (не дефолтные 0.5) */}
+      {match.yesPrice > 0 && match.yesPrice !== 0.5 && (
         <div className="shrink-0 flex gap-1.5">
           <span className="text-[11px] font-mono px-2 py-0.5 rounded border border-bg-border text-text-secondary">
             {(match.yesPrice * 100).toFixed(0)}%
