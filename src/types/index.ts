@@ -138,6 +138,126 @@ export interface SportInjury {
   fixture_date: string | null
 }
 
+export interface PlayerStats {
+  team:     { id: number; name: string; logo: string | null }
+  league:   { id: number; name: string; logo: string | null; country: string | null }
+  season:   number
+  games:    { appearances: number | null; lineups: number | null; minutes: number | null; position: string | null; rating: string | null; captain: boolean | null }
+  goals:    { total: number; assists: number; saves: number | null; conceded: number | null }
+  shots:    { total: number; on: number }
+  passes:   { total: number; key: number; accuracy: string | null }
+  tackles:  { total: number; blocks: number; interceptions: number }
+  dribbles: { attempts: number; success: number }
+  duels:    { total: number; won: number }
+  fouls:    { drawn: number; committed: number }
+  cards:    { yellow: number; yellowred: number; red: number }
+  penalty:  { scored: number; missed: number }
+}
+
+export interface PlayerProfile {
+  id:          number
+  name:        string
+  firstname:   string | null
+  lastname:    string | null
+  age:         number | null
+  birth_date:  string | null
+  nationality: string | null
+  height:      string | null
+  weight:      string | null
+  photo:       string | null
+  injured:     boolean
+  statistics:  PlayerStats[]
+}
+
+export interface SportTeam {
+  id: string
+  external_id: number
+  subcategory: string
+  name: string
+  code: string | null
+  logo: string | null
+  country: string | null
+  founded: number | null
+  venue_name: string | null
+  venue_city: string | null
+  venue_capacity: number | null
+  venue_image: string | null
+  updated_at: string
+}
+
+export interface TeamFixture {
+  fixture_id: number
+  date: string
+  league: string
+  league_logo: string | null
+  is_home: boolean
+  opponent: string
+  opponent_logo: string | null
+  my_goals: number | null
+  opp_goals: number | null
+  result: 'W' | 'D' | 'L'
+  status: string
+}
+
+export interface SportLineupPlayer {
+  id: number
+  name: string
+  number: number | null
+  pos: string | null
+  grid: string | null
+}
+
+export interface SportLineup {
+  team_id: number
+  team_name: string
+  formation: string | null
+  coach_name: string | null
+  start_xi: SportLineupPlayer[]
+  substitutes: SportLineupPlayer[]
+  fetched_at: string
+}
+
+export interface SportFixtureStat {
+  team_id: number
+  team_name: string
+  stats: Record<string, string | number | null>
+  fetched_at: string
+}
+
+export interface SportMatchEvent {
+  minute: number | null
+  extra: number | null
+  team_id: number | null
+  team: string | null
+  player: string | null
+  assist: string | null
+  type: string
+  detail: string
+}
+
+export interface SportSquadPlayer {
+  player_id: number
+  player_name: string
+  player_photo: string | null
+  age: number | null
+  position: string | null
+  number: number | null
+}
+
+export interface SportTopScorer {
+  rank: number
+  player_id: number
+  player_name: string
+  player_photo: string | null
+  team_name: string | null
+  team_logo: string | null
+  goals: number
+  assists: number
+  appearances: number
+  yellow_cards: number
+  red_cards: number
+}
+
 export interface AiValue {
   value_rating: number
   suggested_side?: string

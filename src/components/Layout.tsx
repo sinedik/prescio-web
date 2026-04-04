@@ -115,7 +115,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const path = pathname ?? ''
-    if (path.startsWith('/sport/')) {
+    if (path.startsWith('/sport/') && !path.includes('/team/') && !path.includes('/player/')) {
       setLastSportPath(path)
       localStorage.setItem('lastSportPath', path)
     } else if (path.startsWith('/cybersport/')) {

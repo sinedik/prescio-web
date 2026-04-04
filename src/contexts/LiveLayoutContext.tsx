@@ -1,9 +1,11 @@
 'use client'
 import { createContext, useContext, useState, type ReactNode } from 'react'
 
+export interface SidebarLeague { name: string; flag?: string | null }
+
 interface LiveLayoutCtx {
-  leagues: string[]
-  setLeagues: (l: string[]) => void
+  leagues: SidebarLeague[]
+  setLeagues: (l: SidebarLeague[]) => void
   selectedLeague: string | null
   setSelectedLeague: (l: string | null) => void
   liveCount: number
@@ -17,7 +19,7 @@ interface LiveLayoutCtx {
 const Ctx = createContext<LiveLayoutCtx | null>(null)
 
 export function LiveLayoutProvider({ children }: { children: ReactNode }) {
-  const [leagues, setLeagues] = useState<string[]>([])
+  const [leagues, setLeagues] = useState<SidebarLeague[]>([])
   const [selectedLeague, setSelectedLeague] = useState<string | null>(null)
   const [liveCount, setLiveCount] = useState(0)
   const [totalCount, setTotalCount] = useState(0)

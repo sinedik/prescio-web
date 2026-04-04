@@ -2,7 +2,8 @@ import { supabase } from './supabase'
 import type {
   UnifiedEvent, SportEvent, UserProfile,
   UserInterest, UserSearch, FeedFilters,
-  SportPrediction, SportStanding, SportInjury,
+  SportPrediction, SportStanding, SportInjury, SportTeam, PlayerProfile,
+  SportLineup, SportFixtureStat, SportMatchEvent, SportTopScorer, SportSquadPlayer, TeamFixture,
 } from '../types/index'
 import type {
   DotaSeries, DotaLiveMatch, DotaProMatch,
@@ -82,7 +83,7 @@ export const eventsApi = {
 }
 
 export const sportApi = {
-  getEvents: (params: { subcategory?: string; status?: string; limit?: number; offset?: number }) =>
+  getEvents: (params: { subcategory?: string; status?: string; limit?: number; offset?: number; starts_after?: string; starts_before?: string }) =>
     apiFetch<{ events: SportEvent[] }>(`/sport/events${toSearch(params)}`),
   getEvent:       (id: string) => apiFetch<SportEvent>(`/sport/events/${id}`),
   getForm:        (id: string) => apiFetch<{
@@ -93,6 +94,16 @@ export const sportApi = {
   getStandings:   (leagueId: number) => apiFetch<SportStanding[]>(`/sport/standings/${leagueId}`),
   getInjuries:    (params: { leagueId?: number; teamId?: number }) =>
     apiFetch<SportInjury[]>(`/sport/injuries${toSearch(params)}`),
+  getTeam:        (teamId: number) => apiFetch<{ team: SportTeam | null; standings: SportStanding[]; injuries: SportInjury[]; squad: SportSquadPlayer[] }>(`/sport/teams/${teamId}`),
+  getPlayer:      (playerId: number) => apiFetch<PlayerProfile>(`/sport/players/${playerId}`),
+  getTeamFixtures:(teamId: number, last = 10) => apiFetch<TeamFixture[]>(`/sport/teams/${teamId}/fixtures?last=${last}`),
+  getLineups:     (id: string) => apiFetch<SportLineup[]>(`/sport/events/${id}/lineups`),
+  getMatchStats:  (id: string) => apiFetch<SportFixtureStat[]>(`/sport/events/${id}/stats`),
+  getMatchEvents: (id: string) => apiFetch<SportMatchEvent[]>(`/sport/events/${id}/match-events`),
+  getSquad:       (teamExternalId: number) => apiFetch<SportSquadPlayer[]>(`/sport/teams/${teamExternalId}/squad`),
+  getTopScorers:  (leagueId: number, season?: number) => apiFetch<SportTopScorer[]>(`/sport/topscorers/${leagueId}${season ? `?season=${season}` : ''}`),
+  syncDate: (subcategory: string, date: string) =>
+    apiFetch<{ ok: boolean; count: number }>('/sport/sync', { method: 'POST', body: JSON.stringify({ subcategory, date }) }),
 }
 
 export const searchApi = {

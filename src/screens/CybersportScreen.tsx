@@ -250,7 +250,7 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId }: { ini
   const accent = ACCENT[game]
 
   const allGroups   = useMemo(() => groupByTournament(allMatches), [allMatches])
-  const tournaments = useMemo(() => allGroups.map(g => g.tournament), [allGroups])
+  const tournaments = useMemo(() => allGroups.map(g => ({ name: g.tournament })), [allGroups])
 
   const filteredGroups = useMemo(() => {
     if (!activeTournament) return allGroups

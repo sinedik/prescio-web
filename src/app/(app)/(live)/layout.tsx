@@ -1,7 +1,7 @@
 'use client'
 import React, { useEffect, useTransition } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import { LiveLayoutProvider, useLiveLayout } from '@/contexts/LiveLayoutContext'
+import { LiveLayoutProvider, useLiveLayout, type SidebarLeague } from '@/contexts/LiveLayoutContext'
 import { WorldBackground, ACCENT, type Discipline } from '@/components/WorldBackground'
 import { LiveHero } from '@/components/LiveHero'
 import { LogoFootball, LogoBasketball, LogoTennis, LogoMMA, LogoCS2, LogoDota2, LogoValorant } from '@/components/icons/games'
@@ -44,6 +44,17 @@ function LiveSidebar({
   const accent = ACCENT[discipline]
   const isSport = pathname.startsWith('/sport')
   const items = isSport ? SPORT_ITEMS : GAME_ITEMS
+
+  // Base listing path for current discipline (e.g. /sport/football)
+  const basePath = isSport
+    ? (SPORT_ITEMS.find(i => pathname.startsWith(i.href))?.href ?? '/sport/football')
+    : (GAME_ITEMS.find(i => pathname.startsWith(i.href))?.href ?? '/cybersport/cs2')
+
+  function handleLeagueClick(league: SidebarLeague) {
+    setSelectedLeague(league.name)
+    // If we're on a sub-page (match, team, player), go back to the listing
+    if (pathname !== basePath) navigate(basePath)
+  }
 
   return (
     <aside
@@ -89,7 +100,7 @@ function LiveSidebar({
             {isSport ? 'Лиги' : 'Турниры'}
           </p>
           <button
-            onClick={() => setSelectedLeague(null)}
+            onClick={() => { setSelectedLeague(null); if (pathname !== basePath) navigate(basePath) }}
             className={`w-full flex items-center gap-2.5 px-3.5 py-[7px] text-[12px] border-l-2 transition-all
               ${selectedLeague === null
                 ? 'text-text-primary bg-white/[0.04]'
@@ -99,16 +110,23 @@ function LiveSidebar({
           >Все</button>
           {leagues.map(l => (
             <button
-              key={l}
-              onClick={() => setSelectedLeague(l)}
-              className={`w-full flex items-center gap-2.5 px-3.5 py-[7px] text-[12px] border-l-2 transition-all text-left
-                ${selectedLeague === l
+              key={l.name}
+              onClick={() => handleLeagueClick(l)}
+              className={`w-full flex items-center gap-2 px-3.5 py-[7px] text-[12px] border-l-2 transition-all text-left
+                ${selectedLeague === l.name
                   ? 'text-text-primary bg-white/[0.04]'
                   : 'border-l-transparent text-text-muted hover:text-text-secondary hover:bg-white/[0.02]'
                 }`}
-              style={selectedLeague === l ? { borderLeftColor: accent } : {}}
+              style={selectedLeague === l.name ? { borderLeftColor: accent } : {}}
             >
-              <span className="truncate">{l}</span>
+              {l.flag
+                ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={l.flag} alt="" className="w-4 h-3 object-cover rounded-[2px] shrink-0 opacity-70" />
+                )
+                : <div className="w-4 h-3 shrink-0" />
+              }
+              <span className="truncate">{l.name}</span>
             </button>
           ))}
         </div>
@@ -171,7 +189,7 @@ function LiveLayoutInner({ children }: { children: React.ReactNode }) {
             </div>
           )}
 
-          {!hideHero && (
+          {!hideHero && !pathname.includes('/team/') && !pathname.includes('/player/') && (
             <div style={{ position: 'sticky', top: 0, zIndex: 20 }}>
               <div className="px-6">
                 <LiveHero discipline={discipline} />
