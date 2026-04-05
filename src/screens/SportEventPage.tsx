@@ -1,11 +1,15 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { usePolling } from '../hooks/usePolling'
 import { sportApi } from '../lib/api'
+import { getCached, setCached } from '../lib/clientCache'
 import { useAuthContext } from '../contexts/AuthContext'
+import { useSportWs } from '../hooks/useSportWs'
 import type { SportEvent, SportOdds, SportPrediction, SportStanding, SportInjury, SubscriptionPlan, SportLineup, SportFixtureStat, SportMatchEvent, SportTopScorer } from '../types/index'
+
+type EventFastCache = { event: SportEvent; form: { home_form: FormEntry[] | null; away_form: FormEntry[] | null } | null; prediction: SportPrediction | null | undefined }
+type EventDetailsCache = { standings: SportStanding[]; topScorers: SportTopScorer[]; homeInj: SportInjury[]; awayInj: SportInjury[]; lineups: SportLineup[]; matchStats: SportFixtureStat[]; matchEvents: SportMatchEvent[] }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SPORT_ACCENT: Record<string, string> = {
@@ -56,7 +60,7 @@ function TeamAvatar({ name, logo, accent, size = 68 }: { name: string; logo?: st
     <div className="rounded-2xl flex items-center justify-center border-2 overflow-hidden shrink-0"
       style={{ width: size, height: size, background: `${accent}08`, borderColor: `${accent}25` }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={logo} alt={name} onError={() => setErr(true)} style={{ width: size * 0.72, height: size * 0.72, objectFit: 'contain' }} />
+      <img src={logo} alt={name} loading="lazy" onError={() => setErr(true)} style={{ width: size * 0.72, height: size * 0.72, objectFit: 'contain' }} />
     </div>
   )
   return (
@@ -72,7 +76,7 @@ function PlayerAvatar({ name, photo, size = 34 }: { name: string | null; photo?:
   const [err, setErr] = useState(false)
   if (photo && !err) return (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={photo} alt={name ?? ''} onError={() => setErr(true)}
+    <img src={photo} alt={name ?? ''} loading="lazy" onError={() => setErr(true)}
       className="rounded-full object-cover shrink-0 border border-bg-border"
       style={{ width: size, height: size }} />
   )
@@ -431,7 +435,7 @@ function StandingsSection({ standings, homeId, awayId, leagueName, accent }: {
                 <div className="flex items-center gap-2.5 min-w-0">
                   {s.team_logo ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={s.team_logo} alt="" className="w-5 h-5 object-contain shrink-0" />
+                    <img src={s.team_logo} alt="" loading="lazy" className="w-5 h-5 object-contain shrink-0" />
                   ) : (
                     <div className="w-5 h-5 rounded-full shrink-0 border"
                       style={{ background: isHL ? `${accent}50` : 'transparent', borderColor: isHL ? accent : 'rgba(255,255,255,0.15)' }} />
@@ -842,7 +846,7 @@ function TopScorersSection({ scorers, accent, sub }: { scorers: SportTopScorer[]
             </span>
             {s.player_photo ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={s.player_photo} alt={s.player_name} className="w-7 h-7 rounded-full object-cover shrink-0 border border-bg-border" />
+              <img src={s.player_photo} alt={s.player_name} loading="lazy" className="w-7 h-7 rounded-full object-cover shrink-0 border border-bg-border" />
             ) : (
               <div className="w-7 h-7 rounded-full border border-bg-border shrink-0 bg-bg-elevated" />
             )}
@@ -874,7 +878,9 @@ function TopScorersSection({ scorers, accent, sub }: { scorers: SportTopScorer[]
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-export default function SportEventPage({ id: idProp, onBack, onLeagueLoad }: { id?: string; onBack?: () => void; onLeagueLoad?: (league: string) => void }) {
+export interface EventMeta { league: string; leagueId?: number | null; homeTeam: string; awayTeam: string }
+
+export default function SportEventPage({ id: idProp, onBack, onLeagueLoad }: { id?: string; onBack?: () => void; onLeagueLoad?: (meta: EventMeta) => void }) {
   const params = useParams<{ id: string }>()
   const id     = idProp ?? params?.id ?? ''
   const router = useRouter()
@@ -882,8 +888,85 @@ export default function SportEventPage({ id: idProp, onBack, onLeagueLoad }: { i
   const _plan: SubscriptionPlan = profile?.plan ?? (profile?.is_pro ? 'pro' : 'free')
   const pageRef = useRef<HTMLDivElement>(null)
 
-  const { data, loading } = usePolling(() => sportApi.getEvent(id), 60_000, id)
-  const event = data as SportEvent | null
+  const _fc = id ? getCached<EventFastCache>(`event_fast:${id}`) : null
+  const _dc = id ? getCached<EventDetailsCache>(`event_details:${id}`) : null
+
+  const [event, setEvent]           = useState<SportEvent | null>(_fc?.event ?? null)
+  const [loading, setLoading]       = useState(!_fc)
+  const [form, setForm]             = useState<{ home_form: FormEntry[] | null; away_form: FormEntry[] | null } | null>(_fc?.form ?? null)
+  const [prediction, setPrediction] = useState<SportPrediction | null | undefined>(_fc?.prediction)
+  const [standings, setStandings]   = useState<SportStanding[]>(_dc?.standings ?? [])
+  const [homeInj, setHomeInj]       = useState<SportInjury[]>(_dc?.homeInj ?? [])
+  const [awayInj, setAwayInj]       = useState<SportInjury[]>(_dc?.awayInj ?? [])
+  const [lineups, setLineups]       = useState<SportLineup[]>(_dc?.lineups ?? [])
+  const [matchStats, setMatchStats] = useState<SportFixtureStat[]>(_dc?.matchStats ?? [])
+  const [matchEvents, setMatchEvents] = useState<SportMatchEvent[]>(_dc?.matchEvents ?? [])
+  const [topScorers, setTopScorers] = useState<SportTopScorer[]>(_dc?.topScorers ?? [])
+  const [dataError, setDataError]   = useState(false)
+  const [detailsLoading, setDetailsLoading] = useState(!_dc)
+
+  // ── Fast load: event + form + prediction in one request ────────────────────
+  useEffect(() => {
+    if (!id) return
+    if (!getCached<EventFastCache>(`event_fast:${id}`)) setLoading(true)
+    sportApi.getEventFull(id)
+      .then(({ event: ev, form: f, prediction: p }) => {
+        setEvent(ev)
+        setForm(f)
+        setPrediction(p)
+        setCached(`event_fast:${id}`, { event: ev, form: f, prediction: p })
+        if (ev.league && onLeagueLoad) onLeagueLoad({ league: ev.league, leagueId: ev.raw_data?.league_id as number | null | undefined, homeTeam: ev.home_team, awayTeam: ev.away_team })
+      })
+      .catch(() => setDataError(true))
+      .finally(() => setLoading(false))
+  }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── If loaded from cache, fire onLeagueLoad immediately (once) ────────────
+  useEffect(() => {
+    if (_fc?.event && onLeagueLoad) {
+      const ev = _fc.event
+      onLeagueLoad({ league: ev.league ?? '', leagueId: ev.raw_data?.league_id as number | null | undefined, homeTeam: ev.home_team, awayTeam: ev.away_team })
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Heavy load: standings + topscorers + injuries + lineups + stats ─────────
+  useEffect(() => {
+    if (!id) return
+    if (!getCached<EventDetailsCache>(`event_details:${id}`)) setDetailsLoading(true)
+    sportApi.getEventDetails(id)
+      .then(({ standings: s, topScorers: ts, homeInjuries: hi, awayInjuries: ai, lineups: l, stats: st, matchEvents: me }) => {
+        setStandings(s)
+        setTopScorers(ts)
+        setHomeInj(hi)
+        setAwayInj(ai)
+        setLineups(l)
+        setMatchStats(st)
+        setMatchEvents(me)
+        setCached(`event_details:${id}`, { standings: s, topScorers: ts, homeInj: hi, awayInj: ai, lineups: l, matchStats: st, matchEvents: me })
+      })
+      .catch(() => {})
+      .finally(() => setDetailsLoading(false))
+  }, [id])
+
+  // ── WebSocket: live score + odds updates ────────────────────────────────────
+  useSportWs({
+    eventId: id,
+    onEventUpdate: useCallback((data: Record<string, unknown>) => {
+      setEvent(prev => prev ? { ...prev, ...data } as SportEvent : prev)
+    }, []),
+    onOddsUpdate: useCallback((_eventId: string, data: Record<string, unknown>) => {
+      const incoming = data as unknown as SportOdds
+      setEvent(prev => {
+        if (!prev) return prev
+        const odds = prev.sport_odds ?? []
+        const idx = odds.findIndex(o => o.bookmaker === incoming.bookmaker && o.market_type === incoming.market_type)
+        if (idx === -1) return { ...prev, sport_odds: [...odds, incoming] }
+        const updated = [...odds]
+        updated[idx] = incoming
+        return { ...prev, sport_odds: updated }
+      })
+    }, []),
+  })
 
   const sub    = event?.subcategory ?? 'football'
   const accent = SPORT_ACCENT[sub] ?? '#D4A017'
@@ -906,44 +989,6 @@ export default function SportEventPage({ id: idProp, onBack, onLeagueLoad }: { i
   const isLive     = event?.status === 'live'
   const isFinished = event?.status === 'finished'
   const hasScore   = event?.home_score != null && event?.away_score != null
-
-  const [form, setForm]             = useState<{ home_form: FormEntry[] | null; away_form: FormEntry[] | null } | null>(null)
-  const [prediction, setPrediction] = useState<SportPrediction | null | undefined>(undefined)
-  const [standings, setStandings]   = useState<SportStanding[]>([])
-  const [homeInj, setHomeInj]       = useState<SportInjury[]>([])
-  const [awayInj, setAwayInj]       = useState<SportInjury[]>([])
-  const [lineups, setLineups]       = useState<SportLineup[]>([])
-  const [matchStats, setMatchStats] = useState<SportFixtureStat[]>([])
-  const [matchEvents, setMatchEvents] = useState<SportMatchEvent[]>([])
-  const [topScorers, setTopScorers] = useState<SportTopScorer[]>([])
-  const [dataError, setDataError]   = useState(false)
-
-  useEffect(() => {
-    if (event?.league && onLeagueLoad) onLeagueLoad(event.league)
-  }, [event?.league]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (!id) return
-    sportApi.getForm(id).then(setForm).catch(() => setForm({ home_form: null, away_form: null }))
-    sportApi.getPredictions(id).then(setPrediction).catch(() => setPrediction(null))
-    sportApi.getLineups(id).then(setLineups).catch(() => setDataError(true))
-    sportApi.getMatchStats(id).then(setMatchStats).catch(() => {})
-    sportApi.getMatchEvents(id).then(setMatchEvents).catch(() => {})
-  }, [id])
-
-  useEffect(() => {
-    if (!leagueId) return
-    sportApi.getStandings(leagueId).then(setStandings).catch(() => {})
-    sportApi.getTopScorers(leagueId).then(setTopScorers).catch(() => {})
-  }, [leagueId])
-
-  useEffect(() => {
-    if (!homeTeamId && !awayTeamId) return
-    Promise.all([
-      homeTeamId ? sportApi.getInjuries({ teamId: homeTeamId }) : Promise.resolve([]),
-      awayTeamId ? sportApi.getInjuries({ teamId: awayTeamId }) : Promise.resolve([]),
-    ]).then(([h, a]) => { setHomeInj(h as SportInjury[]); setAwayInj(a as SportInjury[]) }).catch(() => {})
-  }, [homeTeamId, awayTeamId])
 
   const availableTabs = (['h2h', 'totals', 'spreads', 'btts'] as const).filter(t => event?.sport_odds?.some(o => o.market_type === t))
   const [activeTab, setActiveTab] = useState<string>('h2h')
@@ -1002,7 +1047,7 @@ export default function SportEventPage({ id: idProp, onBack, onLeagueLoad }: { i
 
       {/* Back — only shown in standalone mode; embedded mode uses parent header */}
       {!onBack && (
-      <button onClick={() => { if (window.history.length > 1) router.back(); else router.push('/sport/football') }}
+      <button onClick={() => { if (leagueId) router.push(`/sport/${sub}/league/${leagueId}`); else router.push(`/sport/${sub}`) }}
         className="flex items-center gap-1.5 text-[13px] font-mono text-text-muted/60 hover:text-text-secondary transition-colors self-start">
         <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
         {leagueName} · все матчи
@@ -1019,7 +1064,7 @@ export default function SportEventPage({ id: idProp, onBack, onLeagueLoad }: { i
           <div className="flex items-center gap-2 min-w-0 flex-1">
             {leagueLogo && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={leagueLogo} alt="" className="w-5 h-5 object-contain shrink-0" />
+              <img src={leagueLogo} alt="" loading="lazy" className="w-5 h-5 object-contain shrink-0" />
             )}
             <span className="text-[12px] font-mono text-[#ccc] truncate font-medium">
               {leagueName}
@@ -1158,6 +1203,12 @@ export default function SportEventPage({ id: idProp, onBack, onLeagueLoad }: { i
 
       {/* ── AI INSIGHT ──────────────────────────────────────────────────────── */}
       <AiInsightCard pred={prediction} odds={event.sport_odds ?? []} accent={accent} />
+      {prediction === null && fixtureId && (
+        <div className="flex items-center gap-2 px-4 py-3 rounded-xl border border-bg-border bg-bg-surface text-[11px] font-mono text-text-muted/45">
+          <svg className="w-3 h-3 animate-spin shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>
+          Прогноз обновляется в фоне — появится при следующем открытии
+        </div>
+      )}
 
       {/* ── LINEUPS ─────────────────────────────────────────────────────────── */}
       <LineupsSection lineups={lineups} accent={accent} status={event.status} sub={sub} />
@@ -1167,6 +1218,15 @@ export default function SportEventPage({ id: idProp, onBack, onLeagueLoad }: { i
 
       {/* ── MATCH STATS ─────────────────────────────────────────────────────── */}
       <MatchStatsSection stats={matchStats} accent={accent} status={event.status} />
+
+      {/* ── DETAILS SKELETON ────────────────────────────────────────────────── */}
+      {detailsLoading && !lineups.length && !matchStats.length && !standings.length && (
+        <div className="flex flex-col gap-3">
+          {[90, 120, 80].map((h, i) => (
+            <div key={i} className="rounded-xl border border-bg-border bg-bg-surface animate-pulse" style={{ height: h, animationDelay: `${i * 80}ms` }} />
+          ))}
+        </div>
+      )}
 
       {/* ── HOME/AWAY SPLIT ─────────────────────────────────────────────────── */}
       {standings.length > 0 && (

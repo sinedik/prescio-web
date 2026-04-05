@@ -1,14 +1,16 @@
 'use client'
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, useMemo, useCallback, memo } from 'react'
+import { getCached, setCached } from '../lib/clientCache'
 import { flushSync } from 'react-dom'
 import { useRouter } from 'next/navigation'
-import { usePolling } from '../hooks/usePolling'
+import Link from 'next/link'
 import { usePageTitle } from '../hooks/usePageTitle'
+import { useSportWs } from '../hooks/useSportWs'
 import { sportApi } from '../lib/api'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import type { SportEvent, SportOdds, SubscriptionPlan } from '../types/index'
 import { useAuthContext } from '../contexts/AuthContext'
-import SportEventPage from './SportEventPage'
+import SportEventPage, { type EventMeta } from './SportEventPage'
 import type { SidebarLeague } from '../contexts/LiveLayoutContext'
 
 import { LogoFootball, LogoBasketball, LogoTennis, LogoMMA } from '../components/icons/games'
@@ -288,11 +290,11 @@ function LeagueDivider({ name, logo, flag, count, liveCount, first }: {
 
   const icon = flag && !flagErr ? (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={flag} alt="" onError={() => setFlagErr(true)}
+    <img src={flag} alt="" loading="lazy" onError={() => setFlagErr(true)}
       className="w-[18px] h-[13px] object-cover rounded-[2px] shrink-0" />
   ) : logo && !logoErr ? (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={logo} alt="" onError={() => setLogoErr(true)}
+    <img src={logo} alt="" loading="lazy" onError={() => setLogoErr(true)}
       className="w-5 h-5 object-contain shrink-0" />
   ) : <div className="w-5 h-5 shrink-0" />
 
@@ -324,7 +326,7 @@ function TeamLogo({ logo, abbr: abbrStr, size, accent }: { logo?: string | null;
     <div className="shrink-0 flex items-center justify-center rounded overflow-hidden border border-bg-border"
       style={{ width: size, height: size, background: `${accent}08` }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={logo} alt="" onError={() => setErr(true)} style={{ width: size * 0.8, height: size * 0.8, objectFit: 'contain' }} />
+      <img src={logo} alt="" loading="lazy" onError={() => setErr(true)} style={{ width: size * 0.8, height: size * 0.8, objectFit: 'contain' }} />
     </div>
   )
   return (
@@ -366,8 +368,8 @@ function OddsBar({ odds, accent, sport }: { odds: Odds3Way; accent: string; spor
 }
 
 // ─── Match Row ────────────────────────────────────────────────────────────────
-function SportRow({ event, sport, accent, onClick }: {
-  event: SportEvent; sport: Sport; accent: string; onClick?: () => void
+const SportRow = memo(function SportRow({ event, sport, accent }: {
+  event: SportEvent; sport: Sport; accent: string
 }) {
   const [expanded, setExpanded] = useState(false)
   const isLive     = event.status === 'live'
@@ -381,17 +383,19 @@ function SportRow({ event, sport, accent, onClick }: {
   const homeLeads  = (event.home_score ?? 0) > (event.away_score ?? 0)
   const awayLeads  = (event.away_score ?? 0) > (event.home_score ?? 0)
 
+  const href = `/sport/${sport}/${event.id}`
+
   return (
     <div className="rounded-lg overflow-hidden"
       style={{ border: `1px solid ${isLive ? 'rgba(255,50,50,0.2)' : 'rgba(255,255,255,0.06)'}` }}>
-      <div
-        onClick={onClick}
+      <Link
+        href={href}
         className="grid items-center gap-3 px-3.5 py-2.5 transition-all group relative"
         style={{
           gridTemplateColumns: '64px 1fr auto',
-          cursor: onClick ? 'pointer' : undefined,
           background: isLive ? 'rgba(255,50,50,0.04)' : 'rgba(8,8,8,0.55)',
           backdropFilter: 'blur(2px)',
+          display: 'grid',
         }}
       >
         {/* Left accent bar */}
@@ -468,14 +472,14 @@ function SportRow({ event, sport, accent, onClick }: {
         </div>
 
         {/* Odds + expand */}
-        <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center gap-2 shrink-0" onClick={e => e.preventDefault()}>
           {odds ? (
             <OddsBar odds={odds} accent={accent} sport={sport} />
           ) : (
             <div className="w-2 h-2 rounded-full bg-bg-border/60" />
           )}
           <button
-            onClick={() => setExpanded(v => !v)}
+            onClick={e => { e.preventDefault(); setExpanded(v => !v) }}
             className="flex items-center gap-1 px-2 py-1 rounded border transition-all shrink-0"
             style={expanded
               ? { borderColor: `${accent}44`, color: accent, background: `${accent}10` }
@@ -489,7 +493,7 @@ function SportRow({ event, sport, accent, onClick }: {
             </svg>
           </button>
         </div>
-      </div>
+      </Link>
 
       {expanded && (
         <div className="px-4 py-3 border-t border-bg-border/50 bg-bg-elevated/30">
@@ -498,7 +502,7 @@ function SportRow({ event, sport, accent, onClick }: {
       )}
     </div>
   )
-}
+})
 
 // ─── Match detail (expanded) ──────────────────────────────────────────────────
 function MatchDetail({ event, sport, accent }: { event: SportEvent; sport: Sport; accent: string }) {
@@ -581,9 +585,12 @@ export function SportScreen({ initialSport, eventId }: { initialSport?: Sport; e
   const dateRange = useMemo(() => buildDateRange(30), [])
   const today     = useMemo(() => toLocalDateStr(new Date()), [])
 
-  const [selectedDate, setSelectedDate] = useState<SelectedDate>(today)
+  const [selectedDate, setSelectedDate] = useState<SelectedDate>(() => getCached<SelectedDate>(`sport_date:${sport}`) ?? today)
   const [currentPage, setCurrentPage]   = useState(1)
-  const [matchLeague, setMatchLeague]   = useState('')
+  const [matchLeague, setMatchLeague]     = useState('')
+  const [matchLeagueId, setMatchLeagueId] = useState<number | null>(null)
+  const [matchHome, setMatchHome]         = useState('')
+  const [matchAway, setMatchAway]         = useState('')
   const [syncingDate, setSyncingDate]   = useState<string | null>(null)
   const [syncVersion, setSyncVersion]   = useState(0)
 
@@ -598,31 +605,49 @@ export function SportScreen({ initialSport, eventId }: { initialSport?: Sport; e
     to.setHours(23, 59, 59, 999)
     return {
       subcategory:   sport,
-      limit:         500,
+      limit:         100,
       starts_after:  from.toISOString(),
       starts_before: to.toISOString(),
     }
   }, [sport])
 
-  const { data, loading, isRefreshing } = usePolling(
-    () => sportApi.getEvents(fetchParams),
-    60_000,
-    sport,
-    syncVersion,
-  )
+  const [events, setEvents]       = useState<SportEvent[]>(() => getCached<SportEvent[]>(`sport_events:${sport}`) ?? [])
+  const [loading, setLoading]     = useState(() => !getCached<SportEvent[]>(`sport_events:${sport}`))
+  const [isRefreshing] = useState(false)
 
-  const [isStale, setIsStale] = useState(false)
-  useEffect(() => { setIsStale(true) }, [sport])
-  useEffect(() => { if (data !== null) setIsStale(false) }, [data])
+  // Initial fetch + refetch on sport/syncVersion change
+  useEffect(() => {
+    const key = `sport_events:${sport}`
+    const cached = getCached<SportEvent[]>(key)
+    if (!cached) { setEvents([]); setLoading(true) }
+
+    sportApi.getEvents(fetchParams)
+      .then(res => {
+        const evts = res.events ?? []
+        setEvents(evts)
+        setCached(key, evts)
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [sport, syncVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // WS: patch score/status in-place without re-fetching the full list
+  useSportWs({
+    subscribeList: true,
+    onListUpdate: useCallback((data: { id: string; status: string; home_score: number | null; away_score: number | null }) => {
+      setEvents(prev => prev.map(e =>
+        e.id === data.id
+          ? { ...e, status: data.status as SportEvent['status'], home_score: data.home_score ?? undefined, away_score: data.away_score ?? undefined }
+          : e
+      ))
+    }, []),
+  })
+
   useEffect(() => { setCurrentPage(1) }, [sport, selectedDate, selectedLeague])
-  // Reset to today when switching sport
-  useEffect(() => { setSelectedDate(today) }, [sport, today])
+  useEffect(() => { setSelectedDate(getCached<SelectedDate>(`sport_date:${sport}`) ?? today) }, [sport, today])
 
-  const showSkeleton = loading || isStale
-  const events = useMemo<SportEvent[]>(
-    () => isStale ? [] : ((data as { events?: SportEvent[] } | null)?.events ?? []),
-    [data, isStale]
-  )
+  const showSkeleton = loading
+  void isRefreshing // kept for future use
 
   const liveCount = events.filter(e => e.status === 'live').length
 
@@ -652,20 +677,25 @@ export function SportScreen({ initialSport, eventId }: { initialSport?: Sport; e
   }, [events])
 
   const leagues = useMemo<SidebarLeague[]>(() => {
-    const seen = new Map<string, string | null>()
+    const seen = new Map<string, { flag: string | null; leagueId: number | null }>()
     for (const e of events) {
       const name = e.league || e.subcategory || ''
       if (!name || seen.has(name)) continue
       const raw = e.raw_data as Record<string, unknown> | null
-      seen.set(name, (raw?.league_flag as string | null | undefined) ?? null)
+      seen.set(name, {
+        flag: (raw?.league_flag as string | null | undefined) ?? null,
+        leagueId: (raw?.league_id as number | null | undefined) ?? null,
+      })
     }
     return Array.from(seen.entries())
-      .map(([name, flag]) => ({ name, flag }))
+      .map(([name, { flag, leagueId }]) => ({ name, flag, leagueId }))
       .sort((a, b) => a.name.localeCompare(b.name))
   }, [events])
-  useEffect(() => { setLeagues(leagues) }, [leagues])             // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { setLiveCount(liveCount) }, [liveCount])       // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { setTotalCount(events.length) }, [events.length]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    setLeagues(leagues)
+    setLiveCount(liveCount)
+    setTotalCount(events.length)
+  }, [leagues, liveCount, events.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const filteredEvents = useMemo(() => {
     let result = selectedLeague
@@ -679,8 +709,8 @@ export function SportScreen({ initialSport, eventId }: { initialSport?: Sport; e
     return result
   }, [events, selectedLeague, selectedDate])
 
-  const allGroups  = groupByLeague(filteredEvents)
-  const pages      = paginateGroups(allGroups)
+  const allGroups  = useMemo(() => groupByLeague(filteredEvents), [filteredEvents])
+  const pages      = useMemo(() => paginateGroups(allGroups), [allGroups])
   const totalPages = pages.length
   const pageGroups = pages[currentPage - 1] ?? []
 
@@ -693,6 +723,7 @@ export function SportScreen({ initialSport, eventId }: { initialSport?: Sport; e
 
   const handleDateSelect = useCallback(async (d: SelectedDate) => {
     setSelectedDate(d)
+    setCached(`sport_date:${sport}`, d)
     setCurrentPage(1)
     if (d === 'live' || d === today) return
     // Sync only when no data at all for this date (regardless of league filter)
@@ -721,22 +752,42 @@ export function SportScreen({ initialSport, eventId }: { initialSport?: Sport; e
       <main className="flex-1 min-w-0 px-6 pb-5 pt-0">
 
         {/* Page header */}
-        <div className="flex items-center gap-3 mb-3"
-          style={{ position: 'sticky', top: eventId ? 0 : 200, zIndex: 15, background: 'rgba(8,8,8,0.75)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', marginLeft: -24, marginRight: -24, paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 8 }}
+        <div className="flex items-center gap-0 mb-3"
+          style={{ position: 'sticky', top: 200, zIndex: 15, background: 'rgba(8,8,8,0.75)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', marginLeft: -24, marginRight: -24, paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 8 }}
         >
-          {eventId && (
-            <button
-              onClick={() => router.push(`/sport/${sport}`)}
-              className="flex items-center justify-center w-7 h-7 rounded border border-bg-border text-text-muted hover:text-text-primary hover:border-bg-border/60 transition-colors shrink-0"
-            >
-              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-            </button>
+          {eventId ? (
+            /* BreadcrumbBar style — same as TeamPage / PlayerPage */
+            <div className="flex items-center gap-0 min-w-0">
+              <button
+                onClick={() => window.history.length > 1 ? router.back() : router.push(`/sport/${sport}`)}
+                className="flex items-center gap-1.5 text-[11px] font-medium text-text-muted hover:text-text-primary transition-colors shrink-0 pr-2"
+              >
+                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+                Назад
+              </button>
+              {matchLeague && (
+                <>
+                  <span className="text-text-muted/30 text-[11px] mx-1.5">/</span>
+                  {matchLeagueId
+                    ? <button onClick={() => router.push(`/sport/${sport}/league/${matchLeagueId}`)} className="text-[11px] font-medium text-text-muted hover:text-text-primary transition-colors truncate max-w-[140px]">{matchLeague}</button>
+                    : <span className="text-[11px] font-medium text-text-muted truncate max-w-[140px]">{matchLeague}</span>
+                  }
+                </>
+              )}
+              {(matchHome || matchAway) && (
+                <>
+                  <span className="text-text-muted/30 text-[11px] mx-1.5">/</span>
+                  <span className="text-[11px] font-medium text-text-primary truncate max-w-[260px]">{matchHome} — {matchAway}</span>
+                </>
+              )}
+            </div>
+          ) : (
+            <h1 className="text-xl font-bold tracking-wider uppercase text-text-primary" style={{ fontFamily: 'var(--font-sans)' }}>
+              {sportLabel}
+            </h1>
           )}
-          <h1 className="text-xl font-bold tracking-wider uppercase text-text-primary" style={{ fontFamily: 'var(--font-sans)' }}>
-            {eventId ? (matchLeague || sportLabel) : sportLabel}
-          </h1>
           {isRefreshing && (
-            <svg className="w-3 h-3 animate-spin text-text-muted/40 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg className="w-3 h-3 animate-spin text-text-muted/40 shrink-0 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 12a9 9 0 11-6.219-8.56"/>
             </svg>
           )}
@@ -759,7 +810,7 @@ export function SportScreen({ initialSport, eventId }: { initialSport?: Sport; e
 
         {/* Content */}
         {eventId ? (
-          <SportEventPage id={eventId} onBack={() => router.push(`/sport/${sport}`)} onLeagueLoad={setMatchLeague} />
+          <SportEventPage id={eventId} onBack={() => window.history.length > 1 ? router.back() : router.push(`/sport/${sport}`)} onLeagueLoad={(meta: EventMeta) => { setMatchLeague(meta.league); setMatchLeagueId(meta.leagueId ?? null); setMatchHome(meta.homeTeam); setMatchAway(meta.awayTeam) }} />
         ) : (
           <>
             {/* Active league filter banner */}
@@ -833,7 +884,6 @@ export function SportScreen({ initialSport, eventId }: { initialSport?: Sport; e
                               event={e}
                               sport={sport}
                               accent={accent}
-                              onClick={() => router.push(`/sport/${sport}/${e.id}`)}
                             />
                           ))}
                         </div>

@@ -50,10 +50,15 @@ function LiveSidebar({
     ? (SPORT_ITEMS.find(i => pathname.startsWith(i.href))?.href ?? '/sport/football')
     : (GAME_ITEMS.find(i => pathname.startsWith(i.href))?.href ?? '/cybersport/cs2')
 
-  function handleLeagueClick(league: SidebarLeague) {
+  const sportSlug = SPORT_ITEMS.find(i => pathname.startsWith(i.href))?.href.split('/').pop() ?? 'football'
+
+  function handleLeagueFilter(league: SidebarLeague) {
     setSelectedLeague(league.name)
-    // If we're on a sub-page (match, team, player), go back to the listing
     if (pathname !== basePath) navigate(basePath)
+  }
+
+  function handleLeagueNavigate(league: SidebarLeague) {
+    if (league.leagueId) navigate(`/sport/${sportSlug}/league/${league.leagueId}`)
   }
 
   return (
@@ -108,27 +113,39 @@ function LiveSidebar({
               }`}
             style={selectedLeague === null ? { borderLeftColor: accent } : {}}
           >Все</button>
-          {leagues.map(l => (
-            <button
-              key={l.name}
-              onClick={() => handleLeagueClick(l)}
-              className={`w-full flex items-center gap-2 px-3.5 py-[7px] text-[12px] border-l-2 transition-all text-left
-                ${selectedLeague === l.name
-                  ? 'text-text-primary bg-white/[0.04]'
-                  : 'border-l-transparent text-text-muted hover:text-text-secondary hover:bg-white/[0.02]'
-                }`}
-              style={selectedLeague === l.name ? { borderLeftColor: accent } : {}}
-            >
-              {l.flag
-                ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={l.flag} alt="" className="w-4 h-3 object-cover rounded-[2px] shrink-0 opacity-70" />
-                )
-                : <div className="w-4 h-3 shrink-0" />
-              }
-              <span className="truncate">{l.name}</span>
-            </button>
-          ))}
+          {leagues.map(l => {
+            const isActive = selectedLeague === l.name
+            return (
+              <div key={l.name}
+                className={`flex items-center border-l-2 transition-all text-[12px] group
+                  ${isActive ? 'text-text-primary bg-white/[0.04]' : 'border-l-transparent text-text-muted hover:bg-white/[0.02]'}`}
+                style={isActive ? { borderLeftColor: accent } : {}}
+              >
+                <button
+                  onClick={() => handleLeagueFilter(l)}
+                  className={`flex-1 flex items-center gap-2 px-3.5 py-[7px] text-left min-w-0
+                    ${isActive ? '' : 'hover:text-text-secondary'}`}
+                >
+                  {l.flag
+                    ? <img src={l.flag} alt="" className="w-4 h-3 object-cover rounded-[2px] shrink-0 opacity-70" /> // eslint-disable-line @next/next/no-img-element
+                    : <div className="w-4 h-3 shrink-0" />
+                  }
+                  <span className="truncate">{l.name}</span>
+                </button>
+                {l.leagueId && (
+                  <button
+                    onClick={() => handleLeagueNavigate(l)}
+                    className="shrink-0 pr-2.5 pl-1 py-2 opacity-0 group-hover:opacity-50 hover:!opacity-100 transition-opacity text-text-muted"
+                    title={`Страница ${l.name}`}
+                  >
+                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M7 17L17 7M17 7H7M17 7v10"/>
+                    </svg>
+                  </button>
+                )}
+              </div>
+            )
+          })}
         </div>
       )}
     </aside>
@@ -189,14 +206,16 @@ function LiveLayoutInner({ children }: { children: React.ReactNode }) {
             </div>
           )}
 
-          {!hideHero && !pathname.includes('/team/') && !pathname.includes('/player/') && (
-            <div style={{ position: 'sticky', top: 0, zIndex: 20 }}>
-              <div className="px-6">
-                <LiveHero discipline={discipline} />
+          <div className="max-w-[1280px] mx-auto w-full">
+            {!hideHero && (
+              <div style={{ position: 'sticky', top: 0, zIndex: 20 }}>
+                <div className="px-6">
+                  <LiveHero discipline={discipline} />
+                </div>
               </div>
-            </div>
-          )}
-          {children}
+            )}
+            {children}
+          </div>
         </div>
 
       </div>

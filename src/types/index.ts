@@ -199,6 +199,35 @@ export interface TeamFixture {
   status: string
 }
 
+export interface LeagueMeta {
+  leagueId: number
+  name: string | null
+  logo: string | null
+  flag: string | null
+  season: number
+}
+
+export interface LeagueFixture {
+  id: string
+  home_team: string
+  away_team: string
+  starts_at: string
+  status: 'scheduled' | 'live' | 'finished' | 'canceled'
+  home_score: number | null
+  away_score: number | null
+  home_logo: string | null
+  away_logo: string | null
+  home_team_id: number | null
+  away_team_id: number | null
+}
+
+export interface LeaguePageData {
+  meta: LeagueMeta
+  standings: SportStanding[]
+  topScorers: SportTopScorer[]
+  fixtures: LeagueFixture[]
+}
+
 export interface SportLineupPlayer {
   id: number
   name: string

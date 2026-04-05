@@ -24,7 +24,6 @@ function formatK(n: number): string {
 function WinRateBar({ radiantLead }: { radiantLead: number }) {
   const maxGold = 15000
   const clamped = Math.max(-maxGold, Math.min(maxGold, radiantLead))
-
   return (
     <div className="relative h-1.5 rounded-full overflow-hidden bg-bg-border">
       <div
@@ -41,93 +40,25 @@ function WinRateBar({ radiantLead }: { radiantLead: number }) {
   )
 }
 
-function HeroImage({ heroId, heroImg, size = 36 }: { heroId: number; heroImg: string | null; size?: number }) {
+function HeroImage({ heroId, heroImg, size = 44 }: { heroId: number; heroImg: string | null; size?: number }) {
   const [failed, setFailed] = useState(false)
+  const h = Math.round(size * 0.56)
   if (!heroImg || failed) {
     return (
       <div className="rounded shrink-0 flex items-center justify-center text-[9px] font-mono bg-bg-elevated text-text-muted"
-        style={{ width: size, height: Math.round(size * 0.56) }}>
+        style={{ width: size, height: h }}>
         {heroId}
       </div>
     )
   }
   return (
-    <div className="rounded overflow-hidden shrink-0" style={{ width: size, height: Math.round(size * 0.56) }}>
+    <div className="rounded overflow-hidden shrink-0" style={{ width: size, height: h }}>
       <img src={heroImg} alt="" className="w-full h-full object-cover" onError={() => setFailed(true)} draggable={false} />
     </div>
   )
 }
 
 const AEGIS_ID = 117
-
-function LivePlayerRow({ p, side, itemMap, elapsed = 0 }: { p: DotaLivePlayer; side: 'radiant' | 'dire'; itemMap: Record<number, DotaItem>; elapsed?: number }) {
-  const [imgFailed, setImgFailed] = useState(false)
-  const color = side === 'radiant' ? '#00e5a0' : '#ff4f6a'
-  const respawnTimer = Math.max(0, p.respawnTimer - elapsed)
-  const isDead = respawnTimer > 0
-  const hasAegis = p.items.includes(AEGIS_ID)
-  const w = 36, h = Math.round(w * 0.56)
-
-  const ultColor = p.ultimateState === 3 ? '#00e5a0' : p.ultimateState === 2 ? '#f5c842' : '#4fc3f7'
-  const showUlt = p.ultimateState > 0
-
-  return (
-    <div className="flex flex-col gap-1 px-2 py-1.5 rounded hover:bg-bg-elevated transition-colors">
-      <div className="flex items-center gap-2">
-        {/* Hero portrait with overlays */}
-        <div className="relative shrink-0 rounded overflow-hidden" style={{ width: w, height: h }}>
-          {p.heroImg && !imgFailed ? (
-            <img src={p.heroImg} alt="" className="w-full h-full object-cover"
-              onError={() => setImgFailed(true)} draggable={false} />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-[9px] font-mono bg-bg-elevated text-text-muted">
-              {p.heroId}
-            </div>
-          )}
-          {isDead && (
-            <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.75)' }}>
-              <span className="font-mono font-bold text-[10px]" style={{ color: '#ff4f6a' }}>{respawnTimer}s</span>
-            </div>
-          )}
-          {showUlt && (
-            <div className="absolute top-0 left-0 w-2 h-2 rounded-full" style={{ background: ultColor, border: '1px solid #0a0c10' }} />
-          )}
-          {hasAegis && (
-            <div className="absolute top-0 right-0 w-3 h-3 rounded-full flex items-center justify-center"
-              style={{ background: '#0a0c10', border: '1px solid rgba(184,212,255,0.45)', fontSize: 7 }}>🛡</div>
-          )}
-        </div>
-
-        {/* Name + lv + GPM + CS */}
-        <div className="flex-1 min-w-0">
-          <p className="text-[11px] font-mono truncate text-text-primary leading-none">{p.name ?? `Hero ${p.heroId}`}</p>
-          <div className="flex items-center gap-1.5 mt-0.5">
-            <span className="text-[9px] font-mono text-text-muted">lv{p.level}</span>
-            {p.goldPerMinute > 0 && (
-              <span className="text-[9px] font-mono" style={{ color: '#f5c842', opacity: 0.8 }}>{p.goldPerMinute}g</span>
-            )}
-            {p.numLastHits > 0 && (
-              <span className="text-[9px] font-mono text-text-muted opacity-60">{p.numLastHits}cs</span>
-            )}
-          </div>
-        </div>
-
-        {/* KDA + NW */}
-        <div className="text-right text-[10px] font-mono shrink-0">
-          <p className="font-bold leading-none" style={{ color }}>{p.numKills}/{p.numDeaths}/{p.numAssists}</p>
-          <p className="text-text-muted mt-0.5">{formatK(p.networth)}</p>
-        </div>
-
-        {/* Ult CD */}
-        {p.ultimateState === 2 && p.ultimateCooldown > 0 && (
-          <span className="text-[9px] font-mono font-bold shrink-0" style={{ color: '#f5c842' }}>{p.ultimateCooldown}s</span>
-        )}
-      </div>
-
-      {p.items.length > 0 && <ItemSlots itemIds={p.items} itemMap={itemMap} size={22} />}
-    </div>
-  )
-}
 
 function ItemSlot({ itemId, itemMap, size = 26 }: { itemId: number | null | undefined; itemMap: Record<number, DotaItem>; size?: number }) {
   const [failed, setFailed] = useState(false)
@@ -144,7 +75,7 @@ function ItemSlot({ itemId, itemMap, size = 26 }: { itemId: number | null | unde
   )
 }
 
-function ItemSlots({ itemIds, neutralItemId, itemMap, size = 24 }: {
+function ItemSlots({ itemIds, neutralItemId, itemMap, size = 26 }: {
   itemIds: number[]
   neutralItemId?: number | null
   itemMap: Record<number, DotaItem>
@@ -157,7 +88,7 @@ function ItemSlots({ itemIds, neutralItemId, itemMap, size = 24 }: {
         {slots.map((id, i) => <ItemSlot key={i} itemId={id} itemMap={itemMap} size={size} />)}
       </div>
       {neutralItemId !== undefined && (
-        <div className="ml-0.5">
+        <div className="ml-1">
           <ItemSlot itemId={neutralItemId} itemMap={itemMap} size={size} />
         </div>
       )}
@@ -165,46 +96,148 @@ function ItemSlots({ itemIds, neutralItemId, itemMap, size = 24 }: {
   )
 }
 
+// ─── Live player row ──────────────────────────────────────────────────────────
+
+function LivePlayerRow({ p, side, itemMap, elapsed = 0 }: { p: DotaLivePlayer; side: 'radiant' | 'dire'; itemMap: Record<number, DotaItem>; elapsed?: number }) {
+  const [imgFailed, setImgFailed] = useState(false)
+  const color = side === 'radiant' ? '#00e5a0' : '#ff4f6a'
+  const respawnTimer = Math.max(0, p.respawnTimer - elapsed)
+  const isDead = respawnTimer > 0
+  const hasAegis = p.items.includes(AEGIS_ID)
+  const w = 36, h = Math.round(w * 0.56)
+  const ultColor = p.ultimateState === 3 ? '#00e5a0' : p.ultimateState === 2 ? '#f5c842' : '#4fc3f7'
+  const showUlt = p.ultimateState > 0
+
+  return (
+    <div className="flex flex-col gap-1 px-2 py-1.5 rounded hover:bg-bg-elevated transition-colors">
+      <div className="flex items-center gap-2">
+        <div className="relative shrink-0 rounded overflow-hidden" style={{ width: w, height: h }}>
+          {p.heroImg && !imgFailed ? (
+            <img src={p.heroImg} alt="" className="w-full h-full object-cover"
+              onError={() => setImgFailed(true)} draggable={false} />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-[9px] font-mono bg-bg-elevated text-text-muted">
+              {p.heroId}
+            </div>
+          )}
+          {isDead && (
+            <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.75)' }}>
+              <span className="font-mono font-bold text-[10px]" style={{ color: '#ff4f6a' }}>{respawnTimer}s</span>
+            </div>
+          )}
+          {showUlt && <div className="absolute top-0 left-0 w-2 h-2 rounded-full" style={{ background: ultColor, border: '1px solid #0a0c10' }} />}
+          {hasAegis && (
+            <div className="absolute top-0 right-0 w-3 h-3 rounded-full flex items-center justify-center"
+              style={{ background: '#0a0c10', border: '1px solid rgba(184,212,255,0.45)', fontSize: 7 }}>🛡</div>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[11px] font-mono truncate text-text-primary leading-none">{p.name ?? `Hero ${p.heroId}`}</p>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <span className="text-[9px] font-mono text-text-muted">lv{p.level}</span>
+            {p.goldPerMinute > 0 && <span className="text-[9px] font-mono" style={{ color: '#f5c842', opacity: 0.8 }}>{p.goldPerMinute}g</span>}
+            {p.numLastHits > 0 && <span className="text-[9px] font-mono text-text-muted opacity-60">{p.numLastHits}cs</span>}
+          </div>
+        </div>
+        <div className="text-right text-[10px] font-mono shrink-0">
+          <p className="font-bold leading-none" style={{ color }}>{p.numKills}/{p.numDeaths}/{p.numAssists}</p>
+          <p className="text-text-muted mt-0.5">{formatK(p.networth)}</p>
+        </div>
+        {p.ultimateState === 2 && p.ultimateCooldown > 0 && (
+          <span className="text-[9px] font-mono font-bold shrink-0" style={{ color: '#f5c842' }}>{p.ultimateCooldown}s</span>
+        )}
+      </div>
+      {p.items.length > 0 && <ItemSlots itemIds={p.items} itemMap={itemMap} size={22} />}
+    </div>
+  )
+}
+
+// ─── Stats table (finished match) ─────────────────────────────────────────────
+
+const STAT_GRID = '44px 1fr 80px 64px 52px 52px 44px auto'
+
+function StatTableHeader({ color, teamName, won, kills }: {
+  color: string; teamName: string; won: boolean; kills: number
+}) {
+  return (
+    <>
+      <div className="flex items-center gap-2.5 px-4 py-3 border-b" style={{ background: `${color}08`, borderColor: `${color}1a` }}>
+        <span className="text-[13px] font-mono font-bold" style={{ color }}>{teamName}</span>
+        {won && (
+          <span className="text-[8px] font-mono font-bold px-2 py-0.5 rounded" style={{ background: `${color}20`, color }}>WIN</span>
+        )}
+        <div className="flex-1" />
+        <span className="text-[10px] font-mono" style={{ color: `${color}88` }}>{kills} kills</span>
+      </div>
+      <div className="grid items-center px-4 py-1.5 text-[8px] font-mono uppercase tracking-wider border-b border-bg-border/50"
+        style={{ gridTemplateColumns: STAT_GRID }}>
+        <div className="text-text-muted/40">Hero</div>
+        <div className="pl-2 text-text-muted/40">Player</div>
+        <div className="text-center text-text-muted/40">K / D / A</div>
+        <div className="text-right text-text-muted/40">Net Worth</div>
+        <div className="text-right" style={{ color: 'rgba(245,200,66,0.45)' }}>GPM</div>
+        <div className="text-right" style={{ color: 'rgba(167,139,250,0.45)' }}>XPM</div>
+        <div className="text-right text-text-muted/40">LH</div>
+        <div className="pl-2 text-text-muted/40">Items</div>
+      </div>
+    </>
+  )
+}
+
 function PlayerRow({ player, isRadiant, itemMap }: { player: DotaMatchPlayer; isRadiant: boolean; itemMap: Record<number, DotaItem> }) {
   const color = isRadiant ? '#00e5a0' : '#ff4f6a'
   return (
-    <div className="flex flex-col gap-1.5 px-2 py-2 rounded hover:bg-bg-elevated transition-colors">
-      {/* Hero + name + KDA */}
-      <div className="flex items-center gap-2">
-        <HeroImage heroId={player.heroId} heroImg={player.heroImg} size={40} />
-        <div className="flex-1 min-w-0">
-          <p className="text-[12px] font-mono font-bold leading-none truncate text-text-primary">
-            {player.name ?? player.heroName}
-          </p>
-          {player.teamName && (
-            <p className="text-[9px] font-mono mt-0.5 truncate text-text-muted">{player.teamName}</p>
-          )}
-        </div>
-        <div className="flex items-center gap-3 shrink-0 text-[11px] font-mono">
-          <span className="font-bold" style={{ color }}>{player.kills}/{player.deaths}/{player.assists}</span>
-          <span className="text-text-muted">{formatK(player.networth)}</span>
-          <span className="text-text-muted opacity-60">lv{player.level}</span>
+    <div className="grid items-center px-4 py-2.5 hover:bg-white/[0.025] transition-colors border-b border-bg-border/25 last:border-0"
+      style={{ gridTemplateColumns: STAT_GRID }}>
+      <HeroImage heroId={player.heroId} heroImg={player.heroImg} size={44} />
+      <div className="pl-2 min-w-0">
+        <p className="text-[12px] font-mono font-bold truncate text-text-primary leading-none">{player.name ?? '—'}</p>
+        <p className="text-[9px] font-mono truncate text-text-muted mt-0.5 opacity-60">{player.heroName}</p>
+      </div>
+      <div className="text-center text-[12px] font-mono font-bold" style={{ color }}>
+        {player.kills}/{player.deaths}/{player.assists}
+      </div>
+      <div className="text-right text-[11px] font-mono text-text-secondary">{formatK(player.networth)}</div>
+      <div className="text-right text-[11px] font-mono" style={{ color: '#f5c842' }}>{player.gpm}</div>
+      <div className="text-right text-[11px] font-mono" style={{ color: '#a78bfa' }}>{player.xpm}</div>
+      <div className="text-right text-[11px] font-mono text-text-secondary">{player.lastHits}</div>
+      <div className="pl-2">
+        <ItemSlots itemIds={player.items ?? []} neutralItemId={player.neutralItem} itemMap={itemMap} size={26} />
+      </div>
+    </div>
+  )
+}
+
+// ─── Gold advantage chart ─────────────────────────────────────────────────────
+
+function GoldChart({ leads }: { leads: number[] }) {
+  const max = Math.max(...leads.map(Math.abs), 1000)
+  const ptArr = leads.map((v, i) => {
+    const x = (i / (leads.length - 1)) * 400
+    const y = 40 - (v / max) * 37
+    return { x: x.toFixed(1), y: y.toFixed(1) }
+  })
+  const pts = ptArr.map(p => `${p.x},${p.y}`).join(' ')
+  const lastVal = leads[leads.length - 1]
+  const lineColor = lastVal >= 0 ? '#00e5a0' : '#ff4f6a'
+  const first = ptArr[0], last = ptArr[ptArr.length - 1]
+  const fillPath = `M ${first.x},${first.y} ${ptArr.slice(1).map(p => `L ${p.x},${p.y}`).join(' ')} L ${last.x},40 L ${first.x},40 Z`
+
+  return (
+    <div className="rounded-xl bg-bg-surface border border-bg-border px-4 pt-3 pb-3">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-[9px] font-mono uppercase tracking-wider text-text-muted/60">Gold advantage per minute</p>
+        <div className="flex items-center gap-4 text-[9px] font-mono">
+          <span style={{ color: '#00e5a0' }}>● Radiant</span>
+          <span style={{ color: '#ff4f6a' }}>● Dire</span>
         </div>
       </div>
-      {/* Items */}
-      {(player.items?.length > 0 || player.neutralItem != null) && (
-        <ItemSlots itemIds={player.items ?? []} neutralItemId={player.neutralItem} itemMap={itemMap} size={24} />
-      )}
-      {/* Stats row */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {[
-          { label: 'GPM',  value: player.gpm,         color: '#f5c842' },
-          { label: 'XPM',  value: player.xpm,         color: '#a78bfa' },
-          { label: 'LH',   value: player.lastHits,    color: undefined },
-          { label: 'DN',   value: player.denies,      color: undefined },
-          { label: 'HD',   value: player.heroDamage != null ? formatK(player.heroDamage) : null,  color: '#ff4f6a' },
-          { label: 'TD',   value: player.towerDamage != null ? formatK(player.towerDamage) : null, color: '#f5c842' },
-        ].filter(s => s.value != null && s.value !== 0).map(s => (
-          <div key={s.label} className="flex items-baseline gap-0.5">
-            <span className="text-[8px] font-mono text-text-muted opacity-60 uppercase">{s.label}</span>
-            <span className="text-[10px] font-mono" style={{ color: s.color ?? 'var(--color-text-secondary)' }}>{s.value}</span>
-          </div>
-        ))}
+      <div className="relative" style={{ height: '72px' }}>
+        <svg viewBox="0 0 400 80" className="w-full h-full" preserveAspectRatio="none">
+          <line x1="0" y1="40" x2="400" y2="40" stroke="rgba(128,128,128,0.15)" strokeWidth="1" strokeDasharray="4 4" />
+          <path d={fillPath} fill={lineColor} opacity="0.07" />
+          <polyline points={pts} fill="none" stroke={lineColor} strokeWidth="1.5" strokeLinejoin="round" />
+        </svg>
       </div>
     </div>
   )
@@ -243,7 +276,6 @@ function LiveView({ matchId, serverSteamId }: { matchId: string; serverSteamId?:
       for (const item of (r.items ?? [])) map[item.id] = item
       setItemMap(map)
     }).catch(() => {})
-    // 1s tick for respawn timer countdown
     const tick = setInterval(() => {
       setElapsed(Math.floor((Date.now() - fetchedAtRef.current) / 1000))
     }, 1000)
@@ -275,21 +307,14 @@ function LiveView({ matchId, serverSteamId }: { matchId: string; serverSteamId?:
 
   const radiantPlayers = liveData.players.filter(p => p.isRadiant)
   const direPlayers = liveData.players.filter(p => !p.isRadiant)
-  // Hero images: backend already provides heroImg on each player, but also merge from heroes cache
   const heroImages: Record<number, string> = {}
   for (const p of liveData.players) {
     const img = p.heroImg ?? heroes[p.heroId]?.img
     if (img) heroImages[p.heroId] = img
   }
 
-  const latestWR = liveData.liveWinRates.length > 0
-    ? liveData.liveWinRates[liveData.liveWinRates.length - 1].winRate
-    : 0.5
-
   const roshanAlive = (liveData.roshanRespawnTimer ?? 0) === 0
-  const roshanMins = liveData.roshanRespawnTimer > 0
-    ? Math.ceil(liveData.roshanRespawnTimer / 60)
-    : 0
+  const roshanMins = liveData.roshanRespawnTimer > 0 ? Math.ceil(liveData.roshanRespawnTimer / 60) : 0
 
   return (
     <div className="space-y-4">
@@ -309,7 +334,6 @@ function LiveView({ matchId, serverSteamId }: { matchId: string; serverSteamId?:
         </div>
         <div className="text-right">
           <p className="text-[9px] font-mono text-text-muted">{liveData.spectators} watching</p>
-          {/* Roshan status */}
           <p className="text-[9px] font-mono mt-0.5 text-text-muted opacity-70">
             {roshanAlive ? 'Rosh alive' : `Rosh ~${roshanMins}m`}
           </p>
@@ -356,7 +380,6 @@ function LiveView({ matchId, serverSteamId }: { matchId: string; serverSteamId?:
 
       {/* Players */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {/* Radiant */}
         <div className="rounded-xl overflow-hidden bg-bg-surface border border-bg-border" style={{ borderColor: 'rgba(0,229,160,0.2)' }}>
           <div className="px-3 py-2 border-b" style={{ background: 'rgba(0,229,160,0.05)', borderColor: 'rgba(0,229,160,0.12)' }}>
             <span className="text-[10px] font-mono font-bold uppercase tracking-wider" style={{ color: '#00e5a0' }}>
@@ -370,7 +393,6 @@ function LiveView({ matchId, serverSteamId }: { matchId: string; serverSteamId?:
           </div>
         </div>
 
-        {/* Dire */}
         <div className="rounded-xl overflow-hidden bg-bg-surface border border-bg-border" style={{ borderColor: 'rgba(255,79,106,0.2)' }}>
           <div className="px-3 py-2 border-b" style={{ background: 'rgba(255,79,106,0.05)', borderColor: 'rgba(255,79,106,0.12)' }}>
             <span className="text-[10px] font-mono font-bold uppercase tracking-wider" style={{ color: '#ff4f6a' }}>
@@ -385,7 +407,7 @@ function LiveView({ matchId, serverSteamId }: { matchId: string; serverSteamId?:
         </div>
       </div>
 
-      {/* Draft — radiant vs dire split */}
+      {/* Draft */}
       {liveData.pickBans.length > 0 && (
         <div className="rounded-xl overflow-hidden bg-bg-surface border border-bg-border">
           <div className="px-3 py-2 border-b border-bg-border">
@@ -451,130 +473,141 @@ function FinishedView({ matchId }: { matchId: string }) {
     }).catch(() => {})
   }, [matchId])
 
-  if (loading) {
-    return <div className="animate-pulse rounded-xl h-64 bg-bg-surface border border-bg-border" />
-  }
-
-  if (!data) {
-    return <div className="text-center py-12"><p className="text-sm font-mono text-text-muted">Match data not available</p></div>
-  }
+  if (loading) return <div className="animate-pulse rounded-xl h-64 bg-bg-surface border border-bg-border" />
+  if (!data) return <div className="text-center py-12"><p className="text-sm font-mono text-text-muted">Match data not available</p></div>
 
   const radiantPlayers = data.players.filter(p => p.isRadiant)
   const direPlayers = data.players.filter(p => !p.isRadiant)
-  const winner = data.didRadiantWin ? data.radiantTeam?.name ?? 'Radiant' : data.direTeam?.name ?? 'Dire'
-  const winnerColor = data.didRadiantWin ? '#00e5a0' : '#ff4f6a'
+  const radiantKills = radiantPlayers.reduce((s, p) => s + p.kills, 0)
+  const direKills = direPlayers.reduce((s, p) => s + p.kills, 0)
+  const radiantName = data.radiantTeam?.name ?? 'Radiant'
+  const direName = data.direTeam?.name ?? 'Dire'
+
+  const teams = [
+    { teamName: radiantName, players: radiantPlayers, color: '#00e5a0', won: data.didRadiantWin === true, isRadiant: true, kills: radiantKills },
+    { teamName: direName, players: direPlayers, color: '#ff4f6a', won: data.didRadiantWin === false, isRadiant: false, kills: direKills },
+  ]
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-bg-surface border border-bg-border">
-        <div>
-          <p className="text-[10px] font-mono text-text-muted">
+    <div className="space-y-3">
+      {/* ── Match header ── */}
+      <div className="rounded-xl overflow-hidden bg-bg-surface border border-bg-border">
+        {/* League + duration */}
+        <div className="flex items-center justify-between px-5 py-2.5 border-b border-bg-border">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-text-muted/70">
             {data.leagueName ?? 'Pro Match'}
-          </p>
-          <p className="text-base font-mono font-bold" style={{ color: winnerColor }}>
-            {winner} wins
-          </p>
-        </div>
-        <div className="flex items-baseline gap-2">
-          <span className="text-[22px] font-mono font-bold leading-none"
-            style={{ color: data.didRadiantWin ? '#00e5a0' : 'rgba(255,255,255,0.35)' }}>
-            {data.players.filter(p => p.isRadiant).reduce((s, p) => s + p.kills, 0)}
           </span>
-          <span className="text-[16px] font-mono text-text-muted opacity-40">:</span>
-          <span className="text-[22px] font-mono font-bold leading-none"
-            style={{ color: !data.didRadiantWin ? '#ff4f6a' : 'rgba(255,255,255,0.35)' }}>
-            {data.players.filter(p => !p.isRadiant).reduce((s, p) => s + p.kills, 0)}
-          </span>
+          {data.duration && (
+            <span className="text-[10px] font-mono text-text-muted">{formatTime(data.duration)}</span>
+          )}
         </div>
-        {data.duration && (
-          <p className="text-[11px] font-mono text-text-muted">
-            {formatTime(data.duration)}
-          </p>
-        )}
-      </div>
 
-      {/* NW chart */}
-      {data.radiantNetworthLeads && data.radiantNetworthLeads.length > 1 && (
-        <div className="rounded-xl p-3 bg-bg-surface border border-bg-border">
-          <p className="text-[9px] font-mono uppercase tracking-wider mb-2 text-text-muted">
-            Gold advantage per minute
-          </p>
-          <div className="relative" style={{ height: '40px' }}>
-            <svg viewBox="0 0 400 40" className="w-full h-full" preserveAspectRatio="none">
-              <line x1="0" y1="20" x2="400" y2="20" stroke="rgba(128,128,128,0.15)" strokeWidth="1" />
-              {(() => {
-                const d = data.radiantNetworthLeads!
-                const max = Math.max(...d.map(Math.abs), 1000)
-                const pts = d.map((v, i) => {
-                  const x = (i / (d.length - 1)) * 400
-                  const y = 20 - (v / max) * 18
-                  return `${x.toFixed(1)},${y.toFixed(1)}`
-                }).join(' ')
-                return (
-                  <polyline points={pts} fill="none"
-                    stroke={d[d.length - 1] >= 0 ? '#00e5a0' : '#ff4f6a'}
-                    strokeWidth="1.5" strokeLinejoin="round" />
-                )
-              })()}
-            </svg>
+        {/* Teams + score */}
+        <div className="flex items-center px-6 py-5">
+          {/* Radiant */}
+          <div className="flex-1 flex items-center gap-3">
+            {data.radiantTeam?.logo && (
+              <img src={data.radiantTeam.logo} alt="" className="w-10 h-10 object-contain shrink-0" draggable={false} />
+            )}
+            <div>
+              <p className="text-[17px] font-mono font-bold leading-none"
+                style={{ color: data.didRadiantWin ? '#00e5a0' : 'rgba(255,255,255,0.55)' }}>
+                {radiantName}
+              </p>
+              <p className="text-[9px] font-mono mt-1.5 tracking-widest uppercase"
+                style={{ color: data.didRadiantWin ? '#00e5a099' : 'rgba(255,255,255,0.22)' }}>
+                {data.didRadiantWin ? 'WINNER' : 'DEFEAT'}
+              </p>
+            </div>
+          </div>
+
+          {/* Score */}
+          <div className="flex items-center gap-3 shrink-0 px-8">
+            <span className="text-[44px] font-mono font-bold leading-none"
+              style={{ color: data.didRadiantWin ? '#00e5a0' : 'rgba(255,255,255,0.28)', letterSpacing: '-2px' }}>
+              {radiantKills}
+            </span>
+            <span className="text-[28px] font-mono leading-none" style={{ color: 'rgba(255,255,255,0.18)' }}>:</span>
+            <span className="text-[44px] font-mono font-bold leading-none"
+              style={{ color: !data.didRadiantWin ? '#ff4f6a' : 'rgba(255,255,255,0.28)', letterSpacing: '-2px' }}>
+              {direKills}
+            </span>
+          </div>
+
+          {/* Dire */}
+          <div className="flex-1 flex items-center justify-end gap-3">
+            <div className="text-right">
+              <p className="text-[17px] font-mono font-bold leading-none"
+                style={{ color: !data.didRadiantWin ? '#ff4f6a' : 'rgba(255,255,255,0.55)' }}>
+                {direName}
+              </p>
+              <p className="text-[9px] font-mono mt-1.5 tracking-widest uppercase"
+                style={{ color: !data.didRadiantWin ? '#ff4f6a99' : 'rgba(255,255,255,0.22)' }}>
+                {!data.didRadiantWin ? 'WINNER' : 'DEFEAT'}
+              </p>
+            </div>
+            {data.direTeam?.logo && (
+              <img src={data.direTeam.logo} alt="" className="w-10 h-10 object-contain shrink-0" draggable={false} />
+            )}
           </div>
         </div>
+      </div>
+
+      {/* ── Gold advantage chart ── */}
+      {data.radiantNetworthLeads && data.radiantNetworthLeads.length > 1 && (
+        <GoldChart leads={data.radiantNetworthLeads} />
       )}
 
-      {/* Players */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {[
-          { label: `Radiant${data.radiantTeam?.name ? ` · ${data.radiantTeam.name}` : ''}`, players: radiantPlayers, color: '#00e5a0', won: data.didRadiantWin === true },
-          { label: `Dire${data.direTeam?.name ? ` · ${data.direTeam.name}` : ''}`, players: direPlayers, color: '#ff4f6a', won: data.didRadiantWin === false },
-        ].map(({ label, players, color, won }) => (
-          <div key={label} className="rounded-xl overflow-hidden bg-bg-surface border border-bg-border"
-            style={{ borderColor: `${color}33` }}>
-            <div className="flex items-center justify-between px-3 py-2 border-b"
-              style={{ background: `${color}08`, borderColor: `${color}18` }}>
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider" style={{ color }}>
-                {label}
-              </span>
-              {won && <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded" style={{ background: `${color}18`, color }}>WIN</span>}
-            </div>
-            <div className="p-1">
-              {players.map((p, i) => <PlayerRow key={i} player={p} isRadiant={p.isRadiant} itemMap={itemMap} />)}
-            </div>
+      {/* ── Player tables ── */}
+      {teams.map(({ teamName, players, color, won, isRadiant, kills }) => (
+        <div key={teamName} className="rounded-xl overflow-hidden bg-bg-surface border border-bg-border"
+          style={{ borderColor: `${color}20` }}>
+          <StatTableHeader color={color} teamName={teamName} won={won} kills={kills} />
+          <div>
+            {players.map((p, i) => (
+              <PlayerRow key={i} player={p} isRadiant={isRadiant} itemMap={itemMap} />
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
 
-      {/* Draft */}
+      {/* ── Draft ── */}
       {data.pickBans.length > 0 && (
         <div className="rounded-xl overflow-hidden bg-bg-surface border border-bg-border">
-          <div className="px-3 py-2 border-b border-bg-border">
+          <div className="px-4 py-2.5 border-b border-bg-border">
             <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-text-muted">Draft</span>
           </div>
-          <div className="p-3">
-            <div className="grid grid-cols-2 gap-4">
+          <div className="p-4">
+            <div className="grid grid-cols-2 gap-8">
               {(['radiant', 'dire'] as const).map(side => {
                 const isRadiant = side === 'radiant'
                 const picks = data.pickBans.filter(pb => pb.isPick && pb.isRadiant === isRadiant)
-                const bans = data.pickBans.filter(pb => !pb.isPick && pb.isRadiant === isRadiant)
+                const bans  = data.pickBans.filter(pb => !pb.isPick && pb.isRadiant === isRadiant)
                 const color = isRadiant ? '#00e5a0' : '#ff4f6a'
+                const label = isRadiant ? radiantName : direName
                 return (
                   <div key={side}>
-                    <p className="text-[9px] font-mono uppercase mb-2" style={{ color }}>Picks</p>
-                    <div className="flex flex-wrap gap-1 mb-3">
+                    <p className="text-[11px] font-mono font-bold mb-3" style={{ color }}>{label}</p>
+                    <p className="text-[8px] font-mono uppercase tracking-wider mb-2 text-text-muted/50">Picks</p>
+                    <div className="flex flex-wrap gap-1.5 mb-4">
                       {picks.map((pb, i) => pb.heroImg ? (
-                        <div key={i} className="rounded overflow-hidden" style={{ width: 36, height: 21 }}>
+                        <div key={i} title={pb.heroName ?? ''} className="rounded overflow-hidden" style={{ width: 52, height: 29 }}>
                           <img src={pb.heroImg} alt={pb.heroName ?? ''} className="w-full h-full object-cover" draggable={false} />
                         </div>
                       ) : null)}
                     </div>
-                    <p className="text-[9px] font-mono uppercase mb-2 text-text-muted">Bans</p>
-                    <div className="flex flex-wrap gap-1 opacity-40">
-                      {bans.map((pb, i) => pb.heroImg ? (
-                        <div key={i} className="rounded overflow-hidden grayscale" style={{ width: 28, height: 16 }}>
-                          <img src={pb.heroImg} alt={pb.heroName ?? ''} className="w-full h-full object-cover" draggable={false} />
+                    {bans.length > 0 && (
+                      <>
+                        <p className="text-[8px] font-mono uppercase tracking-wider mb-2 text-text-muted/50">Bans</p>
+                        <div className="flex flex-wrap gap-1 opacity-30">
+                          {bans.map((pb, i) => pb.heroImg ? (
+                            <div key={i} title={pb.heroName ?? ''} className="rounded overflow-hidden grayscale" style={{ width: 38, height: 22 }}>
+                              <img src={pb.heroImg} alt={pb.heroName ?? ''} className="w-full h-full object-cover" draggable={false} />
+                            </div>
+                          ) : null)}
                         </div>
-                      ) : null)}
-                    </div>
+                      </>
+                    )}
                   </div>
                 )
               })}
@@ -602,7 +635,7 @@ export default function DotaMatchScreen({ matchId, onBack }: Props) {
   const [isLive, setIsLive] = useState(!!serverSteamId)
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6 text-text-primary">
+    <div className="py-5 text-text-primary">
       {/* Back */}
       <button
         onClick={() => onBack ? onBack() : router.back()}
@@ -614,7 +647,7 @@ export default function DotaMatchScreen({ matchId, onBack }: Props) {
         BACK
       </button>
 
-      {/* Tab: Live / Stats */}
+      {/* Tabs */}
       <div className="flex items-center gap-0.5 bg-bg-surface border border-bg-border rounded p-1 w-fit mb-5">
         {([
           { key: true, label: 'LIVE' },

@@ -1,7 +1,7 @@
 'use client'
 import { createContext, useContext, useState, type ReactNode } from 'react'
 
-export interface SidebarLeague { name: string; flag?: string | null }
+export interface SidebarLeague { name: string; flag?: string | null; leagueId?: number | null }
 
 interface LiveLayoutCtx {
   leagues: SidebarLeague[]
