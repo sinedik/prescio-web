@@ -169,7 +169,7 @@ function SquadSection({ squad, sport }: { squad: SportSquadPlayer[]; sport: stri
               </span>
             </div>
             {/* Two-column grid for squad players */}
-            <div className="grid grid-cols-2 divide-x divide-bg-border/20">
+            <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-bg-border/20">
               {players.map(p => (
                 <Link key={p.player_id} href={`/sport/${sport}/player/${p.player_id}`}
                   className="flex items-center gap-3 px-4 py-2.5 border-b border-bg-border/20 hover:bg-white/[0.02] transition-colors">
@@ -198,7 +198,7 @@ function InjuriesSection({ injuries }: { injuries: SportInjury[] }) {
   if (!injuries.length) return null
   return (
     <Section id="injuries" title="Травмы и дисквалификации">
-      <div className="grid grid-cols-2 divide-x divide-bg-border">
+      <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-bg-border">
         {injuries.slice(0, 8).map(inj => (
           <div key={inj.id} className="flex items-center gap-3 px-4 py-3 border-b border-bg-border/20">
             <PlayerAvatar name={inj.player_name ?? '?'} photo={inj.player_photo} />
@@ -226,7 +226,7 @@ function TopScorersSection({ scorers, leagueId, sport }: { scorers: SportTopScor
   if (!scorers.length) return null
   return (
     <Section id="topscorers" title={leagueName ? `Бомбардиры · ${leagueName}` : 'Бомбардиры лиги'}>
-      <div className="grid grid-cols-2 divide-x divide-bg-border">
+      <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-bg-border">
         {scorers.slice(0, 10).map((s, i) => (
           <Link key={s.player_id} href={`/sport/${sport}/player/${s.player_id}`}
             className="flex items-center gap-3 px-4 py-2.5 border-b border-bg-border/20 hover:bg-white/[0.02] transition-colors">
@@ -374,7 +374,7 @@ function ProfileCard({ team, standing, recentForm, leagueName }: {
 // ─── Skeleton ────────────────────────────────────────────────────────────────
 function TeamSkeleton() {
   return (
-    <div className="grid gap-6 pb-8 pt-5 animate-pulse" style={{ gridTemplateColumns: '300px 1fr' }}>
+    <div className="grid gap-4 md:gap-6 pb-8 pt-5 animate-pulse grid-cols-1 md:grid-cols-[300px,1fr]">
       <div className="flex flex-col gap-4">
         <div className="h-72 rounded-xl bg-bg-surface border border-bg-border" />
       </div>
@@ -447,7 +447,7 @@ export default function TeamPage({ teamId }: { teamId: number }) {
 
   // ── Breadcrumb bar ──────────────────────────────────────────────────────────
   const BreadcrumbBar = () => (
-    <div className="sticky top-[200px] z-20 -mx-6 px-6 py-2.5 flex items-center gap-2 border-b border-bg-border"
+    <div className="sticky top-[200px] z-20 -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6 py-2.5 flex items-center gap-2 border-b border-bg-border"
       style={{ background: 'rgba(10,10,15,0.92)', backdropFilter: 'blur(12px)' }}>
       <button onClick={handleBack}
         className="flex items-center gap-1.5 text-[13px] font-mono text-[#888] hover:text-white transition-colors shrink-0">
@@ -469,14 +469,14 @@ export default function TeamPage({ teamId }: { teamId: number }) {
   )
 
   if (loading) return (
-    <div className="px-6" id="team-scroll-root">
+    <div className="px-3 sm:px-4 md:px-6" id="team-scroll-root">
       <BreadcrumbBar />
       <TeamSkeleton />
     </div>
   )
 
   if (!team || loadError) return (
-    <div className="px-6" id="team-scroll-root">
+    <div className="px-3 sm:px-4 md:px-6" id="team-scroll-root">
       <BreadcrumbBar />
       <div className="flex flex-col items-center justify-center py-24 gap-4">
         <p className="text-sm font-mono text-text-muted">
@@ -487,13 +487,13 @@ export default function TeamPage({ teamId }: { teamId: number }) {
   )
 
   return (
-    <div className="px-6" id="team-scroll-root">
+    <div className="px-3 sm:px-4 md:px-6" id="team-scroll-root">
       <BreadcrumbBar />
 
-      <div className="grid gap-6 pb-8 pt-5" style={{ gridTemplateColumns: '300px 1fr' }}>
+      <div className="grid gap-4 md:gap-6 pb-8 pt-5 grid-cols-1 md:grid-cols-[300px,1fr]">
 
         {/* ── LEFT: sticky profile ─────────────────────────────────────────── */}
-        <div className="flex flex-col gap-4" style={{ position: 'sticky', top: 242, alignSelf: 'start' }}>
+        <div className="flex flex-col gap-4 md:sticky md:self-start" style={{ top: 242 }}>
           <ProfileCard
             team={team}
             standing={standing}

@@ -374,7 +374,7 @@ function LeagueCard({ data, sport }: { data: LeaguePageData; sport: string }) {
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 function LeagueSkeleton() {
   return (
-    <div className="grid gap-6 pb-8 pt-5" style={{ gridTemplateColumns: '280px 1fr' }}>
+    <div className="grid gap-4 md:gap-6 pb-8 pt-5 grid-cols-1 md:grid-cols-[280px,1fr]">
       <div className="rounded-xl border border-bg-border bg-bg-surface h-[400px] animate-pulse" />
       <div className="flex flex-col gap-4">
         <div className="rounded-xl border border-bg-border bg-bg-surface h-[320px] animate-pulse" />
@@ -414,7 +414,7 @@ export default function LeaguePage({ leagueId, sport }: Props) {
   }, [leagueId, sport])
 
   const BreadcrumbBar = () => (
-    <div className="sticky top-[200px] z-20 -mx-6 px-6 py-2.5 flex items-center gap-2 border-b border-bg-border"
+    <div className="sticky top-[200px] z-20 -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6 py-2.5 flex items-center gap-2 border-b border-bg-border"
       style={{ background: 'rgba(8,8,8,0.85)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}>
       <button onClick={() => router.push(`/sport/${sport}`)}
         className="flex items-center gap-1.5 text-[12px] font-mono text-text-muted/60 hover:text-text-secondary transition-colors shrink-0">
@@ -431,14 +431,14 @@ export default function LeaguePage({ leagueId, sport }: Props) {
   )
 
   if (loading) return (
-    <div className="px-6">
+    <div className="px-3 sm:px-4 md:px-6">
       <BreadcrumbBar />
       <LeagueSkeleton />
     </div>
   )
 
   if (notFound || !data) return (
-    <div className="px-6">
+    <div className="px-3 sm:px-4 md:px-6">
       <BreadcrumbBar />
       <div className="flex flex-col items-center justify-center py-24 gap-4">
         <p className="text-sm font-mono text-text-muted">Лига не найдена</p>
@@ -447,13 +447,13 @@ export default function LeaguePage({ leagueId, sport }: Props) {
   )
 
   return (
-    <div className="px-6">
+    <div className="px-3 sm:px-4 md:px-6">
       <BreadcrumbBar />
 
-      <div className="grid gap-6 pb-8 pt-5" style={{ gridTemplateColumns: '280px 1fr' }}>
+      <div className="grid gap-4 md:gap-6 pb-8 pt-5 grid-cols-1 md:grid-cols-[280px,1fr]">
 
         {/* ── LEFT: sticky league card ─────────────────────────────────────── */}
-        <div style={{ position: 'sticky', top: 242, alignSelf: 'start' }}>
+        <div className="md:sticky md:self-start" style={{ top: 242 }}>
           <LeagueCard data={data} sport={sport} />
         </div>
 

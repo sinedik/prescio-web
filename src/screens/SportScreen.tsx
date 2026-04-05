@@ -344,20 +344,20 @@ function OddsBar({ odds, accent, sport }: { odds: Odds3Way; accent: string; spor
   const awayWins = odds.away > odds.home
   return (
     <div className="flex gap-1 items-stretch">
-      <div className="flex flex-col items-center px-2 py-1.5 rounded-md border transition-all min-w-[42px]"
+      <div className="flex flex-col items-center px-1.5 sm:px-2 py-1.5 rounded-md border transition-all min-w-[36px] sm:min-w-[42px]"
         style={homeWins ? { borderColor: `${accent}55`, background: `${accent}10` } : { borderColor: 'rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)' }}>
         <span className="text-[7px] font-mono text-[#888] uppercase tracking-wide mb-0.5">Х</span>
         <span className="text-[12px] font-mono font-semibold leading-none"
           style={{ color: homeWins ? accent : '#ccc' }}>{odds.home}%</span>
       </div>
       {showDraw && (
-        <div className="flex flex-col items-center px-2 py-1.5 rounded-md border transition-all min-w-[38px]"
+        <div className="flex flex-col items-center px-1.5 sm:px-2 py-1.5 rounded-md border transition-all min-w-[32px] sm:min-w-[38px]"
           style={{ borderColor: 'rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
           <span className="text-[7px] font-mono text-[#888] uppercase tracking-wide mb-0.5">Н</span>
           <span className="text-[12px] font-mono font-semibold leading-none text-[#aaa]">{odds.draw}%</span>
         </div>
       )}
-      <div className="flex flex-col items-center px-2 py-1.5 rounded-md border transition-all min-w-[42px]"
+      <div className="flex flex-col items-center px-1.5 sm:px-2 py-1.5 rounded-md border transition-all min-w-[36px] sm:min-w-[42px]"
         style={awayWins ? { borderColor: `${accent}55`, background: `${accent}10` } : { borderColor: 'rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)' }}>
         <span className="text-[7px] font-mono text-[#888] uppercase tracking-wide mb-0.5">Г</span>
         <span className="text-[12px] font-mono font-semibold leading-none"
@@ -390,9 +390,8 @@ const SportRow = memo(function SportRow({ event, sport, accent }: {
       style={{ border: `1px solid ${isLive ? 'rgba(255,50,50,0.2)' : 'rgba(255,255,255,0.06)'}` }}>
       <Link
         href={href}
-        className="grid items-center gap-3 px-3.5 py-2.5 transition-all group relative"
+        className="grid items-center gap-2 sm:gap-3 px-3 sm:px-3.5 py-2.5 transition-all group relative [grid-template-columns:48px_1fr_auto] sm:[grid-template-columns:64px_1fr_auto]"
         style={{
-          gridTemplateColumns: '64px 1fr auto',
           background: isLive ? 'rgba(255,50,50,0.04)' : 'rgba(8,8,8,0.55)',
           backdropFilter: 'blur(2px)',
           display: 'grid',
@@ -749,11 +748,11 @@ export function SportScreen({ initialSport, eventId }: { initialSport?: Sport; e
 
   return (
     <ErrorBoundary>
-      <main className="flex-1 min-w-0 px-6 pb-5 pt-0">
+      <main className="flex-1 min-w-0 px-3 sm:px-4 md:px-6 pb-5 pt-0">
 
         {/* Page header */}
-        <div className="flex items-center gap-0 mb-3"
-          style={{ position: 'sticky', top: 200, zIndex: 15, background: 'rgba(8,8,8,0.75)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', marginLeft: -24, marginRight: -24, paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 8 }}
+        <div className="flex items-center gap-0 mb-3 -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6 pt-3 pb-2"
+          style={{ position: 'sticky', top: 200, zIndex: 15, background: 'rgba(8,8,8,0.75)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
         >
           {eventId ? (
             /* BreadcrumbBar style — same as TeamPage / PlayerPage */
@@ -769,15 +768,15 @@ export function SportScreen({ initialSport, eventId }: { initialSport?: Sport; e
                 <>
                   <span className="text-text-muted/30 text-[11px] mx-1.5">/</span>
                   {matchLeagueId
-                    ? <button onClick={() => router.push(`/sport/${sport}/league/${matchLeagueId}`)} className="text-[11px] font-medium text-text-muted hover:text-text-primary transition-colors truncate max-w-[140px]">{matchLeague}</button>
-                    : <span className="text-[11px] font-medium text-text-muted truncate max-w-[140px]">{matchLeague}</span>
+                    ? <button onClick={() => router.push(`/sport/${sport}/league/${matchLeagueId}`)} className="text-[11px] font-medium text-text-muted hover:text-text-primary transition-colors truncate max-w-[80px] sm:max-w-[120px] md:max-w-[140px]">{matchLeague}</button>
+                    : <span className="text-[11px] font-medium text-text-muted truncate max-w-[80px] sm:max-w-[120px] md:max-w-[140px]">{matchLeague}</span>
                   }
                 </>
               )}
               {(matchHome || matchAway) && (
                 <>
                   <span className="text-text-muted/30 text-[11px] mx-1.5">/</span>
-                  <span className="text-[11px] font-medium text-text-primary truncate max-w-[260px]">{matchHome} — {matchAway}</span>
+                  <span className="text-[11px] font-medium text-text-primary truncate max-w-[140px] sm:max-w-[200px] md:max-w-[260px]">{matchHome} — {matchAway}</span>
                 </>
               )}
             </div>

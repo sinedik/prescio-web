@@ -1,5 +1,5 @@
 'use client'
-import React, { useEffect, useTransition } from 'react'
+import React, { useEffect, useState, useTransition } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { LiveLayoutProvider, useLiveLayout, type SidebarLeague } from '@/contexts/LiveLayoutContext'
 import { WorldBackground, ACCENT, type Discipline } from '@/components/WorldBackground'
@@ -33,12 +33,14 @@ const GAME_ITEMS = [
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 function LiveSidebar({
-  discipline, pathname, isPending, navigate,
+  discipline, pathname, isPending, navigate, mobileOpen, onMobileClose,
 }: {
   discipline: Discipline
   pathname: string
   isPending: boolean
   navigate: (href: string) => void
+  mobileOpen: boolean
+  onMobileClose: () => void
 }) {
   const { leagues, selectedLeague, setSelectedLeague } = useLiveLayout()
   const accent = ACCENT[discipline]
@@ -63,9 +65,16 @@ function LiveSidebar({
 
   return (
     <aside
-      className="w-[200px] shrink-0 border-r border-bg-border bg-bg-surface flex flex-col"
-      style={{ height: '100%', opacity: isPending ? 0.6 : 1, transition: 'opacity 0.2s ease', overflowY: 'hidden' }}
+      className={`fixed md:static top-[52px] left-0 bottom-0 w-[200px] shrink-0 border-r border-bg-border bg-bg-surface flex flex-col z-[100] ${mobileOpen ? 'translate-x-0' : '-translate-x-[200px] md:translate-x-0'}`}
+      style={{ opacity: isPending ? 0.6 : 1, transition: 'opacity 0.2s ease, transform 0.2s ease', overflowY: 'hidden' }}
     >
+      {/* Mobile close */}
+      <button
+        className="md:hidden absolute top-3 right-3 w-7 h-7 flex items-center justify-center text-text-muted hover:text-text-primary transition-colors"
+        onClick={onMobileClose}
+      >
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
       {/* Section */}
       <div className="mb-5 shrink-0">
         <p className="text-[9px] font-bold tracking-[0.16em] text-text-muted/50 uppercase px-3.5 mb-1.5 pt-4">
@@ -158,9 +167,16 @@ function LiveLayoutInner({ children }: { children: React.ReactNode }) {
   const router     = useRouter()
   const discipline = getDiscipline(pathname)
   const [isPending, startTransition] = useTransition()
+  const [mobileOpen, setMobileOpen]  = useState(false)
   const { setSelectedLeague, setLeagues, setTotalCount, setLiveCount, hideHero, setHideHero } = useLiveLayout()
 
-  const navigate = (href: string) => startTransition(() => router.push(href))
+  const navigate = (href: string) => {
+    setMobileOpen(false)
+    startTransition(() => router.push(href))
+  }
+
+  // Close sidebar on route change
+  useEffect(() => { setMobileOpen(false) }, [pathname])
 
   // Reset filters when discipline changes
   useEffect(() => {
@@ -175,10 +191,27 @@ function LiveLayoutInner({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      {/* Background fixed behind content area — starts after sidebar */}
-      <div style={{ position: 'fixed', top: 52, left: 200, right: 0, bottom: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden', opacity: isPending ? 0.35 : 1, transition: 'opacity 0.4s ease' }}>
+      {/* Background — starts after sidebar on desktop, full width on mobile */}
+      <div className="fixed top-[52px] left-0 md:left-[200px] right-0 bottom-0 pointer-events-none overflow-hidden"
+        style={{ zIndex: 0, opacity: isPending ? 0.35 : 1, transition: 'opacity 0.4s ease' }}>
         <WorldBackground discipline={discipline} />
       </div>
+
+      {/* Mobile backdrop */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-[99] bg-black/60 md:hidden" onClick={() => setMobileOpen(false)} />
+      )}
+
+      {/* Mobile hamburger */}
+      <button
+        className="md:hidden fixed top-[60px] left-3 z-[90] w-8 h-8 flex items-center justify-center rounded-lg border border-bg-border bg-bg-surface/90 text-text-muted hover:text-text-primary transition-colors"
+        style={{ backdropFilter: 'blur(6px)' }}
+        onClick={() => setMobileOpen(true)}
+      >
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
 
       <div className="flex relative" style={{ zIndex: 1, height: 'calc(100vh - 52px)', overflow: 'hidden' }}>
 
@@ -187,6 +220,8 @@ function LiveLayoutInner({ children }: { children: React.ReactNode }) {
           pathname={pathname}
           isPending={isPending}
           navigate={navigate}
+          mobileOpen={mobileOpen}
+          onMobileClose={() => setMobileOpen(false)}
         />
 
         <div
@@ -209,7 +244,7 @@ function LiveLayoutInner({ children }: { children: React.ReactNode }) {
           <div className="max-w-[1280px] mx-auto w-full">
             {!hideHero && (
               <div style={{ position: 'sticky', top: 0, zIndex: 20 }}>
-                <div className="px-6">
+                <div className="px-3 sm:px-4 md:px-6">
                   <LiveHero discipline={discipline} />
                 </div>
               </div>

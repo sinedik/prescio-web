@@ -269,7 +269,7 @@ function SeasonBlock({ s, accent }: { s: PlayerStats; accent: string }) {
       </div>
 
       {/* Detailed stats — two columns on wide layout */}
-      <div className="grid grid-cols-2 gap-0 divide-x divide-bg-border/30">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-0 divide-y sm:divide-y-0 sm:divide-x divide-bg-border/30">
         <div className="px-4 py-1">
           {!isGK && <>
             <StatRow label="Удары" value={s.shots.total} sub={`${s.shots.on} в цель`} />
@@ -310,7 +310,7 @@ function SeasonBlock({ s, accent }: { s: PlayerStats; accent: string }) {
 // ─── Skeleton ────────────────────────────────────────────────────────────────
 function PlayerSkeleton() {
   return (
-    <div className="grid gap-6 pb-8 pt-5 animate-pulse" style={{ gridTemplateColumns: '280px 1fr' }}>
+    <div className="grid gap-4 md:gap-6 pb-8 pt-5 animate-pulse grid-cols-1 md:grid-cols-[280px,1fr]">
       <div className="flex flex-col gap-4">
         <div className="h-80 rounded-xl bg-bg-surface border border-bg-border" />
         <div className="h-28 rounded-xl bg-bg-surface border border-bg-border" />
@@ -366,7 +366,7 @@ export default function PlayerPage({ playerId }: { playerId: number }) {
 
   // ── Breadcrumb bar ──────────────────────────────────────────────────────────
   const BreadcrumbBar = () => (
-    <div className="sticky top-[200px] z-20 -mx-6 px-6 py-2.5 flex items-center gap-2 border-b border-bg-border"
+    <div className="sticky top-[200px] z-20 -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6 py-2.5 flex items-center gap-2 border-b border-bg-border"
       style={{ background: 'rgba(10,10,15,0.92)', backdropFilter: 'blur(12px)' }}>
       <button onClick={handleBack}
         className="flex items-center gap-1.5 text-[13px] font-mono text-[#888] hover:text-white transition-colors shrink-0">
@@ -396,14 +396,14 @@ export default function PlayerPage({ playerId }: { playerId: number }) {
   )
 
   if (loading) return (
-    <div className="px-6">
+    <div className="px-3 sm:px-4 md:px-6">
       <BreadcrumbBar />
       <PlayerSkeleton />
     </div>
   )
 
   if (notFound || !player) return (
-    <div className="px-6">
+    <div className="px-3 sm:px-4 md:px-6">
       <BreadcrumbBar />
       <div className="flex flex-col items-center justify-center py-24 gap-4">
         <p className="text-sm font-mono text-text-muted">Игрок не найден</p>
@@ -412,13 +412,13 @@ export default function PlayerPage({ playerId }: { playerId: number }) {
   )
 
   return (
-    <div className="px-6">
+    <div className="px-3 sm:px-4 md:px-6">
       <BreadcrumbBar />
 
-      <div className="grid gap-6 pb-8 pt-5" style={{ gridTemplateColumns: '280px 1fr' }}>
+      <div className="grid gap-4 md:gap-6 pb-8 pt-5 grid-cols-1 md:grid-cols-[280px,1fr]">
 
         {/* ── LEFT: sticky profile sidebar ────────────────────────────────── */}
-        <div style={{ position: 'sticky', top: 242, alignSelf: 'start' }}>
+        <div className="md:sticky md:self-start" style={{ top: 242 }}>
           <ProfileSidebar player={player} mainStat={mainStat} accent={accent} sport={sport} />
         </div>
 
