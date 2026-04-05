@@ -5,6 +5,7 @@ import { usePageTitle } from '../hooks/usePageTitle'
 import { api } from '../lib/api'
 import DotaMinimap from '../components/dota/DotaMinimap'
 import type { DotaLiveMatch, DotaMatchDetail, DotaHero, DotaItem, DotaLivePlayer, DotaMatchPlayer } from '../types/dota'
+import type { EsportsMatchDetail } from '../types'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -457,15 +458,136 @@ function LiveView({ matchId, serverSteamId }: { matchId: string; serverSteamId?:
   )
 }
 
+// ─── Series overview (GRID fallback when Stratz not available) ────────────────
+
+function SeriesOverview({ esports }: { esports: EsportsMatchDetail }) {
+  const scoreA = esports.teamA?.score ?? null
+  const scoreB = esports.teamB?.score ?? null
+  const finished = esports.status === 'finished'
+  const winnerA = finished && scoreA !== null && scoreB !== null && scoreA > scoreB
+  const winnerB = finished && scoreA !== null && scoreB !== null && scoreB > scoreA
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-xl overflow-hidden bg-bg-surface border border-bg-border">
+        <div className="flex items-center justify-between px-5 py-2.5 border-b border-bg-border">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-text-muted/70">
+            {esports.tournament ?? 'Pro Match'}
+          </span>
+          <span className="text-[10px] font-mono text-text-muted uppercase">
+            {esports.format ?? ''} · {esports.status}
+          </span>
+        </div>
+        <div className="flex items-center px-6 py-5">
+          <div className="flex-1">
+            <p className="text-[17px] font-mono font-bold leading-none"
+              style={{ color: winnerA ? '#00e5a0' : 'rgba(255,255,255,0.55)' }}>
+              {esports.teamA?.name ?? 'Team A'}
+            </p>
+            {finished && <p className="text-[9px] font-mono mt-1.5 tracking-widest uppercase"
+              style={{ color: winnerA ? '#00e5a099' : 'rgba(255,255,255,0.22)' }}>
+              {winnerA ? 'WINNER' : 'DEFEAT'}
+            </p>}
+          </div>
+          <div className="flex items-center gap-3 shrink-0 px-8">
+            {scoreA !== null && scoreB !== null ? (
+              <>
+                <span className="text-[44px] font-mono font-bold leading-none"
+                  style={{ color: winnerA ? '#00e5a0' : 'rgba(255,255,255,0.28)', letterSpacing: '-2px' }}>{scoreA}</span>
+                <span className="text-[28px] font-mono leading-none" style={{ color: 'rgba(255,255,255,0.18)' }}>:</span>
+                <span className="text-[44px] font-mono font-bold leading-none"
+                  style={{ color: winnerB ? '#ff4f6a' : 'rgba(255,255,255,0.28)', letterSpacing: '-2px' }}>{scoreB}</span>
+              </>
+            ) : (
+              <span className="text-[28px] font-mono leading-none text-text-muted">vs</span>
+            )}
+          </div>
+          <div className="flex-1 text-right">
+            <p className="text-[17px] font-mono font-bold leading-none"
+              style={{ color: winnerB ? '#ff4f6a' : 'rgba(255,255,255,0.55)' }}>
+              {esports.teamB?.name ?? 'Team B'}
+            </p>
+            {finished && <p className="text-[9px] font-mono mt-1.5 tracking-widest uppercase"
+              style={{ color: winnerB ? '#ff4f6a99' : 'rgba(255,255,255,0.22)' }}>
+              {winnerB ? 'WINNER' : 'DEFEAT'}
+            </p>}
+          </div>
+        </div>
+      </div>
+
+      {esports.games.length > 0 && (
+        <div className="rounded-xl overflow-hidden bg-bg-surface border border-bg-border">
+          <div className="px-5 py-2.5 border-b border-bg-border">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-text-muted/60">Games</span>
+          </div>
+          <div className="divide-y divide-bg-border/50">
+            {esports.games.map((g, i) => {
+              const wonA = g.teamA?.won === true
+              const wonB = g.teamB?.won === true
+              return (
+                <div key={i} className="flex items-center px-5 py-3 gap-4">
+                  <span className="text-[9px] font-mono text-text-muted/40 w-10">MAP {g.seq}</span>
+                  <span className="text-[11px] font-mono font-bold flex-1"
+                    style={{ color: wonA ? '#00e5a0' : 'rgba(255,255,255,0.45)' }}>
+                    {esports.teamA?.name}
+                  </span>
+                  <span className="text-[10px] font-mono text-text-muted mx-2">
+                    {g.finished ? 'FIN' : g.started ? 'LIVE' : '—'}
+                  </span>
+                  <span className="text-[11px] font-mono font-bold flex-1 text-right"
+                    style={{ color: wonB ? '#ff4f6a' : 'rgba(255,255,255,0.45)' }}>
+                    {esports.teamB?.name}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      <div className="text-center py-3">
+        <p className="text-[10px] font-mono text-text-muted/40">Detailed player stats not available for this match</p>
+      </div>
+    </div>
+  )
+}
+
 // ─── Finished match view ──────────────────────────────────────────────────────
 
 function FinishedView({ matchId }: { matchId: string }) {
   const [data, setData] = useState<DotaMatchDetail | null>(null)
+  const [esportsData, setEsportsData] = useState<EsportsMatchDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [itemMap, setItemMap] = useState<Record<number, DotaItem>>({})
 
   useEffect(() => {
-    api.getDotaMatch(matchId).then(d => { setData(d); setLoading(false) }).catch(() => setLoading(false))
+    async function load() {
+      // Try direct Stratz/OpenDota match lookup
+      let dotaMatch: DotaMatchDetail | null = null
+      try { dotaMatch = await api.getDotaMatch(matchId) } catch {}
+
+      if (!dotaMatch) {
+        // Fallback: treat matchId as GRID series ID
+        let esports: EsportsMatchDetail | null = null
+        try { esports = await api.getEsportsMatch(matchId) } catch {}
+
+        if (esports) {
+          // If steamData has completed games with real Dota 2 match IDs, try Stratz for those
+          type SteamGame = { matchId: number; isLive?: boolean }
+          const steamGames = (esports.steamData?.games ?? []) as SteamGame[]
+          const lastDone = [...steamGames].filter(g => !g.isLive).pop()
+          if (lastDone?.matchId) {
+            try { dotaMatch = await api.getDotaMatch(String(lastDone.matchId)) } catch {}
+          }
+          if (!dotaMatch) setEsportsData(esports)
+        }
+      }
+
+      if (dotaMatch) setData(dotaMatch)
+      setLoading(false)
+    }
+
+    load()
     api.getDotaItems().then(r => {
       const map: Record<number, DotaItem> = {}
       for (const item of (r.items ?? [])) map[item.id] = item
@@ -474,6 +596,7 @@ function FinishedView({ matchId }: { matchId: string }) {
   }, [matchId])
 
   if (loading) return <div className="animate-pulse rounded-xl h-64 bg-bg-surface border border-bg-border" />
+  if (!data && esportsData) return <SeriesOverview esports={esportsData} />
   if (!data) return <div className="text-center py-12"><p className="text-sm font-mono text-text-muted">Match data not available</p></div>
 
   const radiantPlayers = data.players.filter(p => p.isRadiant)
