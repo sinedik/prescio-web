@@ -14,7 +14,7 @@ interface UseSportWsOptions {
   onListUpdate?: (data: { id: string; status: string; home_score: number | null; away_score: number | null }) => void
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 const WS_URL  = API_URL.replace(/^http/, 'ws') + '/ws'
 
 export function useSportWs({ eventId, subscribeList, onEventUpdate, onOddsUpdate, onListUpdate }: UseSportWsOptions) {
