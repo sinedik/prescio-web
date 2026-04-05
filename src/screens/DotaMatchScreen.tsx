@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { usePageTitle } from '../hooks/usePageTitle'
+import { getCached, setCached } from '../lib/clientCache'
 import { api } from '../lib/api'
 import DotaMinimap from '../components/dota/DotaMinimap'
 import type { DotaLiveMatch, DotaMatchDetail, DotaHero, DotaItem, DotaLivePlayer, DotaMatchPlayer } from '../types/dota'
@@ -555,20 +556,25 @@ function SeriesOverview({ esports }: { esports: EsportsMatchDetail }) {
 // ─── Finished match view ──────────────────────────────────────────────────────
 
 function FinishedView({ matchId }: { matchId: string }) {
-  const [data, setData] = useState<DotaMatchDetail | null>(null)
-  const [esportsData, setEsportsData] = useState<EsportsMatchDetail | null>(null)
-  const [loading, setLoading] = useState(true)
+  const cacheKey = `dota:match:${matchId}`
+  type CachedMatch = { dotaMatch: DotaMatchDetail | null; esportsData: EsportsMatchDetail | null }
+  const cached = getCached<CachedMatch>(cacheKey, 30 * 60_000)
+
+  const [data, setData] = useState<DotaMatchDetail | null>(cached?.dotaMatch ?? null)
+  const [esportsData, setEsportsData] = useState<EsportsMatchDetail | null>(cached?.esportsData ?? null)
+  const [loading, setLoading] = useState(!cached)
   const [itemMap, setItemMap] = useState<Record<number, DotaItem>>({})
 
   useEffect(() => {
+    if (cached) return  // already have data, skip fetch
     async function load() {
       // Try direct Stratz/OpenDota match lookup
       let dotaMatch: DotaMatchDetail | null = null
       try { dotaMatch = await api.getDotaMatch(matchId) } catch {}
 
+      let esports: EsportsMatchDetail | null = null
       if (!dotaMatch) {
         // Fallback: treat matchId as GRID series ID
-        let esports: EsportsMatchDetail | null = null
         try { esports = await api.getEsportsMatch(matchId) } catch {}
 
         if (esports) {
@@ -584,6 +590,7 @@ function FinishedView({ matchId }: { matchId: string }) {
       }
 
       if (dotaMatch) setData(dotaMatch)
+      setCached(cacheKey, { dotaMatch, esportsData: esports })
       setLoading(false)
     }
 
@@ -593,7 +600,7 @@ function FinishedView({ matchId }: { matchId: string }) {
       for (const item of (r.items ?? [])) map[item.id] = item
       setItemMap(map)
     }).catch(() => {})
-  }, [matchId])
+  }, [matchId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) return <div className="animate-pulse rounded-xl h-64 bg-bg-surface border border-bg-border" />
   if (!data && esportsData) return <SeriesOverview esports={esportsData} />

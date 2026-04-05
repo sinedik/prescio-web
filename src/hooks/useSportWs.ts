@@ -49,7 +49,10 @@ export function useSportWs({ eventId, subscribeList, onEventUpdate, onOddsUpdate
     }
 
     ws.onclose = () => {
-      reconnectT.current = setTimeout(connect, 3000)
+      // Only reconnect if this ws is still the active one (guards against stale closures)
+      if (wsRef.current === ws) {
+        reconnectT.current = setTimeout(connect, 3000)
+      }
     }
 
     ws.onerror = () => ws.close()
@@ -59,8 +62,11 @@ export function useSportWs({ eventId, subscribeList, onEventUpdate, onOddsUpdate
     connect()
     return () => {
       if (reconnectT.current) clearTimeout(reconnectT.current)
-      wsRef.current?.close()
-      wsRef.current = null
+      if (wsRef.current) {
+        wsRef.current.onclose = null  // prevent reconnect on intentional close
+        wsRef.current.close()
+        wsRef.current = null
+      }
     }
   }, [connect])
 }

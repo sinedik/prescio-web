@@ -1,12 +1,11 @@
 'use client'
-import React, { useState, useCallback, useMemo, useEffect } from 'react'
+import React, { useState, useCallback, useMemo, useEffect, useRef, memo } from 'react'
 import { flushSync } from 'react-dom'
 import { useRouter } from 'next/navigation'
-import { usePolling } from '../hooks/usePolling'
+import { getCached, setCached } from '../lib/clientCache'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { api } from '../lib/api'
 import { ErrorBoundary } from '../components/ErrorBoundary'
-import { LogoCS2, LogoDota2 } from '../components/icons/games'
 import type { EsportsMatch } from '../types'
 import DotaMatchScreen from './DotaMatchScreen'
 import { useLiveLayout } from '../contexts/LiveLayoutContext'
@@ -14,27 +13,6 @@ import { useLiveLayout } from '../contexts/LiveLayoutContext'
 export type Game = 'cs2' | 'dota2' | 'valorant'
 type TimeWin = 'live' | '1h' | '3h' | '12h' | 'all'
 
-// ─── Background textures ──────────────────────────────────────────────────────
-const HERO_PAGE_BG: Record<Game, string> = {
-  cs2:      'repeating-linear-gradient(90deg,transparent,transparent 43px,rgba(230,100,20,0.016) 43px,rgba(230,100,20,0.016) 44px),#0a0603',
-  dota2:    'repeating-linear-gradient(0deg,transparent,transparent 31px,rgba(180,30,30,0.018) 31px,rgba(180,30,30,0.018) 32px),#0a0606',
-  valorant: 'repeating-linear-gradient(0deg,transparent,transparent 37px,rgba(255,70,85,0.016) 37px,rgba(255,70,85,0.016) 38px),#0a0506',
-}
-
-const GAME_BG: Record<Game, string> = {
-  cs2:
-    'repeating-linear-gradient(90deg,transparent,transparent 43px,rgba(230,100,20,0.022) 43px,rgba(230,100,20,0.022) 44px),' +
-    'radial-gradient(ellipse 700px 400px at 50% -8%,rgba(230,100,20,0.10) 0%,transparent 70%),' +
-    '#0a0603',
-  dota2:
-    'repeating-linear-gradient(0deg,transparent,transparent 31px,rgba(180,30,30,0.022) 31px,rgba(180,30,30,0.022) 32px),' +
-    'radial-gradient(ellipse 700px 400px at 50% -8%,rgba(180,30,30,0.10) 0%,transparent 70%),' +
-    '#0a0606',
-  valorant:
-    'repeating-linear-gradient(0deg,transparent,transparent 37px,rgba(255,70,85,0.018) 37px,rgba(255,70,85,0.018) 38px),' +
-    'radial-gradient(ellipse 700px 400px at 50% -8%,rgba(255,70,85,0.10) 0%,transparent 70%),' +
-    '#0a0506',
-}
 
 const ACCENT: Record<Game, string> = {
   cs2:      '#e66414',
@@ -50,68 +28,8 @@ const TIME_LABELS: Record<TimeWin, string> = {
   all: 'ALL',
 }
 
-// ─── Pagination ───────────────────────────────────────────────────────────────
-const PAGE_SIZE = 20
-
-function paginateGroups(
-  groups: { tournament: string; matches: EsportsMatch[] }[],
-  page: number
-): { tournament: string; matches: EsportsMatch[] }[] {
-  let skip = (page - 1) * PAGE_SIZE
-  let remaining = PAGE_SIZE
-  const result: { tournament: string; matches: EsportsMatch[] }[] = []
-  for (const g of groups) {
-    if (remaining <= 0) break
-    if (skip >= g.matches.length) { skip -= g.matches.length; continue }
-    const slice = g.matches.slice(skip, skip + remaining)
-    result.push({ tournament: g.tournament, matches: slice })
-    remaining -= slice.length
-    skip = 0
-  }
-  return result
-}
-
-function totalMatches(groups: { tournament: string; matches: EsportsMatch[] }[]) {
-  return groups.reduce((s, g) => s + g.matches.length, 0)
-}
-
-function Pagination({ current, total, onChange, accent }: {
-  current: number; total: number; onChange: (p: number) => void; accent: string
-}) {
-  if (total <= 1) return null
-  const pages: (number | '...')[] = []
-  if (total <= 7) {
-    for (let i = 1; i <= total; i++) pages.push(i)
-  } else {
-    pages.push(1)
-    if (current > 3) pages.push('...')
-    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) pages.push(i)
-    if (current < total - 2) pages.push('...')
-    pages.push(total)
-  }
-  return (
-    <div className="flex items-center justify-center gap-1 pt-5 pb-2">
-      <button onClick={() => onChange(current - 1)} disabled={current === 1}
-        className="w-7 h-7 flex items-center justify-center rounded text-text-muted hover:text-text-primary transition-colors disabled:opacity-25 disabled:cursor-not-allowed">
-        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
-      </button>
-      {pages.map((p, i) =>
-        p === '...'
-          ? <span key={`e${i}`} className="w-7 h-7 flex items-center justify-center text-[10px] font-mono text-text-muted/40">···</span>
-          : <button key={p} onClick={() => onChange(p as number)}
-              className="w-7 h-7 flex items-center justify-center rounded text-[11px] font-mono transition-all"
-              style={p === current
-                ? { background: `${accent}18`, color: accent, border: `1px solid ${accent}44` }
-                : { color: 'rgb(var(--text-muted))', border: '1px solid transparent' }
-              }>{p}</button>
-      )}
-      <button onClick={() => onChange(current + 1)} disabled={current === total}
-        className="w-7 h-7 flex items-center justify-center rounded text-text-muted hover:text-text-primary transition-colors disabled:opacity-25 disabled:cursor-not-allowed">
-        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
-      </button>
-    </div>
-  )
-}
+const REFRESH_INTERVAL = 60_000
+const CACHE_TTL        = 55_000  // slightly below refresh interval
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function abbr(name: string, max = 16) {
@@ -135,34 +53,112 @@ function groupByTournament(matches: EsportsMatch[]) {
     if (!map.has(key)) map.set(key, [])
     map.get(key)!.push(m)
   }
-  return Array.from(map.entries()).map(([tournament, ms]) => ({ tournament, matches: ms }))
+  return Array.from(map.entries()).map(([tournament, matches]) => ({ tournament, matches }))
+}
+
+// ─── Pagination ───────────────────────────────────────────────────────────────
+const EVENTS_PER_PAGE = 20
+
+type TournamentGroup = { tournament: string; matches: EsportsMatch[] }
+
+function paginateGroups(groups: TournamentGroup[], page: number): TournamentGroup[] {
+  let skip = (page - 1) * EVENTS_PER_PAGE
+  let remaining = EVENTS_PER_PAGE
+  const result: TournamentGroup[] = []
+  for (const g of groups) {
+    if (remaining <= 0) break
+    if (skip >= g.matches.length) { skip -= g.matches.length; continue }
+    const slice = g.matches.slice(skip, skip + remaining)
+    result.push({ tournament: g.tournament, matches: slice })
+    remaining -= slice.length
+    skip = 0
+  }
+  return result
+}
+
+function totalMatches(groups: TournamentGroup[]) {
+  return groups.reduce((s, g) => s + g.matches.length, 0)
+}
+
+function Pagination({ current, total, totalEvents, pageStart, pageEnd, onChange, accent }: {
+  current: number; total: number; totalEvents: number; pageStart: number; pageEnd: number
+  onChange: (p: number) => void; accent: string
+}) {
+  if (total <= 1) return null
+  const pages: (number | '...')[] = []
+  if (total <= 7) {
+    for (let i = 1; i <= total; i++) pages.push(i)
+  } else {
+    pages.push(1)
+    if (current > 3) pages.push('...')
+    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) pages.push(i)
+    if (current < total - 2) pages.push('...')
+    pages.push(total)
+  }
+  return (
+    <div className="flex flex-col items-center gap-2 pt-4 pb-2">
+      <span className="text-[10px] font-mono text-[#888]">
+        Матчи {pageStart}–{pageEnd} из {totalEvents}
+      </span>
+      <div className="flex items-center gap-1">
+        <button onClick={() => onChange(current - 1)} disabled={current === 1}
+          className="w-8 h-8 flex items-center justify-center rounded text-text-muted hover:text-text-primary transition-colors disabled:opacity-25 disabled:cursor-not-allowed">
+          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        {pages.map((p, i) =>
+          p === '...' ? (
+            <span key={`e${i}`} className="w-8 h-8 flex items-center justify-center text-[10px] font-mono text-text-muted/40">···</span>
+          ) : (
+            <button key={p} onClick={() => onChange(p as number)}
+              className="w-8 h-8 flex items-center justify-center rounded text-[11px] font-mono transition-all"
+              style={p === current
+                ? { background: `${accent}18`, color: accent, border: `1px solid ${accent}44` }
+                : { color: 'rgb(var(--text-muted))', border: '1px solid transparent' }
+              }>{p}</button>
+          )
+        )}
+        <button onClick={() => onChange(current + 1)} disabled={current === total}
+          className="w-8 h-8 flex items-center justify-center rounded text-text-muted hover:text-text-primary transition-colors disabled:opacity-25 disabled:cursor-not-allowed">
+          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+      </div>
+    </div>
+  )
 }
 
 // ─── TournamentDivider ────────────────────────────────────────────────────────
-function TournamentDivider({ name, count, first }: { name: string; count: number; first?: boolean }) {
+function TournamentDivider({ name, count, liveCount, first }: {
+  name: string; count: number; liveCount: number; first?: boolean
+}) {
   return (
-    <div className={`flex items-center gap-3 ${first ? 'pt-0' : 'pt-4'} pb-1.5`}>
-      <span className="text-[10px] font-mono font-bold tracking-[0.1em] uppercase shrink-0 max-w-[55%] truncate text-text-muted">
-        {name}
-      </span>
-      <div className="flex-1 h-px bg-bg-border" />
-      <span className="text-[9px] font-mono shrink-0 px-1.5 py-0.5 rounded border border-bg-border text-text-muted/50">
-        {count}
-      </span>
+    <div className={`flex items-center gap-2.5 px-3.5 rounded-lg overflow-hidden ${first ? 'mt-0' : 'mt-5'} mb-1.5`}
+      style={{ minHeight: 40, background: 'rgba(255,255,255,0.05)', borderLeft: '3px solid rgba(255,255,255,0.08)' }}>
+      <span className="text-[13px] font-semibold text-[#e0e0e0] truncate flex-1">{name}</span>
+      {liveCount > 0 && (
+        <span className="flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0"
+          style={{ background: 'rgba(255,50,50,0.12)', color: '#ff5252', border: '1px solid rgba(255,50,50,0.25)' }}>
+          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+          {liveCount}
+        </span>
+      )}
+      <span className="text-[10px] font-mono text-[#888] shrink-0 min-w-[18px] text-right">{count}</span>
     </div>
   )
 }
 
 // ─── EsportsRow ───────────────────────────────────────────────────────────────
-function EsportsRow({ match, accent, onClick }: {
+const EsportsRow = memo(function EsportsRow({ match, accent, onClick }: {
   match: EsportsMatch
   accent: string
   onClick: () => void
 }) {
-  const isLive = match.status === 'live'
+  const isLive     = match.status === 'live'
   const isFinished = match.status === 'finished'
   const seriesScoreA = match.games.filter(g => g.teamA?.won).length
   const seriesScoreB = match.games.filter(g => g.teamB?.won).length
+  const scoreA = match.teamA.score
+  const scoreB = match.teamB.score
+  const hasSeriesScore = isLive || isFinished
 
   return (
     <div
@@ -175,17 +171,22 @@ function EsportsRow({ match, accent, onClick }: {
         borderLeft: isLive ? `3px solid ${accent}` : undefined,
       }}
     >
-      {/* Status */}
+      {/* Status / Time */}
       <div className="shrink-0 w-14 text-center">
         {isLive ? (
-          <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
-            style={{ background: `${accent}22`, color: accent }}>LIVE</span>
+          <div className="flex flex-col items-center gap-0.5">
+            <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
+              style={{ background: `${accent}22`, color: accent }}>LIVE</span>
+            {scoreA != null && scoreB != null && (
+              <span className="text-[11px] font-mono font-bold text-text-primary">
+                {scoreA}:{scoreB}
+              </span>
+            )}
+          </div>
         ) : isFinished ? (
           <span className="text-[9px] font-mono text-text-muted">FIN</span>
         ) : (
-          <div className="text-center">
-            <p className="text-[9px] font-mono text-text-muted">{formatTime(match.startsAt)}</p>
-          </div>
+          <p className="text-[9px] font-mono text-text-muted">{formatTime(match.startsAt)}</p>
         )}
       </div>
 
@@ -199,16 +200,16 @@ function EsportsRow({ match, accent, onClick }: {
         <p className="text-[10px] font-mono text-text-muted mt-0.5 truncate">{match.format}</p>
       </div>
 
-      {/* Series score */}
-      {(isLive || isFinished) && (seriesScoreA + seriesScoreB > 0) && (
+      {/* Series score (games won) */}
+      {hasSeriesScore && (seriesScoreA + seriesScoreB > 0) && (
         <div className="shrink-0 text-right">
           <p className="text-sm font-mono font-bold text-text-primary">
-            {seriesScoreA} : {seriesScoreB}
+            {seriesScoreA}:{seriesScoreB}
           </p>
         </div>
       )}
 
-      {/* Odds — показываем только если есть реальные Polymarket данные (не дефолтные 0.5) */}
+      {/* Odds */}
       {match.yesPrice > 0 && match.yesPrice !== 0.5 && (
         <div className="shrink-0 flex gap-1.5">
           <span className="text-[11px] font-mono px-2 py-0.5 rounded border border-bg-border text-text-secondary">
@@ -218,40 +219,79 @@ function EsportsRow({ match, accent, onClick }: {
       )}
     </div>
   )
-}
+})
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 export default function CybersportScreen({ initialGame = 'cs2', matchId }: { initialGame?: Game; matchId?: string }) {
   usePageTitle('Esports')
   const router = useRouter()
 
-  const game = initialGame
-  const [timeWin, setTimeWin] = useState<TimeWin>('all')
+  const game   = initialGame
+  const accent = ACCENT[game]
+
+  const [timeWin, setTimeWin]       = useState<TimeWin>('all')
   const [currentPage, setCurrentPage] = useState(1)
-  const [isStale, setIsStale] = useState(false)
+
+  const cacheKey = `esports:matches:${game}:${timeWin}`
+
+  // SWR: init from cache for instant display, then fetch in background
+  const [matches, setMatches]     = useState<EsportsMatch[]>(() => getCached<EsportsMatch[]>(cacheKey) ?? [])
+  const [loading, setLoading]     = useState(() => !getCached<EsportsMatch[]>(cacheKey))
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   const { selectedLeague: activeTournament, setSelectedLeague: setActiveTournament, setLeagues, setLiveCount, setTotalCount, setHideHero } = useLiveLayout()
 
-  const fetchMatches = useCallback(
-    () => api.getEsportsMatches(game, timeWin),
-    [game, timeWin]
-  )
-  const { data, loading, isRefreshing } = usePolling(fetchMatches, 60_000, game, timeWin)
+  const fetchMatches = useCallback(async (background = false) => {
+    if (background) setIsRefreshing(true)
+    else setLoading(true)
+    try {
+      const res = await api.getEsportsMatches(game, timeWin)
+      const ms = (res as { matches?: EsportsMatch[] })?.matches ?? []
+      setMatches(ms)
+      setCached(cacheKey, ms)
+    } catch { /* ignore */ } finally {
+      if (background) setIsRefreshing(false)
+      else setLoading(false)
+    }
+  }, [game, timeWin, cacheKey])
 
-  useEffect(() => { setIsStale(true) }, [game, timeWin])
-  useEffect(() => { if (data !== null) setIsStale(false) }, [data])
+  // On game/timeWin change: show cache immediately, then re-fetch
+  useEffect(() => {
+    const cached = getCached<EsportsMatch[]>(cacheKey)
+    if (cached) {
+      setMatches(cached)
+      setLoading(false)
+      fetchMatches(true)
+    } else {
+      setMatches([])
+      fetchMatches(false)
+    }
+  }, [game, timeWin]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-refresh in background every 60s
+  const refreshTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  useEffect(() => {
+    refreshTimerRef.current = setInterval(() => fetchMatches(true), REFRESH_INTERVAL)
+    return () => {
+      if (refreshTimerRef.current) clearInterval(refreshTimerRef.current)
+    }
+  }, [fetchMatches])
+
+  // Reset page on filter change
   useEffect(() => { setCurrentPage(1) }, [game, timeWin, activeTournament])
 
-  const showSkeleton = loading || isStale
-  const allMatches = useMemo<EsportsMatch[]>(
-    () => isStale ? [] : ((data as { matches?: EsportsMatch[] } | null)?.matches ?? []),
-    [data, isStale]
-  )
-  const accent = ACCENT[game]
+  useEffect(() => { setHideHero(!!matchId) }, [matchId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const allGroups   = useMemo(() => groupByTournament(allMatches), [allMatches])
+  // Sidebar
+  const allGroups = useMemo(() => groupByTournament(matches), [matches])
   const tournaments = useMemo(() => allGroups.map(g => ({ name: g.tournament })), [allGroups])
+  const liveCount   = useMemo(() => matches.filter(m => m.status === 'live').length, [matches])
 
+  useEffect(() => { setLeagues(tournaments) }, [tournaments]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setLiveCount(liveCount) }, [liveCount]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setTotalCount(matches.length) }, [matches.length]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Filtering
   const filteredGroups = useMemo(() => {
     if (!activeTournament) return allGroups
     return allGroups.filter(g => g.tournament === activeTournament)
@@ -262,20 +302,22 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId }: { ini
     [filteredGroups, currentPage]
   )
 
-  const total     = totalMatches(filteredGroups)
-  const liveCount = allMatches.filter(m => m.status === 'live').length
+  const total  = totalMatches(filteredGroups)
+  const pages  = Math.ceil(total / EVENTS_PER_PAGE)
 
-  useEffect(() => { setLeagues(tournaments) }, [tournaments]) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { setLiveCount(liveCount) }, [liveCount]) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { setTotalCount(allMatches.length) }, [allMatches.length]) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { setHideHero(!!matchId) }, [matchId]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Event range for pagination display
+  const eventsBefore = (currentPage - 1) * EVENTS_PER_PAGE
+  const eventsOnPage = pageGroups.reduce((s, g) => s + g.matches.length, 0)
+  const pageStart    = total > 0 ? eventsBefore + 1 : 0
+  const pageEnd      = eventsBefore + eventsOnPage
 
   return (
     <ErrorBoundary>
       <main className="flex-1 min-w-0 px-6 pb-5 pt-0">
+
         {/* Time filter bar */}
         {!matchId && (
-          <div className="flex items-center gap-1.5 mb-4 pt-3 px-0"
+          <div className="flex items-center gap-1.5 mb-4 pt-3"
             style={{ position: 'sticky', top: 200, zIndex: 15, background: 'rgba(8,8,8,0.75)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', marginLeft: -24, marginRight: -24, paddingLeft: 24, paddingRight: 24 }}
           >
             {(['live', '1h', '3h', '12h', 'all'] as TimeWin[]).map(tw => (
@@ -314,7 +356,21 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId }: { ini
           />
         ) : (
           <>
-            {showSkeleton && (
+            {/* Active tournament filter banner */}
+            {activeTournament && !loading && (
+              <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-lg border border-bg-border bg-bg-surface">
+                <span className="text-[11px] font-mono text-text-muted truncate flex-1">{activeTournament}</span>
+                <button
+                  onClick={() => setActiveTournament(null)}
+                  className="shrink-0 text-[9px] font-mono text-text-muted/50 hover:text-text-muted transition-colors px-1.5 py-0.5 rounded border border-bg-border"
+                >
+                  Сбросить
+                </button>
+              </div>
+            )}
+
+            {/* Skeleton */}
+            {loading && (
               <div className="flex flex-col gap-1.5">
                 {[0,1,2,3,4,5].map(i => (
                   <div key={i} className="rounded-lg animate-pulse bg-bg-surface border border-bg-border"
@@ -323,7 +379,8 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId }: { ini
               </div>
             )}
 
-            {!showSkeleton && allMatches.length === 0 && (
+            {/* Empty state */}
+            {!loading && matches.length === 0 && (
               <div className="flex flex-col items-center justify-center py-20 text-center">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 bg-bg-surface border border-bg-border">
                   <svg className="w-5 h-5 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -337,28 +394,35 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId }: { ini
               </div>
             )}
 
-            {!showSkeleton && pageGroups.length > 0 && (
+            {/* Match list */}
+            {!loading && pageGroups.length > 0 && (
               <>
                 <div className="flex flex-col gap-1.5">
-                  {pageGroups.map(({ tournament, matches }, idx) => (
-                    <div key={tournament}>
-                      <TournamentDivider name={tournament} count={matches.length} first={idx === 0} />
-                      <div className="flex flex-col gap-1">
-                        {matches.map(m => (
-                          <EsportsRow
-                            key={m.id}
-                            match={m}
-                            accent={accent}
-                            onClick={() => router.push(`/cybersport/${game}/${m.id}`)}
-                          />
-                        ))}
+                  {pageGroups.map(({ tournament, matches: ms }, idx) => {
+                    const tournLive = ms.filter(m => m.status === 'live').length
+                    return (
+                      <div key={tournament}>
+                        <TournamentDivider name={tournament} count={ms.length} liveCount={tournLive} first={idx === 0} />
+                        <div className="flex flex-col gap-1">
+                          {ms.map(m => (
+                            <EsportsRow
+                              key={m.id}
+                              match={m}
+                              accent={accent}
+                              onClick={() => router.push(`/cybersport/${game}/${m.id}`)}
+                            />
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
                 <Pagination
                   current={currentPage}
-                  total={Math.ceil(total / PAGE_SIZE)}
+                  total={pages}
+                  totalEvents={total}
+                  pageStart={pageStart}
+                  pageEnd={pageEnd}
                   accent={accent}
                   onChange={p => {
                     flushSync(() => setCurrentPage(p))
