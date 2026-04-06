@@ -302,7 +302,7 @@ export default function AuthPage() {
         >
           {[
             { value: '4', label: tr('auth.stat_assets') },
-            { value: String(analysesCount ?? 247), label: tr('auth.stat_analyses') },
+            { value: String(analysesCount ?? '—'), label: tr('auth.stat_analyses') },
             { value: '$500M+', label: tr('auth.stat_volume') },
           ].map(({ value, label }, i) => (
             <div key={label} className="relative">

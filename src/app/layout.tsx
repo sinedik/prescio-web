@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     template: '%s | Prescio',
   },
   description:
-    'AI-powered edge detection across prediction markets, sports betting and esports. Kalshi, Polymarket, Metaculus, football, basketball, Dota 2, CS2 — one platform. Find mispriced odds before the market corrects.',
+    'Prescio aggregates Polymarket, Kalshi, Metaculus, sports and esports in one feed. AI analyzes probabilities and finds where the market misprices events — before the crowd corrects it.',
   keywords: [
     'prediction markets', 'kalshi', 'polymarket', 'metaculus',
     'prediction market analysis', 'AI betting', 'sports analytics',
@@ -28,12 +28,12 @@ export const metadata: Metadata = {
     siteName: 'Prescio',
     url: `${siteUrl}/`,
     title: 'Prescio — AI Analytics for Markets, Sports & Esports',
-    description: 'One platform. Prediction markets, sports odds, esports. AI finds where the market is wrong — you act on it.',
+    description: 'One feed. Polymarket, Kalshi, Metaculus, sports & esports. AI finds where the market misprices events — before the crowd corrects it.',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Prescio — AI Analytics for Markets, Sports & Esports',
-    description: 'One platform. Prediction markets, sports odds, esports. AI finds where the market is wrong — you act on it.',
+    description: 'One feed. Polymarket, Kalshi, Metaculus, sports & esports. AI finds where the market misprices events — before the crowd corrects it.',
   },
   icons: {
     icon: [

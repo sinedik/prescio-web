@@ -14,7 +14,7 @@ const FREE_FEATURES = [
   'Prediction markets feed (Polymarket, Kalshi, Metaculus)',
   'Sports odds tracking — 15+ football leagues',
   'Esports live match tracking (Dota 2)',
-  'Crypto market signals feed',
+  '3 AI analyses per day',
   'Watchlist & portfolio tracking',
 ]
 
@@ -22,10 +22,17 @@ const PRO_FEATURES = [
   'Everything in Free',
   'Unlimited AI analysis on any market',
   'Full thesis & crowd bias breakdown',
-  'Resolution arbitrage analysis',
+  'AI Search across all markets',
   'Event context & timeline',
-  'Sports & crypto AI signals',
+  'Sports & esports AI signals',
 ]
+
+const COMING_SOON_FEATURES = new Set([
+  'Instant alerts when edge is found',
+  'Entry / exit timing signals',
+  'Edge score on every market',
+  'Kelly-optimal position sizing',
+])
 
 const ALPHA_FEATURES = [
   'Everything in Pro',
@@ -295,6 +302,14 @@ export default function PricingClient() {
                       </span>
                       <span className="text-xs leading-relaxed" style={{ color: 'rgb(var(--text-secondary))' }}>
                         {feature}
+                        {COMING_SOON_FEATURES.has(feature) && (
+                          <span
+                            className="ml-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded"
+                            style={{ color: 'rgb(var(--text-muted))', background: 'rgb(var(--bg-elevated))' }}
+                          >
+                            COMING SOON
+                          </span>
+                        )}
                       </span>
                     </div>
                   ))}
@@ -323,7 +338,7 @@ export default function PricingClient() {
             {[
               {
                 q: 'What counts as an "analysis"?',
-                a: 'An analysis is when you ask Prescio AI to evaluate a specific market, match, or coin. Free users cannot run AI analyses. Pro and Alpha users have unlimited analyses.',
+                a: 'An analysis is when you ask Prescio AI to evaluate a specific market, match, or coin. Free users get 3 AI analyses per day. Pro and Alpha users have unlimited analyses.',
               },
               {
                 q: 'Can I cancel anytime?',

@@ -12,7 +12,7 @@ interface Props {
 
 const PRO_FEATURES = [
   'Full thesis & crowd bias',
-  'Resolution arbitrage analysis',
+  'AI Search across all markets',
   'Unlimited analyses per day',
   'Event context & timeline',
 ]
