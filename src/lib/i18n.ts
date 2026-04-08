@@ -158,6 +158,7 @@ const translations = {
   'landing.hero.pill_markets':   { en: 'Prediction markets', ru: 'Предсказательные рынки' },
   'landing.hero.pill_sports':    { en: 'Sports analytics', ru: 'Спортивная аналитика' },
   'landing.hero.pill_esports':   { en: 'Esports', ru: 'Киберспорт' },
+  'landing.hero.pill_crypto':    { en: 'Crypto markets', ru: 'Крипто-рынки' },
   'landing.hero.pill_ai_search': { en: 'AI Search', ru: 'AI-поиск' },
 
   'landing.stats.volume':        { en: 'Prediction market volume', ru: 'Объём предсказательных рынков' },
