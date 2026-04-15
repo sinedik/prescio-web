@@ -6,7 +6,7 @@ import { usePolling } from '../hooks/usePolling'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { api } from '../lib/api'
 import { ErrorBoundary } from '../components/ErrorBoundary'
-import type { EsportsMatchDetail, EsportsGame, EsportsGameTeam, EsportsDraftAction, EsportsPlayer, EsportsTeamDetail, EsportsRound, EsportsDotaLive, EsportsDotaPlayer, EsportsPreMatch, EsportsRecentMatch } from '../types'
+import type { EsportsMatchDetail, EsportsGame, EsportsGameTeam, EsportsDraftAction, EsportsPlayer, EsportsTeamDetail, EsportsRound, EsportsPreMatch, EsportsRecentMatch } from '../types'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -96,45 +96,6 @@ function Countdown({ startsAt }: { startsAt: string }) {
       Starts in {label}
     </span>
   )
-}
-
-// Hero portrait from Steam CDN — works for any Dota2 hero
-function heroIconUrl(heroId?: string | null, heroName?: string | null): string | null {
-  if (heroId) {
-    const m = heroId.match(/^npc_dota_hero_(.+)$/)
-    if (m) return `https://cdn.dota2.com/apps/dota2/images/dota_react/heroes/${m[1]}.png`
-  }
-  if (heroName) {
-    const slug = heroName.toLowerCase().replace(/[\s'-]+/g, '_').replace(/[^a-z0-9_]/g, '')
-    return `https://cdn.dota2.com/apps/dota2/images/dota_react/heroes/${slug}.png`
-  }
-  return null
-}
-
-function HeroPortrait({ heroId, heroName, heroImg, size = 28, isBan = false, sideColor }: {
-  heroId?: string | null; heroName?: string | null; heroImg?: string | null; size?: number; isBan?: boolean; sideColor?: string
-}) {
-  const [err, setErr] = useState(false)
-  const url = heroImg ?? heroIconUrl(heroId, heroName)
-  if (url && !err) {
-    return (
-      <div className="relative shrink-0 rounded overflow-hidden" style={{
-        width: size,
-        height: size * 0.56,
-        boxShadow: sideColor ? `inset 0 -2px 0 ${sideColor}` : undefined,
-      }}>
-        <img src={url} alt={heroName ?? ''} onError={() => setErr(true)}
-          className="w-full h-full object-cover object-top"
-          style={isBan ? { filter: 'grayscale(80%) brightness(0.5)' } : undefined} />
-        {isBan && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-red-400/80 text-[9px] font-bold">✕</span>
-          </div>
-        )}
-      </div>
-    )
-  }
-  return null
 }
 
 // ─── Live clock (ticks every second if ticking) ───────────────────────────────
@@ -242,79 +203,118 @@ function PlayerRow({ player, accent, isDota, isCs2, completedRounds }: {
   )
 }
 
-// ─── Draft picks/bans row ─────────────────────────────────────────────────────
+// ─── Map Veto (CS2 / Valorant) ────────────────────────────────────────────────
 
-function DraftRow({ actions, teamAId, teamBId, accent }: {
+function MapVeto({ actions, teamA, teamB, accent }: {
   actions: EsportsDraftAction[]
-  teamAId?: string
-  teamBId?: string
+  teamA: EsportsTeamDetail | null
+  teamB: EsportsTeamDetail | null
   accent: string
 }) {
-  if (!actions.length) return null
-  const picks = actions.filter(a => a.type === 'pick')
-  const bans  = actions.filter(a => a.type === 'ban')
+  const maps = actions.filter(a => (a.itemType ?? '').toLowerCase() === 'map')
+  if (!maps.length) return null
+  const ordered = [...maps].sort((x, y) => Number(x.seq) - Number(y.seq))
   return (
-    <div className="flex flex-col gap-2">
-      {picks.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {picks.map((a, i) => {
-            const isA = a.teamId === teamAId
-            const isB = a.teamId === teamBId
-            const portrait = <HeroPortrait heroId={a.heroId} heroName={a.heroName} heroImg={a.heroImg} size={36} />
-            return (
-              <div key={i} className="flex flex-col items-center gap-0.5 group" title={a.heroName ?? undefined}>
-                {portrait ? (
-                  <div className="rounded overflow-hidden" style={{
-                    border: `1px solid ${isA ? `${accent}55` : 'rgba(255,255,255,0.12)'}`,
-                    boxShadow: isA ? `0 0 6px ${accent}22` : undefined,
-                  }}>
-                    {portrait}
-                  </div>
-                ) : (
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded"
-                    style={{
-                      background: isA ? `${accent}18` : isB ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.04)',
-                      color: isA ? accent : 'rgb(var(--text-secondary))',
-                      border: `1px solid ${isA ? `${accent}33` : 'rgba(255,255,255,0.08)'}`,
-                    }}>
-                    {a.heroName ?? `pick#${i + 1}`}
-                  </span>
-                )}
-                {portrait && a.heroName && (
-                  <span className="text-[8px] font-mono text-text-muted/50 max-w-[36px] truncate text-center"
-                    style={{ color: isA ? `${accent}cc` : undefined }}>
-                    {a.heroName.split(' ')[0]}
-                  </span>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      )}
-      {bans.length > 0 && (
-        <div className="flex items-center flex-wrap gap-1.5">
-          <span className="text-[8px] font-mono text-text-muted/40 uppercase tracking-wider self-center mr-0.5">Ban</span>
-          {bans.map((a, i) => {
-            const portrait = <HeroPortrait heroId={a.heroId} heroName={a.heroName} heroImg={a.heroImg} size={28} isBan />
-            return (
-              <div key={i} title={a.heroName ?? undefined} className="opacity-60">
-                {portrait ? (
-                  <div className="rounded overflow-hidden border border-red-900/30">{portrait}</div>
-                ) : (
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded line-through opacity-50"
-                    style={{ background: 'rgba(255,50,50,0.06)', color: '#ff5252', border: '1px solid rgba(255,50,50,0.15)' }}>
-                    {a.heroName ?? `ban#${i + 1}`}
-                  </span>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      )}
+    <div className="flex flex-col gap-1.5">
+      {ordered.map((a, i) => {
+        const isA = a.teamId === teamA?.id
+        const isB = a.teamId === teamB?.id
+        const team = isA ? teamA : isB ? teamB : null
+        const isBan = a.type === 'ban'
+        return (
+          <div key={i} className="flex items-center gap-2 text-[11px] font-mono"
+            style={{
+              padding: '6px 10px',
+              borderRadius: 6,
+              background: isBan ? 'rgba(255,50,50,0.04)' : (isA ? `${accent}0d` : 'rgba(255,255,255,0.03)'),
+              border: `1px solid ${isBan ? 'rgba(255,50,50,0.18)' : (isA ? `${accent}2a` : 'rgba(255,255,255,0.08)')}`,
+            }}>
+            <span className="text-text-muted/60 w-5">{i + 1}.</span>
+            <span className="uppercase tracking-wider text-[9px] w-8"
+              style={{ color: isBan ? '#ff6b6b' : accent }}>
+              {a.type}
+            </span>
+            <span className="flex-1 truncate" style={{
+              color: isBan ? '#ff9a9a' : 'rgb(var(--text-primary))',
+              textDecoration: isBan ? 'line-through' : undefined,
+              opacity: isBan ? 0.75 : 1,
+            }}>
+              {a.heroName ?? '—'}
+            </span>
+            {team && (
+              <span className="text-text-muted/70 truncate max-w-[120px]">
+                {team.name}
+              </span>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
 
+// ─── CS2 Minimap (player positions) ───────────────────────────────────────────
+
+function Cs2Minimap({ teamA, teamB, accent }: {
+  teamA: EsportsGameTeam | null
+  teamB: EsportsGameTeam | null
+  accent: string
+}) {
+  const all = [
+    ...(teamA?.players ?? []).map(p => ({ p, side: 'A' as const })),
+    ...(teamB?.players ?? []).map(p => ({ p, side: 'B' as const })),
+  ].filter(({ p }) => p.position && typeof p.position.x === 'number' && typeof p.position.y === 'number')
+
+  if (all.length < 2) return null
+
+  const xs = all.map(({ p }) => p.position!.x)
+  const ys = all.map(({ p }) => p.position!.y)
+  const minX = Math.min(...xs), maxX = Math.max(...xs)
+  const minY = Math.min(...ys), maxY = Math.max(...ys)
+  const pad = 200
+  const rangeX = Math.max(maxX - minX, 1) + pad * 2
+  const rangeY = Math.max(maxY - minY, 1) + pad * 2
+  const size = 220
+
+  const norm = (v: number, min: number, range: number) =>
+    ((v - (min - pad)) / range) * size
+
+  return (
+    <div className="px-4 pb-3">
+      <p className="text-[9px] font-mono text-text-muted/60 uppercase tracking-wider mb-1">Minimap</p>
+      <div className="relative" style={{ width: size, height: size, margin: '0 auto' }}>
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}
+          style={{
+            background: 'rgba(255,255,255,0.02)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 8,
+          }}>
+          {/* Grid */}
+          <line x1={size/2} y1={0} x2={size/2} y2={size} stroke="rgba(255,255,255,0.04)" strokeDasharray="2 4" />
+          <line x1={0} y1={size/2} x2={size} y2={size/2} stroke="rgba(255,255,255,0.04)" strokeDasharray="2 4" />
+          {all.map(({ p, side }) => {
+            const cx = norm(p.position!.x, minX, rangeX)
+            const cy = size - norm(p.position!.y, minY, rangeY)
+            const alive = p.alive !== false
+            const color = side === 'A' ? accent : '#e0e0e0'
+            return (
+              <g key={p.id} opacity={alive ? 1 : 0.3}>
+                <circle cx={cx} cy={cy} r={6} fill={color} stroke="rgba(0,0,0,0.5)" strokeWidth={1} />
+                {!alive && (
+                  <line x1={cx-4} y1={cy-4} x2={cx+4} y2={cy+4} stroke="#ff5252" strokeWidth={1.5} />
+                )}
+                <text x={cx} y={cy - 9} fontSize={7} fill="rgba(255,255,255,0.7)"
+                  textAnchor="middle" fontFamily="monospace">
+                  {(p.name ?? '').slice(0, 6)}
+                </text>
+              </g>
+            )
+          })}
+        </svg>
+      </div>
+    </div>
+  )
+}
 
 // ─── Game card ────────────────────────────────────────────────────────────────
 
@@ -465,6 +465,76 @@ function GamesTabs({ games, teamA, teamB, isDota, isCs2, accent }: {
   )
 }
 
+function RoundTimeline({ rounds, teamAName, teamBName }: {
+  rounds: EsportsRound[]
+  teamAName?: string
+  teamBName?: string
+}) {
+  const winIcon = (winType?: string | null): string => {
+    const t = (winType ?? '').toLowerCase()
+    if (t.includes('defus')) return '✂'
+    if (t.includes('detonat') || t.includes('bomb_expl') || t.includes('target_bombed')) return '✸'
+    if (t.includes('time') || t.includes('expir') || t.includes('saved')) return '⏱'
+    if (t.includes('eliminat') || t.includes('kill')) return '✕'
+    return '•'
+  }
+  const sideOf = (r: EsportsRound, winner: 'A' | 'B'): string | null => {
+    const t = winner === 'A' ? r.teamA : r.teamB
+    return (t?.side ?? '').toLowerCase() || null
+  }
+  let aCount = 0, bCount = 0
+  return (
+    <div className="flex flex-col gap-1 py-2">
+      <div className="flex items-center justify-between px-1">
+        <span className="text-[9px] font-mono text-text-muted/50 uppercase tracking-wider">Round timeline</span>
+        <span className="text-[9px] font-mono text-text-muted/40 tabular-nums">
+          {rounds.filter(r => r.teamA?.won).length} : {rounds.filter(r => r.teamB?.won).length}
+        </span>
+      </div>
+      <div className="flex gap-0.5 overflow-x-auto scrollbar-thin pb-1">
+        {rounds.map(r => {
+          const aWon = !!r.teamA?.won
+          const bWon = !!r.teamB?.won
+          const winner: 'A' | 'B' | null = aWon ? 'A' : bWon ? 'B' : null
+          const side = winner ? sideOf(r, winner) : null
+          const col = side === 'ct' || side === 'counter_terrorist'
+            ? CS_CT
+            : side === 't' || side === 'terrorist'
+            ? CS_T
+            : winner === 'A' ? '#7e8494' : winner === 'B' ? '#5a6070' : 'transparent'
+          if (winner === 'A') aCount++
+          if (winner === 'B') bCount++
+          const tName = winner === 'A' ? teamAName : winner === 'B' ? teamBName : '—'
+          const wt = winner === 'A' ? r.teamA?.winType : r.teamB?.winType
+          const half = r.round === 13 ? 'mr12' : r.round === 25 ? 'ot-start' : null
+          const tip = `Round ${r.round} · ${tName ?? ''}${wt ? ` · ${wt}` : ''} · ${aCount}:${bCount}`
+          const isLive = r.started && !r.finished
+          return (
+            <div key={r.round} className="flex items-center">
+              {half && <div className="w-px h-7 mx-0.5 bg-bg-border/60" aria-hidden />}
+              <div
+                title={tip}
+                className="w-5 h-7 rounded-sm flex flex-col items-center justify-center font-mono shrink-0"
+                style={{
+                  background: winner ? `${col}29` : isLive ? 'rgba(255,61,61,0.12)' : 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${winner ? `${col}66` : isLive ? `${LIVE_RED}66` : 'rgba(255,255,255,0.06)'}`,
+                }}
+              >
+                <span className="text-[8px] leading-none" style={{ color: winner ? col : isLive ? LIVE_RED : 'rgba(255,255,255,0.25)' }}>
+                  {winner ? winIcon(wt) : isLive ? '●' : '·'}
+                </span>
+                <span className="text-[7px] leading-none mt-0.5 tabular-nums"
+                  style={{ color: winner ? `${col}cc` : 'rgba(255,255,255,0.3)' }}>
+                  {r.round}
+                </span>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
 
 function GameCard({ game, teamA, teamB, isDota, isCs2, accent }: {
   game: EsportsGame
@@ -565,12 +635,40 @@ function GameCard({ game, teamA, teamB, isDota, isCs2, accent }: {
         </div>
       </div>
 
-      {/* Draft picks/bans */}
-      {hasDraft && isDota && (
-        <div className="px-4 pb-2 pt-0">
-          <DraftRow actions={game.draft!} teamAId={gA?.id} teamBId={gB?.id} accent={accent} />
+      {/* Round timeline (CS2) */}
+      {(game.rounds?.length ?? 0) > 0 && (
+        <div className="px-4 pb-2 pt-0 border-t border-bg-border/40">
+          <RoundTimeline rounds={game.rounds} teamAName={teamA.name} teamBName={teamB.name} />
         </div>
       )}
+
+      {/* Economy bar (CS2) */}
+      {isCs2 && (gA?.loadoutValue != null || gB?.loadoutValue != null) && (() => {
+        const aLoad = gA?.loadoutValue ?? 0
+        const bLoad = gB?.loadoutValue ?? 0
+        const total = aLoad + bLoad
+        const aPct = total > 0 ? (aLoad / total) * 100 : 50
+        return (
+          <div className="px-4 pb-2 pt-2 border-t border-bg-border/40 flex flex-col gap-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] font-mono text-text-muted/50 uppercase tracking-wider">Economy</span>
+              <span className="text-[9px] font-mono text-text-muted/40">equipment value</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono tabular-nums shrink-0 w-14" style={{ color: colorA }}>
+                ${aLoad.toLocaleString()}
+              </span>
+              <div className="flex-1 h-1.5 rounded-full overflow-hidden flex" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                <div className="h-full transition-all duration-500" style={{ width: `${aPct}%`, background: colorA }} />
+                <div className="h-full transition-all duration-500" style={{ width: `${100 - aPct}%`, background: colorB }} />
+              </div>
+              <span className="text-[10px] font-mono tabular-nums shrink-0 w-14 text-right" style={{ color: colorB }}>
+                ${bLoad.toLocaleString()}
+              </span>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Player scoreboards */}
       {hasPlayers && (() => {
@@ -621,426 +719,110 @@ function GameCard({ game, teamA, teamB, isDota, isCs2, accent }: {
         )
       })()}
 
-    </div>
-  )
-}
+      {/* CS2 minimap */}
+      {isCs2 && isLive && <Cs2Minimap teamA={gA} teamB={gB} accent={accent} />}
 
-
-// ─── Dota 2 win rate sparkline ────────────────────────────────────────────────
-
-function WinRateSparkline({ winRates, accent, teamAName, teamBName }: {
-  winRates: { time: number; winRate: number }[]
-  accent: string
-  teamAName: string
-  teamBName: string
-}) {
-  if (winRates.length < 2) return null
-  const W = 300, H = 48
-  const times = winRates.map(w => w.time)
-  const minT = Math.min(...times), maxT = Math.max(...times)
-  const rangeT = maxT - minT || 1
-
-  const pts = winRates.map(w => {
-    const x = ((w.time - minT) / rangeT) * W
-    const y = H - w.winRate * H
-    return `${x.toFixed(1)},${y.toFixed(1)}`
-  })
-  const pathD = `M ${pts.join(' L ')}`
-  const last = winRates[winRates.length - 1]
-  const lastX = ((last.time - minT) / rangeT) * W
-  const lastY = H - last.winRate * H
-  const pct = Math.round(last.winRate * 100)
-
-  return (
-    <div className="bg-bg-elevated/50 rounded-lg p-3">
-      <div className="flex items-center justify-between mb-1.5">
-        <span className="text-[9px] font-mono text-text-muted/40 uppercase tracking-wider">Win probability over time</span>
-        <span className="text-[11px] font-mono font-bold" style={{ color: pct >= 50 ? accent : '#888' }}>{pct}%</span>
-      </div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-12" preserveAspectRatio="none">
-        <line x1="0" y1={H / 2} x2={W} y2={H / 2} stroke="rgba(255,255,255,0.08)" strokeWidth="1" strokeDasharray="4 4" />
-        <path d={`${pathD} L ${lastX.toFixed(1)},${H} L 0,${H} Z`} fill={`${accent}22`} />
-        <path d={pathD} fill="none" stroke={accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        <circle cx={lastX.toFixed(1)} cy={lastY.toFixed(1)} r="3" fill={accent} />
-      </svg>
-      <div className="flex justify-between mt-1">
-        <span className="text-[8px] font-mono text-text-muted/40">{teamAName}</span>
-        <span className="text-[8px] font-mono text-text-muted/40">{teamBName}</span>
-      </div>
-    </div>
-  )
-}
-
-// ─── Dota 2 game timeline (kills, roshan, buildings) ─────────────────────────
-
-function SeriesTimeline({ live, teamAName, teamBName, accent }: {
-  live: EsportsDotaLive
-  teamAName: string
-  teamBName: string
-  accent: string
-}) {
-  const kills = live.killTimeline ?? []
-  const rosh  = (live.roshanEvents ?? []).filter(r => !r.isAlive) // deaths only
-  const bld   = (live.buildingEvents ?? []).filter(b => b.isAlive === false)
-
-  const hasAny = kills.length > 0 || rosh.length > 0 || bld.length > 0
-  if (!hasAny) return null
-
-  const allTimes = [
-    ...kills.map(k => k.time),
-    ...rosh.map(r => r.time),
-    ...bld.map(b => b.time),
-  ]
-  const minT = Math.min(0, ...allTimes)
-  const maxT = Math.max(live.gameTime ?? 0, ...allTimes, 60)
-  const range = maxT - minT || 1
-  const W = 600, H = 64
-  const pct = (t: number) => ((t - minT) / range) * 100
-
-  return (
-    <div className="bg-bg-elevated/50 rounded-lg p-3">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-[9px] font-mono text-text-muted/40 uppercase tracking-wider">Timeline</span>
-        <span className="text-[8px] font-mono text-text-muted/40">
-          {kills.length}k · {rosh.length} rosh · {bld.length} bld
-        </span>
-      </div>
-      <div className="relative overflow-hidden" style={{ width: '100%', height: H }}>
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: H }} preserveAspectRatio="none">
-          {/* Axis */}
-          <line x1={0} y1={H/2} x2={W} y2={H/2} stroke="rgba(255,255,255,0.1)" strokeWidth={1} />
-          {/* Minute ticks */}
-          {Array.from({ length: Math.floor(maxT/60) + 1 }, (_, m) => {
-            const x = pct(m * 60) * W / 100
-            return (
-              <g key={m}>
-                <line x1={x} y1={H/2 - 3} x2={x} y2={H/2 + 3} stroke="rgba(255,255,255,0.15)" />
-                {m % 5 === 0 && (
-                  <text x={x} y={H - 2} fontSize={7} fill="rgba(255,255,255,0.3)" textAnchor="middle" fontFamily="monospace">
-                    {m}m
-                  </text>
-                )}
-              </g>
-            )
-          })}
-          {/* Kills */}
-          {kills.map((k, i) => {
-            const x = pct(k.time) * W / 100
-            const y = k.isRadiant ? H/2 - 8 : H/2 + 8
-            const col = k.isRadiant ? DOTA_RADIANT : DOTA_DIRE
-            return <circle key={`k${i}`} cx={x} cy={y} r={1.8} fill={col} opacity={0.8} />
-          })}
-          {/* Roshan */}
-          {rosh.map((r, i) => {
-            const x = pct(r.time) * W / 100
-            return (
-              <g key={`r${i}`}>
-                <line x1={x} y1={4} x2={x} y2={H-12} stroke="#ffd84a" strokeWidth={1} strokeDasharray="2 2" opacity={0.5} />
-                <text x={x} y={10} fontSize={8} fill="#ffd84a" textAnchor="middle" fontFamily="monospace">R</text>
-              </g>
-            )
-          })}
-          {/* Buildings */}
-          {bld.map((b, i) => {
-            const x = pct(b.time) * W / 100
-            const col = b.isRadiant ? DOTA_DIRE : DOTA_RADIANT // dead radiant building → kill credit dire color
-            return <rect key={`b${i}`} x={x - 1} y={H/2 - 2} width={2} height={4} fill={col} opacity={0.7} />
-          })}
-        </svg>
-      </div>
-      <div className="flex justify-between text-[8px] font-mono mt-1">
-        <span style={{ color: DOTA_RADIANT }}>{teamAName}</span>
-        <span className="text-text-muted/40">R · building · K/min</span>
-        <span style={{ color: DOTA_DIRE }}>{teamBName}</span>
-      </div>
-    </div>
-  )
-}
-
-// ─── Dota 2 live section ──────────────────────────────────────────────────────
-
-function DotaLiveSection({ live, teamAName, teamBName, accent }: {
-  live: EsportsDotaLive
-  teamAName: string
-  teamBName: string
-  accent: string
-}) {
-  const radiantPlayers = live.players?.filter(p => p.isRadiant) ?? []
-  const direPlayers    = live.players?.filter(p => !p.isRadiant) ?? []
-
-  return (
-    <div className="bg-bg-surface border border-bg-border rounded-lg overflow-hidden">
-      {/* Header */}
-      <div className="px-4 py-3 flex items-center justify-between border-b border-bg-border/50">
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-mono text-text-muted uppercase tracking-wider">Dota 2 Live</span>
-          {live.gameTime != null && live.gameTime >= 0 && (() => {
-            const cycle = live.gameTime % 600
-            const isDay = cycle < 300
-            return (
-              <span className="text-[9px] font-mono px-1.5 py-[1px] rounded" title={isDay ? 'Day' : 'Night (Roshan safer to take)'}
-                style={{
-                  background: isDay ? 'rgba(253,224,71,0.12)' : 'rgba(99,102,241,0.15)',
-                  color: isDay ? '#facc15' : '#a5b4fc',
-                  border: `1px solid ${isDay ? 'rgba(253,224,71,0.25)' : 'rgba(99,102,241,0.28)'}`,
-                }}>
-                {isDay ? '☀ Day' : '☾ Night'}
-              </span>
-            )
-          })()}
-        </div>
-        <div className="flex items-center gap-3">
-          {live.gameTime != null && (
-            <span className="text-[11px] font-mono font-bold text-text-primary tabular-nums">
-              {live.gameTime < 0 ? `-${fmtClock(Math.abs(live.gameTime))}` : fmtClock(live.gameTime)}
-            </span>
-          )}
-          {live.spectators != null && (
-            <span className="text-[9px] font-mono text-text-muted/50">{live.spectators.toLocaleString()} watching</span>
-          )}
-        </div>
-      </div>
-
-      {/* Kill score */}
-      {(live.radiantScore != null || live.direScore != null) && (
-        <div className="px-4 py-2 flex items-center justify-between bg-bg-elevated/30">
-          <span className="text-[11px] font-mono font-bold truncate flex-1" style={{ color: DOTA_RADIANT }}>{teamAName}</span>
-          <div className="flex items-center gap-2 font-mono shrink-0">
-            <span className="text-xl font-bold" style={{ color: DOTA_RADIANT }}>{live.radiantScore ?? 0}</span>
-            <span className="text-text-muted/40">:</span>
-            <span className="text-xl font-bold" style={{ color: DOTA_DIRE }}>{live.direScore ?? 0}</span>
-          </div>
-          <span className="text-[11px] font-mono font-bold truncate flex-1 text-right" style={{ color: DOTA_DIRE }}>{teamBName}</span>
-        </div>
+      {/* CS2 rounds history */}
+      {isCs2 && (game.rounds?.length ?? 0) > 0 && (
+        <RoundsHistory rounds={game.rounds} teamAName={teamA.name ?? '—'} teamBName={teamB.name ?? '—'} accent={accent} />
       )}
+    </div>
+  )
+}
 
-      {/* Net worth lead */}
-      {(() => {
-        const radNW = radiantPlayers.reduce((s, p) => s + (p.networth ?? 0), 0)
-        const direNW = direPlayers.reduce((s, p) => s + (p.networth ?? 0), 0)
-        if (radNW === 0 && direNW === 0) return null
-        const lead = live.radiantLead ?? (radNW - direNW)
-        const total = radNW + direNW
-        const radPct = total > 0 ? (radNW / total) * 100 : 50
-        const absK = Math.abs(lead) >= 1000 ? `${(Math.abs(lead) / 1000).toFixed(1)}k` : String(Math.abs(lead))
-        const leader = lead > 0 ? 'Radiant' : lead < 0 ? 'Dire' : null
-        const leaderCol = lead > 0 ? DOTA_RADIANT : lead < 0 ? DOTA_DIRE : '#6b7280'
-        return (
-          <div className="px-4 py-2 border-b border-bg-border/40">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[9px] font-mono text-text-muted/50 uppercase tracking-wider">Net worth</span>
-              {leader ? (
-                <span className="text-[10px] font-mono font-bold tabular-nums" style={{ color: leaderCol }}>
-                  {leader} +{absK}
-                </span>
-              ) : (
-                <span className="text-[10px] font-mono text-text-muted/50">even</span>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono tabular-nums shrink-0 w-12" style={{ color: DOTA_RADIANT }}>
-                {fmtK(radNW)}
-              </span>
-              <div className="flex-1 h-2 rounded-full overflow-hidden flex" style={{ background: 'rgba(255,255,255,0.04)' }}>
-                <div className="h-full transition-all duration-500" style={{ width: `${radPct}%`, background: DOTA_RADIANT }} />
-                <div className="h-full transition-all duration-500" style={{ width: `${100 - radPct}%`, background: DOTA_DIRE }} />
-              </div>
-              <span className="text-[10px] font-mono tabular-nums shrink-0 w-12 text-right" style={{ color: DOTA_DIRE }}>
-                {fmtK(direNW)}
-              </span>
-            </div>
-          </div>
-        )
-      })()}
+// ─── CS2 Rounds history ───────────────────────────────────────────────────────
 
-      <div className="px-4 pb-4 pt-3 flex flex-col gap-3">
-        {/* Win rate sparkline */}
-        {live.winRates && live.winRates.length > 1 && (
-          <WinRateSparkline winRates={live.winRates} accent={DOTA_RADIANT} teamAName={teamAName} teamBName={teamBName} />
-        )}
+function winTypeIcon(wt?: string | null): string {
+  if (!wt) return '•'
+  const s = wt.toLowerCase()
+  if (s.includes('bomb') && s.includes('defus')) return '✂'
+  if (s.includes('bomb')) return '✸'
+  if (s.includes('saved') || s.includes('timeout')) return '⧗'
+  if (s.includes('elim') || s.includes('kill')) return '☠'
+  return '•'
+}
 
-        {/* Insight H2H */}
-        {live.insight && (
-          <div className="flex gap-2">
-            {live.insight.teamOneLeagueMatchCount != null && live.insight.teamOneLeagueMatchCount > 0 && (
-              <div className="flex-1 bg-bg-elevated/50 rounded px-3 py-2">
-                <p className="text-[8px] font-mono text-text-muted/40 mb-1">League record</p>
-                <p className="text-[13px] font-mono font-bold text-text-primary">
-                  {live.insight.teamOneLeagueWinCount}/{live.insight.teamOneLeagueMatchCount}
-                </p>
-                <p className="text-[8px] font-mono text-text-muted/50 truncate">{teamAName}</p>
-              </div>
-            )}
-            {live.insight.teamTwoLeagueMatchCount != null && live.insight.teamTwoLeagueMatchCount > 0 && (
-              <div className="flex-1 bg-bg-elevated/50 rounded px-3 py-2">
-                <p className="text-[8px] font-mono text-text-muted/40 mb-1">League record</p>
-                <p className="text-[13px] font-mono font-bold text-text-primary">
-                  {live.insight.teamTwoLeagueWinCount}/{live.insight.teamTwoLeagueMatchCount}
-                </p>
-                <p className="text-[8px] font-mono text-text-muted/50 truncate">{teamBName}</p>
-              </div>
-            )}
-            {live.insight.teamOneVsWinCount != null && (
-              <div className="flex-1 bg-bg-elevated/50 rounded px-3 py-2">
-                <p className="text-[8px] font-mono text-text-muted/40 mb-1">H2H wins</p>
-                <p className="text-[13px] font-mono font-bold text-text-primary">
-                  {live.insight.teamOneVsWinCount} : {live.insight.teamTwoVsWinCount ?? 0}
-                </p>
-                <p className="text-[8px] font-mono text-text-muted/50">this tournament</p>
-              </div>
-            )}
-          </div>
-        )}
+function sideColor(side?: string | null): string {
+  const s = (side ?? '').toLowerCase()
+  if (s.includes('t') && !s.includes('ct')) return '#d4a43a' // T
+  if (s.includes('ct')) return '#4a9eda' // CT
+  return '#888'
+}
 
-        {/* Game timeline (kills, roshan, buildings) */}
-        <SeriesTimeline live={live} teamAName={teamAName} teamBName={teamBName} accent={DOTA_RADIANT} />
+function computeRoundMvp(r: EsportsRound): { name: string | null; kills: number } | null {
+  const all = [...(r.teamA?.players ?? []), ...(r.teamB?.players ?? [])]
+  if (!all.length) return null
+  const top = all.reduce((best, p) =>
+    (p.kills ?? 0) > (best.kills ?? 0) ? p : best, all[0])
+  if ((top.kills ?? 0) < 1) return null
+  return { name: top.name ?? null, kills: top.kills ?? 0 }
+}
 
-        {/* Roshan respawn */}
-        {live.roshanRespawnTimer != null && live.roshanRespawnTimer > 0 && (
-          <div className="flex items-center gap-2 px-3 py-2 bg-bg-elevated/50 rounded">
-            <span className="text-[9px] font-mono text-text-muted/50 uppercase">Roshan respawn</span>
-            <span className="text-[11px] font-mono font-bold text-yellow-500/80">
-              {fmtClock(live.roshanRespawnTimer)}
-            </span>
-          </div>
-        )}
+function RoundsHistory({ rounds, teamAName, teamBName, accent }: {
+  rounds: EsportsRound[]
+  teamAName: string
+  teamBName: string
+  accent: string
+}) {
+  const finished = rounds.filter(r => r.finished)
+  if (!finished.length) return null
 
-        {/* Building state */}
-        {live.buildingState && (
-          <div className="flex gap-2">
-            {(['radiant', 'dire'] as const).map((side, si) => {
-              const bs = live.buildingState![side]
-              const name = si === 0 ? teamAName : teamBName
-              const towers = bs.towers ?? []
-              const barracks = bs.barracks ?? []
-              return (
-                <div key={side} className="flex-1 bg-bg-elevated/50 rounded px-3 py-2">
-                  <p className="text-[8px] font-mono text-text-muted/40 mb-1.5 truncate">{name}</p>
-                  <div className="flex items-center gap-1.5 mb-0.5">
-                    <span className="text-[8px] font-mono text-text-muted/30 w-3">T</span>
-                    <div className="flex gap-0.5">
-                      {towers.map((alive, ti) => (
-                        <div key={ti} className="w-2.5 h-3.5 rounded-sm"
-                          style={{ background: alive ? '#4ade80' : 'rgba(255,255,255,0.07)' }} />
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[8px] font-mono text-text-muted/30 w-3">B</span>
-                    <div className="flex gap-0.5">
-                      {barracks.map((alive, bi) => (
-                        <div key={bi} className="w-2.5 h-2.5 rounded-sm"
-                          style={{ background: alive ? '#a78bfa' : 'rgba(255,255,255,0.07)' }} />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
+  const aWins = finished.filter(r => r.teamA?.won).length
+  const bWins = finished.filter(r => r.teamB?.won).length
 
-        {/* Players */}
-        {live.players && live.players.length > 0 && (() => {
-          const all = live.players
-          const maxK = Math.max(...all.map(p => p.kills ?? 0))
-          const maxA = Math.max(...all.map(p => p.assists ?? 0))
-          const maxNW = Math.max(...all.map(p => p.networth ?? 0))
-          const maxGPM = Math.max(...all.map(p => p.gpm ?? 0))
-          const maxLVL = Math.max(...all.map(p => p.level ?? 0))
-          const RADIANT = '#4ade80'
-          const DIRE = '#ef4444'
+  // Pistol rounds (1 and 13 — half-time swap in MR12)
+  const pistolNums = new Set([1, 13])
+
+  return (
+    <div className="border-t border-bg-border/50 px-4 py-3">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[9px] font-mono text-text-muted/40 uppercase tracking-wider">Rounds</span>
+        <span className="text-[10px] font-mono font-bold text-text-secondary tabular-nums">{aWins} : {bWins}</span>
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {finished.map((r, i) => {
+          const aWon = r.teamA?.won === true
+          const winner = aWon ? r.teamA : r.teamB
+          const winType = winner?.winType
+          const mvp = computeRoundMvp(r)
+          const sideCol = sideColor(winner?.side)
+          const isPistol = pistolNums.has(r.round)
+          const icon = winTypeIcon(winType)
+          const title =
+            `Rd ${r.round}: ${aWon ? teamAName : teamBName} (${winner?.side ?? '?'})` +
+            `${winType ? ` — ${winType}` : ''}` +
+            `${mvp ? ` — MVP ${mvp.name ?? '?'} (${mvp.kills}k)` : ''}` +
+            `${isPistol ? ' — pistol' : ''}`
           return (
-            <div className="grid grid-cols-1 gap-2">
-              {[
-                { players: radiantPlayers, name: teamAName, color: RADIANT, label: 'RADIANT' },
-                { players: direPlayers,    name: teamBName, color: DIRE,    label: 'DIRE' },
-              ].map(({ players, name, color, label }) =>
-                players.length > 0 && (
-                  <div key={label} className="rounded-md border border-bg-border/60 overflow-hidden"
-                    style={{ borderTop: `2px solid ${color}` }}>
-                    {/* Side header */}
-                    <div className="flex items-center justify-between px-3 py-1.5 bg-bg-elevated/40">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-[9px] font-mono font-bold tracking-wider" style={{ color }}>{label}</span>
-                        <span className="text-[10px] font-mono text-text-secondary truncate">{name}</span>
-                      </div>
-                      <span className="text-[9px] font-mono tabular-nums text-text-muted/60">
-                        {players.reduce((s, p) => s + (p.kills ?? 0), 0)} kills
-                      </span>
-                    </div>
-                    {/* Column headers */}
-                    <div className="grid items-center gap-2 px-2 py-1 text-[8px] font-mono uppercase tracking-wider text-text-muted/40"
-                      style={{ gridTemplateColumns: '32px minmax(0,1fr) 40px 56px 48px 44px 28px' }}>
-                      <span />
-                      <span>Player</span>
-                      <span className="text-right">LVL</span>
-                      <span className="text-right">K/D/A</span>
-                      <span className="text-right">NW</span>
-                      <span className="text-right">GPM</span>
-                      <span />
-                    </div>
-                    {/* Rows */}
-                    <div className="flex flex-col">
-                      {players.map((p, pi) => {
-                        const hasItems = (p.itemTimeline?.length ?? 0) > 0
-                        const kLead = maxK > 0 && p.kills === maxK
-                        const aLead = maxA > 0 && p.assists === maxA
-                        const nwLead = maxNW > 0 && p.networth === maxNW
-                        const gpmLead = maxGPM > 0 && p.gpm === maxGPM
-                        const lvlLead = maxLVL > 0 && p.level === maxLVL
-                        return (
-                          <details key={pi} className="group border-t border-bg-border/30 first:border-t-0">
-                            <summary className="grid items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-white/[0.02] transition-colors list-none"
-                              style={{ gridTemplateColumns: '32px minmax(0,1fr) 40px 56px 48px 44px 28px' }}>
-                              <HeroPortrait heroImg={p.heroImg} heroName={p.heroName} size={32} sideColor={color} />
-                              <span className="text-[11px] font-mono text-text-secondary truncate">{p.name ?? `Player ${pi + 1}`}</span>
-                              <span className={`text-right text-[10px] font-mono tabular-nums ${lvlLead ? 'text-text-primary font-bold' : 'text-text-muted/60'}`}>
-                                {p.level ?? '—'}
-                              </span>
-                              <span className="text-right text-[11px] font-mono tabular-nums">
-                                <span className={kLead ? 'font-bold' : ''} style={kLead ? { color } : undefined}>{p.kills ?? 0}</span>
-                                <span className="text-text-muted/40">/</span>
-                                <span className="text-text-muted/70">{p.deaths ?? 0}</span>
-                                <span className="text-text-muted/40">/</span>
-                                <span className={aLead ? 'font-bold' : ''} style={aLead ? { color } : undefined}>{p.assists ?? 0}</span>
-                              </span>
-                              <span className={`text-right text-[10px] font-mono tabular-nums ${nwLead ? 'font-bold text-text-primary' : 'text-text-muted/70'}`}>
-                                {p.networth != null ? fmtK(p.networth) : '—'}
-                              </span>
-                              <span className={`text-right text-[10px] font-mono tabular-nums ${gpmLead ? 'font-bold text-yellow-400' : 'text-yellow-500/50'}`}>
-                                {p.gpm ?? '—'}
-                              </span>
-                              <span className="text-right text-text-muted/40 text-[10px] select-none" aria-hidden>
-                                {hasItems ? <span className="group-open:hidden">+</span> : null}
-                                {hasItems ? <span className="hidden group-open:inline">−</span> : null}
-                              </span>
-                            </summary>
-                            {hasItems && (
-                              <div className="flex gap-0.5 overflow-x-auto px-10 pb-2 pt-0.5 scrollbar-thin bg-bg-elevated/20">
-                                {p.itemTimeline!.slice(-14).map((it, ii) => (
-                                  <div key={ii} className="shrink-0 flex flex-col items-center gap-0.5" title={`${it.name ?? it.itemId} @ ${fmtClock(it.time)}`}>
-                                    {it.img ? (
-                                      <img src={it.img} alt={it.name ?? ''} className="w-5 h-5 rounded"
-                                        style={{ border: '1px solid rgba(255,255,255,0.06)' }} />
-                                    ) : (
-                                      <div className="w-5 h-5 rounded bg-bg-elevated/50 border border-white/5" />
-                                    )}
-                                    <span className="text-[7px] font-mono text-text-muted/50 tabular-nums">{fmtClock(it.time)}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </details>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )
+            <div key={i} title={title}
+              className="relative flex items-center justify-center cursor-default"
+              style={{
+                width: 18, height: 22, borderRadius: 3,
+                background: aWon ? `${sideCol}22` : 'rgba(255,255,255,0.04)',
+                border: `1px solid ${aWon ? sideCol : 'rgba(255,255,255,0.08)'}`,
+                boxShadow: isPistol ? `inset 0 -2px 0 ${accent}` : undefined,
+              }}>
+              <span className="text-[9px] font-mono" style={{ color: aWon ? sideCol : 'rgba(255,255,255,0.25)' }}>
+                {icon}
+              </span>
+              {mvp && (mvp.kills >= 3) && (
+                <span className="absolute -top-1 -right-1 text-[6px] font-mono font-bold px-0.5 rounded-sm"
+                  style={{ background: '#ffd84a', color: '#000' }}>
+                  {mvp.kills}K
+                </span>
               )}
             </div>
           )
-        })()}
+        })}
+      </div>
+      <div className="flex items-center gap-3 mt-2 text-[8px] font-mono text-text-muted/50">
+        <span className="inline-flex items-center gap-1">
+          <span className="w-2 h-2 rounded-sm" style={{ background: '#d4a43a' }} /> T
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="w-2 h-2 rounded-sm" style={{ background: '#4a9eda' }} /> CT
+        </span>
+        <span>✸ bomb · ✂ defuse · ⧗ save · ☠ elim</span>
       </div>
     </div>
   )
@@ -1348,7 +1130,7 @@ function OddsBar({ yesPrice, noPrice, teamA, teamB, accentA }: {
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
-export default function DotaMatchScreen({ seriesId }: { seriesId: string }) {
+export default function CS2MatchScreen({ seriesId }: { seriesId: string }) {
   const router = useRouter()
 
   const fetcher = useCallback(() => api.getEsportsMatch(seriesId), [seriesId])
@@ -1360,8 +1142,8 @@ export default function DotaMatchScreen({ seriesId }: { seriesId: string }) {
 
   const isLive     = match?.status === 'live'
   const isFinished = match?.status === 'finished'
-  const isDota     = true
-  const isCs2      = false
+  const isDota     = false
+  const isCs2      = true
 
   const teamA = match?.teamA as EsportsTeamDetail | undefined
   const teamB = match?.teamB as EsportsTeamDetail | undefined
@@ -1370,10 +1152,7 @@ export default function DotaMatchScreen({ seriesId }: { seriesId: string }) {
 
   const accent = teamA?.colorPrimary ?? nameToColor(teamA?.name ?? '')
 
-  const gameSlug = 'dota2'
-
-  const steamMatchId = (match?.steamData?.games as { matchId?: number }[] | undefined)
-    ?.find(g => g.matchId)?.matchId
+  const gameSlug = (match?.subcategory ?? '').includes('valorant') ? 'valorant' : 'cs2'
 
   // ─── Skeleton ────────────────────────────────────────────────────────────────
   if (loading && !match) {
@@ -1580,27 +1359,11 @@ export default function DotaMatchScreen({ seriesId }: { seriesId: string }) {
         </div>
       </div>
 
-      {/* Steam Live (Dota2) */}
-      {isDota && steamMatchId && (
-        <Link href={`/cybersport/dota/${steamMatchId}`} prefetch={false}
-          className="flex items-center justify-between px-4 py-3 rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-          style={{ background: 'rgba(255,200,0,0.05)', border: '1px solid rgba(255,200,0,0.2)' }}>
-          <div className="flex items-center gap-2">
-            <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
-              style={{ background: 'rgba(255,200,0,0.12)', color: '#f5c842', border: '1px solid rgba(255,200,0,0.2)' }}>
-              STEAM LIVE
-            </span>
-            <span className="text-[11px] font-mono text-text-muted">Live minimap, heroes · ~2 min DotaTV delay</span>
-          </div>
-          <span className="text-[11px] font-mono shrink-0" style={{ color: accent }}>View →</span>
-        </Link>
-      )}
-
-      {/* Series draft (Dota2) */}
-      {isDota && (match.draft?.length ?? 0) > 0 && (
+      {/* Map veto (CS2 / Valorant) */}
+      {(match.draft ?? []).some(a => (a.itemType ?? '').toLowerCase() === 'map') && (
         <div className="bg-bg-surface border border-bg-border rounded-lg p-4">
-          <p className="text-[9px] font-mono text-text-muted uppercase tracking-wider mb-2">Series Draft</p>
-          <DraftRow actions={match.draft!} teamAId={teamA?.id} teamBId={teamB?.id} accent={accent} />
+          <p className="text-[9px] font-mono text-text-muted uppercase tracking-wider mb-2">Map Veto</p>
+          <MapVeto actions={match.draft!} teamA={teamA ?? null} teamB={teamB ?? null} accent={accent} />
         </div>
       )}
 
@@ -1647,7 +1410,7 @@ export default function DotaMatchScreen({ seriesId }: { seriesId: string }) {
           <span className="w-2 h-2 rounded-full animate-pulse shrink-0" style={{ background: accent }} />
           <div>
             <p className="text-[11px] font-mono font-bold text-text-primary">
-              {isDota ? 'Game 1 in progress' : 'Map 1 in progress'}
+              Map 1 in progress
             </p>
             <p className="text-[10px] font-mono text-text-muted/60 mt-0.5">Live stats will appear shortly</p>
           </div>
@@ -1659,16 +1422,6 @@ export default function DotaMatchScreen({ seriesId }: { seriesId: string }) {
           <p className="text-[11px] font-mono text-text-muted">No maps data yet</p>
           <p className="text-[10px] font-mono text-text-muted/50 mt-1">Live data will appear once the match starts</p>
         </div>
-      )}
-
-      {/* Dota 2 live data */}
-      {isDota && isLive && match.dotaLive && (
-        <DotaLiveSection
-          live={match.dotaLive}
-          teamAName={teamA?.name ?? '—'}
-          teamBName={teamB?.name ?? '—'}
-          accent={accent}
-        />
       )}
 
       {/* Markets */}

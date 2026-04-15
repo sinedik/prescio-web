@@ -1,12 +1,14 @@
 'use client'
 import React, { useState, useCallback, useMemo, useEffect, useRef, memo } from 'react'
 import { flushSync } from 'react-dom'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { useSearchParams, usePathname, useRouter } from 'next/navigation'
 import { getCached, setCached } from '../lib/clientCache'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { api } from '../lib/api'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import type { EsportsMatch } from '../types'
+import CS2MatchScreen from './CS2MatchScreen'
 import DotaMatchScreen from './DotaMatchScreen'
 import { useLiveLayout } from '../contexts/LiveLayoutContext'
 
@@ -39,16 +41,43 @@ function abbr(name: string, max = 16) {
 function formatTime(iso: string) {
   const d = new Date(iso)
   const now = new Date()
+  const hm = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+  const sameDay = d.toDateString() === now.toDateString()
+  const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1)
+  const isTomorrow = d.toDateString() === tomorrow.toDateString()
+  if (sameDay)    return hm
+  if (isTomorrow) return `Tmrw ${hm}`
   const diffH = (d.getTime() - now.getTime()) / 3_600_000
-  if (Math.abs(diffH) < 24) {
-    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+  if (Math.abs(diffH) < 24 * 7) {
+    return d.toLocaleDateString('en-US', { weekday: 'short' }) + ' ' + hm
   }
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
+function statusRank(s: EsportsMatch['status']): number {
+  if (s === 'live') return 0
+  if (s === 'upcoming') return 1
+  return 2  // finished
+}
+
+function sortMatches(matches: EsportsMatch[]): EsportsMatch[] {
+  const now = Date.now()
+  return [...matches].sort((a, b) => {
+    const ra = statusRank(a.status), rb = statusRank(b.status)
+    if (ra !== rb) return ra - rb
+    const ta = new Date(a.startsAt).getTime(), tb = new Date(b.startsAt).getTime()
+    if (a.status === 'finished') return tb - ta              // newest finished first
+    if (a.status === 'upcoming') return ta - tb              // soonest upcoming first
+    // live: newest started first (closest to now)
+    return Math.abs(ta - now) - Math.abs(tb - now)
+  })
+}
+
 function groupByTournament(matches: EsportsMatch[]) {
+  const sorted = sortMatches(matches)
   const map = new Map<string, EsportsMatch[]>()
-  for (const m of matches) {
+  // Order tournaments by their best (live > upcoming > finished) match
+  for (const m of sorted) {
     const key = m.tournament || 'Other'
     if (!map.has(key)) map.set(key, [])
     map.get(key)!.push(m)
@@ -147,10 +176,10 @@ function TournamentDivider({ name, count, liveCount, first }: {
 }
 
 // ─── EsportsRow ───────────────────────────────────────────────────────────────
-const EsportsRow = memo(function EsportsRow({ match, accent, onClick }: {
+const EsportsRow = memo(function EsportsRow({ match, accent, href }: {
   match: EsportsMatch
   accent: string
-  onClick: () => void
+  href: string
 }) {
   const isLive     = match.status === 'live'
   const isFinished = match.status === 'finished'
@@ -159,11 +188,14 @@ const EsportsRow = memo(function EsportsRow({ match, accent, onClick }: {
   const scoreA = match.teamA.score
   const scoreB = match.teamB.score
   const hasSeriesScore = isLive || isFinished
+  const liveGame = isLive ? match.games.find(g => g.started && !g.finished) : null
+  const liveGameLabel = liveGame ? (liveGame.map ? `${liveGame.map}` : `Map ${liveGame.seq}`) : null
 
   return (
-    <div
-      onClick={onClick}
-      className="rounded-lg px-3.5 py-2 flex items-center gap-3 cursor-pointer transition-all"
+    <Link
+      href={href}
+      prefetch={false}
+      className="rounded-lg px-3.5 py-2 flex items-center gap-3 cursor-pointer transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
       style={{
         background: 'rgba(8,8,8,0.55)',
         backdropFilter: 'blur(2px)',
@@ -192,12 +224,17 @@ const EsportsRow = memo(function EsportsRow({ match, accent, onClick }: {
 
       {/* Teams */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
           <span className="text-[13px] font-mono text-text-primary truncate">{abbr(match.teamA.name)}</span>
-          <span className="text-[10px] font-mono text-text-muted shrink-0">vs</span>
+          <span className="text-[10px] font-mono text-text-muted/70 shrink-0 hidden sm:inline">vs</span>
           <span className="text-[13px] font-mono text-text-primary truncate">{abbr(match.teamB.name)}</span>
         </div>
-        <p className="text-[10px] font-mono text-text-muted mt-0.5 truncate">{match.format}</p>
+        <p className="text-[10px] font-mono text-text-muted mt-0.5 truncate">
+          {match.format}
+          {liveGameLabel && (
+            <span className="ml-2 text-text-muted/60">· {liveGameLabel}</span>
+          )}
+        </p>
       </div>
 
       {/* Series score (games won) */}
@@ -210,26 +247,34 @@ const EsportsRow = memo(function EsportsRow({ match, accent, onClick }: {
       )}
 
       {/* Odds */}
-      {match.yesPrice > 0 && match.yesPrice !== 0.5 && (
+      {match.status !== 'upcoming' && match.yesPrice > 0 && match.yesPrice < 1 && match.yesPrice !== 0.5 && (
         <div className="shrink-0 flex gap-1.5">
           <span className="text-[11px] font-mono px-2 py-0.5 rounded border border-bg-border text-text-secondary">
             {(match.yesPrice * 100).toFixed(0)}%
           </span>
         </div>
       )}
-    </div>
+    </Link>
   )
 })
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 export default function CybersportScreen({ initialGame = 'cs2', matchId }: { initialGame?: Game; matchId?: string }) {
   usePageTitle('Esports')
-  const router = useRouter()
 
   const game   = initialGame
   const accent = ACCENT[game]
 
-  const [timeWin, setTimeWin]       = useState<TimeWin>('all')
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
+  const router = useRouter()
+
+  const initialTw = ((): TimeWin => {
+    const v = searchParams?.get('time')
+    return (v === 'live' || v === '1h' || v === '3h' || v === '12h' || v === 'all') ? v : 'all'
+  })()
+
+  const [timeWin, setTimeWin]       = useState<TimeWin>(initialTw)
   const [currentPage, setCurrentPage] = useState(1)
 
   const cacheKey = `esports:matches:${game}:${timeWin}`
@@ -268,17 +313,50 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId }: { ini
     }
   }, [game, timeWin]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-refresh in background every 60s
+  // Auto-refresh in background every 60s, paused when tab hidden
   const refreshTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   useEffect(() => {
-    refreshTimerRef.current = setInterval(() => fetchMatches(true), REFRESH_INTERVAL)
-    return () => {
-      if (refreshTimerRef.current) clearInterval(refreshTimerRef.current)
+    const start = () => {
+      if (refreshTimerRef.current) return
+      refreshTimerRef.current = setInterval(() => fetchMatches(true), REFRESH_INTERVAL)
     }
+    const stop = () => {
+      if (refreshTimerRef.current) { clearInterval(refreshTimerRef.current); refreshTimerRef.current = null }
+    }
+    const handleVisibility = () => {
+      if (document.hidden) stop()
+      else { fetchMatches(true); start() }
+    }
+    if (!document.hidden) start()
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => { stop(); document.removeEventListener('visibilitychange', handleVisibility) }
   }, [fetchMatches])
 
   // Reset page on filter change
   useEffect(() => { setCurrentPage(1) }, [game, timeWin, activeTournament])
+  useEffect(() => { setActiveTournament(null) }, [game]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sync filters to URL (?time=…&tournament=…) — shareable links
+  useEffect(() => {
+    if (matchId) return
+    const params = new URLSearchParams()
+    if (timeWin !== 'all') params.set('time', timeWin)
+    if (activeTournament) params.set('tournament', activeTournament)
+    const qs = params.toString()
+    const url = qs ? `${pathname}?${qs}` : pathname
+    router.replace(url, { scroll: false })
+  }, [timeWin, activeTournament, matchId, pathname, router])
+
+  // Apply ?tournament= from URL once matches arrive
+  const tournamentFromUrl = searchParams?.get('tournament') ?? null
+  useEffect(() => {
+    if (matchId) return
+    if (!tournamentFromUrl) return
+    if (activeTournament === tournamentFromUrl) return
+    if (matches.some(m => m.tournament === tournamentFromUrl)) {
+      setActiveTournament(tournamentFromUrl)
+    }
+  }, [tournamentFromUrl, matches, matchId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { setHideHero(!!matchId) }, [matchId]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -350,10 +428,9 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId }: { ini
 
         {/* Embedded match detail */}
         {matchId ? (
-          <DotaMatchScreen
-            matchId={matchId}
-            onBack={() => router.push(`/cybersport/${game}`)}
-          />
+          game === 'dota2'
+            ? <DotaMatchScreen seriesId={matchId} />
+            : <CS2MatchScreen seriesId={matchId} />
         ) : (
           <>
             {/* Active tournament filter banner */}
@@ -409,7 +486,7 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId }: { ini
                               key={m.id}
                               match={m}
                               accent={accent}
-                              onClick={() => router.push(`/cybersport/${game}/${m.id}`)}
+                              href={`/cybersport/${game}/${m.id}`}
                             />
                           ))}
                         </div>
