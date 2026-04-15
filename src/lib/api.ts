@@ -10,7 +10,7 @@ import type {
   DotaSeries, DotaLiveMatch, DotaProMatch,
   DotaMatchDetail, DotaHero, DotaItem,
 } from '../types/dota'
-import type { EsportsMatch, EsportsMatchDetail } from '../types'
+import type { EsportsMatch, EsportsMatchDetail, EsportsTeamPageData } from '../types'
 
 async function getAuthHeader(): Promise<Record<string, string>> {
   const { data } = await supabase.auth.getSession()
@@ -229,6 +229,8 @@ export const api = {
     apiFetch<{ matches: EsportsMatch[]; total: number }>(`/esports/matches${toSearch({ game, window })}`),
   getEsportsMatch: (seriesId: string) =>
     apiFetch<EsportsMatchDetail>(`/esports/matches/${seriesId}`),
+  getEsportsTeam: (teamId: string) =>
+    apiFetch<EsportsTeamPageData>(`/esports/teams/${teamId}`),
 
   // Paddle
   activatePro: (transactionId: string) =>

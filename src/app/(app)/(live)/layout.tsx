@@ -12,8 +12,9 @@ function getDiscipline(pathname: string): Discipline {
   if (pathname.startsWith('/sport/basketball'))  return 'basketball'
   if (pathname.startsWith('/sport/tennis'))      return 'tennis'
   if (pathname.startsWith('/sport/mma'))         return 'mma'
-  if (pathname.startsWith('/cybersport/dota2'))  return 'dota2'
-  if (pathname.startsWith('/cybersport'))        return 'cs2'
+  if (pathname.startsWith('/cybersport/dota2'))    return 'dota2'
+  if (pathname.startsWith('/cybersport/valorant')) return 'valorant'
+  if (pathname.startsWith('/cybersport'))          return 'cs2'
   return 'football'
 }
 
@@ -28,7 +29,7 @@ const SPORT_ITEMS = [
 const GAME_ITEMS = [
   { href: '/cybersport/cs2',      label: 'CS2',      icon: <LogoCS2 size={16} />,      d: 'cs2'      as Discipline, disabled: false },
   { href: '/cybersport/dota2',    label: 'Dota 2',   icon: <LogoDota2 size={16} />,    d: 'dota2'    as Discipline, disabled: false },
-  { href: '/cybersport/valorant', label: 'Valorant', icon: <LogoValorant size={16} />, d: 'valorant' as Discipline, disabled: true  },
+  { href: '/cybersport/valorant', label: 'Valorant', icon: <LogoValorant size={16} />, d: 'valorant' as Discipline, disabled: false },
 ]
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
@@ -42,7 +43,7 @@ function LiveSidebar({
   mobileOpen: boolean
   onMobileClose: () => void
 }) {
-  const { leagues, selectedLeague, setSelectedLeague } = useLiveLayout()
+  const { leagues, selectedLeague, setSelectedLeague, liveCount } = useLiveLayout()
   const accent = ACCENT[discipline]
   const isSport = pathname.startsWith('/sport')
   const items = isSport ? SPORT_ITEMS : GAME_ITEMS
@@ -101,6 +102,13 @@ function LiveSidebar({
               {item.label}
               {item.disabled && (
                 <span className="ml-auto text-[8px] font-mono text-text-muted/30">soon</span>
+              )}
+              {isActive && !item.disabled && liveCount > 0 && (
+                <span className="ml-auto flex items-center gap-0.5 text-[8px] font-bold px-1 py-0.5 rounded"
+                  style={{ background: 'rgba(255,50,50,0.14)', color: '#ff5252' }}>
+                  <span className="w-1 h-1 rounded-full bg-red-500 animate-pulse inline-block" />
+                  {liveCount}
+                </span>
               )}
             </button>
           )
@@ -242,7 +250,7 @@ function LiveLayoutInner({ children }: { children: React.ReactNode }) {
           )}
 
           <div className="max-w-[1280px] mx-auto w-full">
-            {!hideHero && (
+            {!hideHero && !pathname.includes('/team/') && (
               <div style={{ position: 'sticky', top: 0, zIndex: 20 }}>
                 <div className="px-3 sm:px-4 md:px-6">
                   <LiveHero discipline={discipline} />
