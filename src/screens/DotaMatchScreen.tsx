@@ -1353,8 +1353,14 @@ export default function DotaMatchScreen({ seriesId }: { seriesId: string }) {
   const router = useRouter()
 
   const fetcher = useCallback(() => api.getEsportsMatch(seriesId), [seriesId])
-  const { data, loading, isRefreshing } = usePolling(fetcher, 10_000, seriesId)
-  const match = data as EsportsMatchDetail | null
+  const { data, loading, isRefreshing } = usePolling<EsportsMatchDetail>(
+    fetcher,
+    d => d?.status === 'finished' ? null
+       : d?.status === 'live'     ? 10_000
+       :                            60_000,
+    seriesId,
+  )
+  const match = data ?? null
 
   const titleTeams = match ? `${match.teamA?.name ?? '?'} vs ${match.teamB?.name ?? '?'}` : null
   usePageTitle(titleTeams ? `${titleTeams} — Esports` : 'Match')
@@ -1394,7 +1400,7 @@ export default function DotaMatchScreen({ seriesId }: { seriesId: string }) {
     return (
       <div className="w-full max-w-3xl mx-auto px-6 py-20 text-center flex flex-col items-center gap-3">
         <p className="text-sm font-mono text-text-muted">Match not found</p>
-        <Link href="/cybersport/cs2" prefetch={false}
+        <Link href="/cybersport/dota2"
           className="text-[11px] font-mono text-text-muted/70 hover:text-text-primary underline underline-offset-2">
           ← Back to esports
         </Link>

@@ -1,10 +1,10 @@
 'use client'
-import React, { useState, useCallback, useMemo, useEffect, useRef, memo } from 'react'
+import React, { useState, useMemo, useEffect, memo } from 'react'
 import { flushSync } from 'react-dom'
 import Link from 'next/link'
 import { useSearchParams, usePathname, useRouter } from 'next/navigation'
-import { getCached, setCached } from '../lib/clientCache'
 import { usePageTitle } from '../hooks/usePageTitle'
+import { usePolling } from '../hooks/usePolling'
 import { api } from '../lib/api'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import type { EsportsMatch } from '../types'
@@ -276,60 +276,17 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId }: { ini
   const [timeWin, setTimeWin]       = useState<TimeWin>(initialTw)
   const [currentPage, setCurrentPage] = useState(1)
 
-  const cacheKey = `esports:matches:${game}:${timeWin}`
-
-  // SWR: init from cache for instant display, then fetch in background
-  const [matches, setMatches]     = useState<EsportsMatch[]>(() => getCached<EsportsMatch[]>(cacheKey) ?? [])
-  const [loading, setLoading]     = useState(() => !getCached<EsportsMatch[]>(cacheKey))
-  const [isRefreshing, setIsRefreshing] = useState(false)
-
   const { selectedLeague: activeTournament, setSelectedLeague: setActiveTournament, setLeagues, setLiveCount, setTotalCount, setHideHero } = useLiveLayout()
 
-  const fetchMatches = useCallback(async (background = false) => {
-    if (background) setIsRefreshing(true)
-    else setLoading(true)
-    try {
+  const { data, loading, isRefreshing } = usePolling<EsportsMatch[]>(
+    async () => {
       const res = await api.getEsportsMatches(game, timeWin)
-      const ms = (res as { matches?: EsportsMatch[] })?.matches ?? []
-      setMatches(ms)
-      setCached(cacheKey, ms)
-    } catch { /* ignore */ } finally {
-      if (background) setIsRefreshing(false)
-      else setLoading(false)
-    }
-  }, [game, timeWin, cacheKey])
-
-  // On game/timeWin change: show cache immediately, then re-fetch
-  useEffect(() => {
-    const cached = getCached<EsportsMatch[]>(cacheKey)
-    if (cached) {
-      setMatches(cached)
-      setLoading(false)
-      fetchMatches(true)
-    } else {
-      setMatches([])
-      fetchMatches(false)
-    }
-  }, [game, timeWin]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Auto-refresh in background every 60s, paused when tab hidden
-  const refreshTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  useEffect(() => {
-    const start = () => {
-      if (refreshTimerRef.current) return
-      refreshTimerRef.current = setInterval(() => fetchMatches(true), REFRESH_INTERVAL)
-    }
-    const stop = () => {
-      if (refreshTimerRef.current) { clearInterval(refreshTimerRef.current); refreshTimerRef.current = null }
-    }
-    const handleVisibility = () => {
-      if (document.hidden) stop()
-      else { fetchMatches(true); start() }
-    }
-    if (!document.hidden) start()
-    document.addEventListener('visibilitychange', handleVisibility)
-    return () => { stop(); document.removeEventListener('visibilitychange', handleVisibility) }
-  }, [fetchMatches])
+      return (res as { matches?: EsportsMatch[] })?.matches ?? []
+    },
+    REFRESH_INTERVAL,
+    'esports:matches', game, timeWin,
+  )
+  const matches = data ?? []
 
   // Reset page on filter change
   useEffect(() => { setCurrentPage(1) }, [game, timeWin, activeTournament])
