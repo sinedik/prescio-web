@@ -383,6 +383,7 @@ const SportRow = memo(function SportRow({ event, sport, accent }: {
   event: SportEvent; sport: Sport; accent: string
 }) {
   const [expanded, setExpanded] = useState(false)
+  const router = useRouter()
   const isLive     = event.status === 'live'
   const isFinished = event.status === 'finished'
   const hasScore   = event.home_score != null && event.away_score != null
@@ -401,6 +402,8 @@ const SportRow = memo(function SportRow({ event, sport, accent }: {
       style={{ border: `1px solid ${isLive ? 'rgba(255,50,50,0.2)' : 'rgba(255,255,255,0.06)'}` }}>
       <Link
         href={href}
+        prefetch={false}
+        onMouseEnter={() => router.prefetch(href)}
         className="grid items-center gap-2 sm:gap-3 px-3 sm:px-3.5 py-2.5 transition-all group relative [grid-template-columns:48px_1fr_auto] sm:[grid-template-columns:64px_1fr_auto]"
         style={{
           background: isLive ? 'rgba(255,50,50,0.04)' : 'rgba(8,8,8,0.55)',
