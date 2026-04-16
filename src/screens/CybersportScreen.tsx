@@ -2,15 +2,27 @@
 import React, { useState, useMemo, useEffect, memo } from 'react'
 import { flushSync } from 'react-dom'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import { useSearchParams, usePathname, useRouter } from 'next/navigation'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { usePolling } from '../hooks/usePolling'
 import { api } from '../lib/api'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import type { EsportsMatch } from '../types'
-import CS2MatchScreen from './CS2MatchScreen'
-import DotaMatchScreen from './DotaMatchScreen'
 import { useLiveLayout } from '../contexts/LiveLayoutContext'
+
+const CS2MatchScreen  = dynamic(() => import('./CS2MatchScreen'),  { loading: () => <MatchSkeleton /> })
+const DotaMatchScreen = dynamic(() => import('./DotaMatchScreen'), { loading: () => <MatchSkeleton /> })
+
+function MatchSkeleton() {
+  return (
+    <div className="flex flex-col gap-3 animate-pulse">
+      <div className="h-24 rounded-lg bg-bg-surface border border-bg-border" />
+      <div className="h-10 rounded-lg bg-bg-surface border border-bg-border" />
+      <div className="h-64 rounded-lg bg-bg-surface border border-bg-border" />
+    </div>
+  )
+}
 
 export type Game = 'cs2' | 'dota2'
 type TimeWin = 'live' | '1h' | '3h' | '12h' | 'all'
@@ -258,7 +270,7 @@ const EsportsRow = memo(function EsportsRow({ match, accent, href }: {
 })
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
-export default function CybersportScreen({ initialGame = 'cs2', matchId }: { initialGame?: Game; matchId?: string }) {
+export default function CybersportScreen({ initialGame = 'cs2', matchId, initialMatches }: { initialGame?: Game; matchId?: string; initialMatches?: EsportsMatch[] }) {
   usePageTitle('Esports')
 
   const game   = initialGame
@@ -285,6 +297,8 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId }: { ini
     },
     REFRESH_INTERVAL,
     'esports:matches', game, timeWin,
+    // Seed first paint from SSR only when filter matches the SSR window
+    ...(initialMatches && timeWin === 'all' ? [{ initialData: initialMatches }] : []),
   )
   const matches = data ?? []
 

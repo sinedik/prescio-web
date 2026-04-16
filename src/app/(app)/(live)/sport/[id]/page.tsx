@@ -4,6 +4,9 @@ import { supabase } from '@/lib/supabase'
 import { SportScreen } from '@/screens/SportScreen'
 import type { Sport } from '@/screens/SportScreen'
 import SportEventPage from '@/screens/SportEventPage'
+import { fetchSportEventsSSR } from '@/lib/serverData'
+
+export const revalidate = 60
 
 const SPORT_KEYS: Sport[] = ['football', 'basketball', 'tennis', 'mma']
 
@@ -71,7 +74,8 @@ export default async function SportDisciplinePage({ params }: Props) {
   const { id } = await params
 
   if (SPORT_KEYS.includes(id as Sport)) {
-    return <SportScreen initialSport={id as Sport} />
+    const initialEvents = await fetchSportEventsSSR(id)
+    return <SportScreen initialSport={id as Sport} initialEvents={initialEvents} />
   }
 
   // Legacy: standalone event page (backward compat)

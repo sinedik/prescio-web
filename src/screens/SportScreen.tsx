@@ -4,14 +4,24 @@ import { getCached, setCached } from '../lib/clientCache'
 import { flushSync } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { useSportWs } from '../hooks/useSportWs'
 import { sportApi } from '../lib/api'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import type { SportEvent, SportOdds, SubscriptionPlan } from '../types/index'
 import { useAuthContext } from '../contexts/AuthContext'
-import SportEventPage, { type EventMeta } from './SportEventPage'
+import type { EventMeta } from './SportEventPage'
 import type { SidebarLeague } from '../contexts/LiveLayoutContext'
+
+const SportEventPage = dynamic(() => import('./SportEventPage'), {
+  loading: () => (
+    <div className="flex flex-col gap-3 animate-pulse">
+      <div className="h-32 rounded-lg bg-bg-surface border border-bg-border" />
+      <div className="h-64 rounded-lg bg-bg-surface border border-bg-border" />
+    </div>
+  ),
+})
 
 import { LogoFootball, LogoBasketball, LogoTennis, LogoMMA } from '../components/icons/games'
 import { useLiveLayout } from '../contexts/LiveLayoutContext'
@@ -571,7 +581,7 @@ function MatchDetail({ event, sport, accent }: { event: SportEvent; sport: Sport
 }
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
-export function SportScreen({ initialSport, eventId }: { initialSport?: Sport; eventId?: string } = {}) {
+export function SportScreen({ initialSport, eventId, initialEvents }: { initialSport?: Sport; eventId?: string; initialEvents?: SportEvent[] } = {}) {
   usePageTitle('Sport')
   const router = useRouter()
   const { profile } = useAuthContext()
@@ -610,8 +620,16 @@ export function SportScreen({ initialSport, eventId }: { initialSport?: Sport; e
     }
   }, [sport])
 
-  const [events, setEvents]       = useState<SportEvent[]>(() => getCached<SportEvent[]>(`sport_events:${sport}`) ?? [])
-  const [loading, setLoading]     = useState(() => !getCached<SportEvent[]>(`sport_events:${sport}`))
+  const [events, setEvents]       = useState<SportEvent[]>(() => {
+    const cached = getCached<SportEvent[]>(`sport_events:${sport}`)
+    if (cached) return cached
+    if (initialEvents && initialEvents.length) {
+      setCached(`sport_events:${sport}`, initialEvents)
+      return initialEvents
+    }
+    return []
+  })
+  const [loading, setLoading]     = useState(() => !getCached<SportEvent[]>(`sport_events:${sport}`) && !(initialEvents && initialEvents.length))
   const [isRefreshing] = useState(false)
 
   // Initial fetch + refetch on sport/syncVersion change

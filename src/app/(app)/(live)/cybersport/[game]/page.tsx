@@ -2,6 +2,9 @@ import type { Metadata } from 'next'
 import { getSiteUrl } from '@/lib/site'
 import CybersportScreen from '@/screens/CybersportScreen'
 import type { Game } from '@/screens/CybersportScreen'
+import { fetchEsportsListSSR } from '@/lib/serverData'
+
+export const revalidate = 30
 
 interface Props { params: Promise<{ game: string }> }
 
@@ -41,5 +44,6 @@ const VALID_GAMES: Game[] = ['cs2', 'dota2']
 export default async function CybersportGamePage({ params }: Props) {
   const { game } = await params
   const safeGame: Game = VALID_GAMES.includes(game as Game) ? (game as Game) : 'cs2'
-  return <CybersportScreen key={safeGame} initialGame={safeGame} />
+  const initialMatches = await fetchEsportsListSSR(safeGame, 'all')
+  return <CybersportScreen key={safeGame} initialGame={safeGame} initialMatches={initialMatches} />
 }
