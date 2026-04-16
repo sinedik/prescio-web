@@ -38,23 +38,21 @@ App runs at `http://localhost:3000`. Expects `prescio-api` on port `8000` (proxi
 src/
   app/              Next.js App Router pages
     (app)/          Authenticated section
-      feed/         Events feed
-      markets/      Prediction markets list + detail
+      (live)/
+        cybersport/[game]/[matchId]/   Esports live + finished match detail (dota2 | cs2)
+      events/       Prediction events list + detail
+      markets/      Prediction markets list
       market/[slug] Public market page (SEO)
-      sport/        Sport & esports events
-      dota/         Dota 2 live + match detail
-      dashboard/    User dashboard
       portfolio/    Portfolio tracker
+      watchlist/    Watchlist
       profile/      User settings
     auth/           Login / signup
+    forgot-password/
     onboarding/     New user onboarding
+    pricing/        Plans + Paddle checkout
+    privacy/ terms/ Legal
     page.tsx        Landing page
-  screens/          Page-level React components (used by app/ pages)
   components/       Shared UI components
-    dota/           Dota 2 specific cards (DotaLiveCard, DotaMatchCard, DotaMinimap)
-    feed/           Feed cards, filters, odds display
-    paywall/        Paywall banners and modals
-    search/         AI search overlay
   hooks/
     usePolling.ts   Data polling with visibility-aware background refresh
     useAuth.ts      Auth state (Supabase session + profile cache)
@@ -64,7 +62,7 @@ src/
   lib/
     api.ts          Typed API client (wraps fetch to /api/*)
     supabase.ts     Supabase client
-  types/            TypeScript types (index.ts, dota.ts)
+  types/            TypeScript types
 ```
 
 ## Theming
@@ -100,6 +98,6 @@ Light theme overrides the same variables on `[data-theme="light"]`.
 
 | Plan | Features |
 |---|---|
-| `free` | Markets list, event feed (limited) |
-| `pro` | AI edge analysis, bookmaker odds, AI search |
-| `alpha` | All Pro features + early access |
+| `free` | Events and markets list, 3 AI analyses/day |
+| `pro` | 20 AI analyses/day, bookmaker odds, AI search, price history |
+| `alpha` | 50 AI analyses/day, all Pro features + early access, no watermark on shared analyses |
