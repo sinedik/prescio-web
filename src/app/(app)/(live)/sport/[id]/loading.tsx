@@ -1,5 +1,5 @@
-import { ListLoadingSkeleton } from '@/components/LoadingSkeleton'
+import { SportListSkeleton } from '@/components/LoadingSkeleton'
 
 export default function Loading() {
-  return <ListLoadingSkeleton rows={8} />
+  return <SportListSkeleton rows={8} />
 }
