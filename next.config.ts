@@ -48,8 +48,7 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
-      { source: '/watchlist', destination: '/dashboard', permanent: true },
-      { source: '/me', destination: '/dashboard', permanent: true },
+      { source: '/me', destination: '/profile', permanent: true },
     ]
   },
 }

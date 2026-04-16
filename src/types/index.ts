@@ -368,10 +368,3 @@ export interface DynamicEvent {
   edge_score?: number
   category: TopCategory
 }
-
-export interface FeedFilters {
-  category?: TopCategory
-  subcategory?: string
-  source_name?: SourceName
-  sort: 'recent' | 'score' | 'starts_at'
-}

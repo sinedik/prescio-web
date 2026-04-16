@@ -12,14 +12,13 @@ import CS2MatchScreen from './CS2MatchScreen'
 import DotaMatchScreen from './DotaMatchScreen'
 import { useLiveLayout } from '../contexts/LiveLayoutContext'
 
-export type Game = 'cs2' | 'dota2' | 'valorant'
+export type Game = 'cs2' | 'dota2'
 type TimeWin = 'live' | '1h' | '3h' | '12h' | 'all'
 
 
 const ACCENT: Record<Game, string> = {
   cs2:      '#e66414',
   dota2:    '#c0392b',
-  valorant: '#ff4655',
 }
 
 const TIME_LABELS: Record<TimeWin, string> = {

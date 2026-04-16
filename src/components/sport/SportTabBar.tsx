@@ -1,4 +1,4 @@
-import { LogoDota2, LogoCS2, LogoLoL, LogoValorant, LogoFootball, LogoBasketball, LogoTennis, LogoBaseball, LogoMMA } from '../icons/games'
+import { LogoDota2, LogoCS2, LogoFootball, LogoBasketball, LogoTennis, LogoBaseball, LogoMMA } from '../icons/games'
 
 export const SPORT_TABS = [
   { value: 'football',   label: 'Football',   icon: <LogoFootball size={13} />   },
@@ -9,10 +9,8 @@ export const SPORT_TABS = [
 ]
 
 export const ESPORT_TABS = [
-  { value: 'dota2',    label: 'Dota 2',   icon: <LogoDota2 size={13} />    },
-  { value: 'cs2',      label: 'CS2',      icon: <LogoCS2 size={13} />      },
-  { value: 'lol',      label: 'LoL',      icon: <LogoLoL size={13} />      },
-  { value: 'valorant', label: 'Valorant', icon: <LogoValorant size={13} /> },
+  { value: 'dota2', label: 'Dota 2', icon: <LogoDota2 size={13} /> },
+  { value: 'cs2',   label: 'CS2',    icon: <LogoCS2 size={13} />   },
 ]
 
 export function TabBtn({ value: _v, active, onClick, icon, children }: {

@@ -14,10 +14,6 @@ const GAME_META: Record<string, { title: string; description: string }> = {
     title: 'Dota 2 — Live Matches & AI Esports Analytics',
     description: 'Live Dota 2 matches with real-time AI analysis, hero stats and edge detection. Find value in esports markets on Prescio.',
   },
-  valorant: {
-    title: 'VALORANT — Live Matches & AI Esports Analytics',
-    description: 'Live VALORANT matches with AI-powered win probability and edge signals on Prescio.',
-  },
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -40,7 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-const VALID_GAMES: Game[] = ['cs2', 'dota2', 'valorant']
+const VALID_GAMES: Game[] = ['cs2', 'dota2']
 
 export default async function CybersportGamePage({ params }: Props) {
   const { game } = await params

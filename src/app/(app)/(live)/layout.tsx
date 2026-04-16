@@ -4,7 +4,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { LiveLayoutProvider, useLiveLayout, type SidebarLeague } from '@/contexts/LiveLayoutContext'
 import { WorldBackground, ACCENT, type Discipline } from '@/components/WorldBackground'
 import { LiveHero } from '@/components/LiveHero'
-import { LogoFootball, LogoBasketball, LogoTennis, LogoMMA, LogoCS2, LogoDota2, LogoValorant } from '@/components/icons/games'
+import { LogoFootball, LogoBasketball, LogoTennis, LogoMMA, LogoCS2, LogoDota2 } from '@/components/icons/games'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function getDiscipline(pathname: string): Discipline {
@@ -27,9 +27,8 @@ const SPORT_ITEMS = [
 ]
 
 const GAME_ITEMS = [
-  { href: '/cybersport/cs2',      label: 'CS2',      icon: <LogoCS2 size={16} />,      d: 'cs2'      as Discipline, disabled: false },
-  { href: '/cybersport/dota2',    label: 'Dota 2',   icon: <LogoDota2 size={16} />,    d: 'dota2'    as Discipline, disabled: false },
-  { href: '/cybersport/valorant', label: 'Valorant', icon: <LogoValorant size={16} />, d: 'valorant' as Discipline, disabled: false },
+  { href: '/cybersport/cs2',   label: 'CS2',     icon: <LogoCS2 size={16} />,   d: 'cs2'   as Discipline, disabled: false },
+  { href: '/cybersport/dota2', label: 'Dota 2',  icon: <LogoDota2 size={16} />, d: 'dota2' as Discipline, disabled: false },
 ]
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────

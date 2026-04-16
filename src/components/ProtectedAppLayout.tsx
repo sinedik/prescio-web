@@ -13,17 +13,19 @@ function Loader() {
   )
 }
 
-/** Публичные для SEO/гостей: список рынков и карточка рынка (без авторизации). */
-function isPublicMarketsPath(pathname: string | null): boolean {
+/** Публичные для SEO/гостей: списки маркетов/спорта/киберспорта и их детальные страницы. */
+function isPublicAppPath(pathname: string | null): boolean {
   if (!pathname) return false
   if (pathname === '/markets') return true
   if (pathname.startsWith('/market/')) return true
+  if (pathname === '/sport' || pathname.startsWith('/sport/')) return true
+  if (pathname === '/cybersport' || pathname.startsWith('/cybersport/')) return true
   return false
 }
 
 export default function ProtectedAppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const isPublic = isPublicMarketsPath(pathname)
+  const isPublic = isPublicAppPath(pathname)
   const { user, profile, loading } = useAuthContext()
   const router = useRouter()
 

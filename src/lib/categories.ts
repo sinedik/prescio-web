@@ -54,8 +54,6 @@ export const CATEGORIES: {
     subcategories: [
       { value: 'dota2',        label: 'Dota 2'  },
       { value: 'cs2',          label: 'CS2'     },
-      { value: 'lol',          label: 'LoL'     },
-      { value: 'valorant',     label: 'Valorant'},
       { value: 'other_esport', label: 'Other'   },
     ],
   },

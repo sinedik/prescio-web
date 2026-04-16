@@ -44,14 +44,14 @@ function EmptyState({ tab }: { tab: WatchlistTab }) {
       </p>
       <p className="text-xs font-mono text-text-muted mb-5">
         {tab === 'events'
-          ? 'Browse the feed and click Watch to add events.'
+          ? 'Browse events and click Watch to add them.'
           : 'Open a market and click Watch to add it.'}
       </p>
       <button
-        onClick={() => router.push(tab === 'events' ? '/feed' : '/markets')}
+        onClick={() => router.push('/markets')}
         className="px-4 py-2 bg-accent/10 border border-accent/30 text-accent text-xs font-mono font-bold rounded hover:bg-accent/20 transition-colors"
       >
-        {tab === 'events' ? 'Browse Feed' : 'Browse Markets'}
+        Browse Markets
       </button>
     </div>
   )

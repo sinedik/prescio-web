@@ -273,8 +273,8 @@ export default function EventDetailPage() {
     return (
       <div className="max-w-5xl mx-auto px-6 py-6 text-center py-20">
         <p className="text-sm font-mono text-text-muted">EVENT NOT FOUND</p>
-        <button onClick={() => router.push('/feed')} className="mt-4 text-xs font-mono text-accent hover:text-accent/80">
-          Back to feed
+        <button onClick={() => router.push('/markets')} className="mt-4 text-xs font-mono text-accent hover:text-accent/80">
+          Back to markets
         </button>
       </div>
     )
@@ -298,13 +298,13 @@ export default function EventDetailPage() {
     <div className="max-w-5xl mx-auto px-6 py-6">
       {/* Back */}
       <button
-        onClick={() => router.push('/feed')}
+        onClick={() => router.push('/markets')}
         className="flex items-center gap-1.5 text-[11px] font-mono text-text-muted hover:text-text-secondary transition-colors mb-5"
       >
         <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M19 12H5M12 5l-7 7 7 7" />
         </svg>
-        FEED
+        MARKETS
       </button>
 
       {/* ── 1. Hero image ── */}

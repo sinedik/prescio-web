@@ -2,7 +2,6 @@ export type Lang = 'en' | 'ru'
 
 const translations = {
   // ── Navigation ──────────────────────────────────────────────────────────────
-  'nav.feed':     { en: 'FEED',    ru: 'ЛЕНТА' },
   'nav.markets':  { en: 'MARKETS', ru: 'МАРКЕТЫ' },
   'nav.sport':    { en: 'SPORT',   ru: 'СПОРТ' },
   'nav.esports':  { en: 'ESPORTS', ru: 'КИБЕРСПОРТ' },
@@ -13,7 +12,6 @@ const translations = {
   'common.no_data':     { en: 'No data',    ru: 'Нет данных' },
   'common.see_all':     { en: 'See all',    ru: 'Все' },
   'common.upgrade':     { en: 'Upgrade',    ru: 'Улучшить' },
-  'common.go_to_feed':  { en: 'Go to Feed →', ru: 'Перейти в ленту →' },
   'common.just_now':    { en: 'just now',   ru: 'только что' },
   'common.today':       { en: 'today',      ru: 'сегодня' },
   'common.yesterday':   { en: 'yesterday',  ru: 'вчера' },
@@ -22,30 +20,6 @@ const translations = {
   'plan.free':  { en: 'FREE',  ru: 'FREE' },
   'plan.pro':   { en: 'PRO',   ru: 'PRO' },
   'plan.alpha': { en: 'ALPHA', ru: 'ALPHA' },
-
-  // ── Dashboard ────────────────────────────────────────────────────────────────
-  'dashboard.title':             { en: 'Dashboard',          ru: 'Главная' },
-  'dashboard.top_edge':          { en: 'Top Edge Events',    ru: 'Топ Edge-событий' },
-  'dashboard.watchlist':         { en: 'Watchlist',          ru: 'Вотчлист' },
-  'dashboard.recent_analyses':   { en: 'Recent Analyses',    ru: 'Последние анализы' },
-  'dashboard.analyses_today':    { en: 'AI Analyses today',  ru: 'AI-анализов сегодня' },
-  'dashboard.searches_today':    { en: 'AI Searches today',  ru: 'AI-поисков сегодня' },
-  'dashboard.upgrade_desc':      { en: 'Upgrade to Pro — 20 analyses/day + AI Search', ru: 'Перейди на Pro — 20 анализов/день + AI-поиск' },
-  'dashboard.no_edge':           { en: 'No edge events right now', ru: 'Нет edge-событий прямо сейчас' },
-  'dashboard.no_watchlist':      { en: 'No items in watchlist yet', ru: 'Вотчлист пуст' },
-  'dashboard.no_analyses':       { en: 'No analyses yet',    ru: 'Анализов пока нет' },
-  'dashboard.first_analysis':    { en: 'Run your first AI analysis', ru: 'Запусти первый AI-анализ' },
-  'dashboard.browse_feed':       { en: 'Browse feed →',      ru: 'В ленту →' },
-  'dashboard.watchlist_manage':  { en: 'Manage',             ru: 'Управление' },
-  'dashboard.history':           { en: 'History',            ru: 'История' },
-
-  // ── Feed ─────────────────────────────────────────────────────────────────────
-  'feed.title':            { en: 'Feed',            ru: 'Лента' },
-  'feed.ai_search':        { en: 'AI Search',       ru: 'AI-поиск' },
-  'feed.no_events':        { en: 'No events found', ru: 'Событий не найдено' },
-  'feed.sort_recent':      { en: 'Recent',          ru: 'Новые' },
-  'feed.sort_edge':        { en: 'Edge',            ru: 'Edge' },
-  'feed.sort_volume':      { en: 'Volume',          ru: 'Объём' },
 
   // ── Markets ──────────────────────────────────────────────────────────────────
   'markets.title':         { en: 'Markets',         ru: 'Маркеты' },

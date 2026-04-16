@@ -1,28 +1,39 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import Logo from './Logo'
 import { api } from '../lib/api'
+import { useAuthContext } from '../contexts/AuthContext'
 
-const FOOTER_LINKS = {
-  PRODUCT: [
-    { label: 'Markets', to: '/markets' },
-    { label: 'Watchlist', to: '/watchlist' },
-    { label: 'Portfolio', to: '/portfolio' },
-    { label: 'Pricing', to: '/pricing' },
-  ],
-  COMPANY: [
-    { label: 'About', to: '/' },
-    { label: 'Privacy Policy', to: '/privacy' },
-    { label: 'Terms of Service', to: '/terms' },
-  ],
-  INTELLIGENCE: [
-    { label: 'Polymarket', href: 'https://polymarket.com' },
-    { label: 'Kalshi', href: 'https://kalshi.com' },
-    { label: 'Metaculus', href: 'https://metaculus.com' },
-    { label: 'ISW Reports', href: 'https://understandingwar.org' },
-  ],
+type FooterLink = { label: string; to?: string; href?: string }
+
+function buildFooterLinks(isAuthed: boolean): Record<string, FooterLink[]> {
+  return {
+    PRODUCT: [
+      { label: 'Markets',   to: '/markets' },
+      { label: 'Sport',     to: '/sport/football' },
+      { label: 'Esports',   to: '/cybersport/cs2' },
+      ...(isAuthed
+        ? [
+            { label: 'Watchlist', to: '/watchlist' },
+            { label: 'Portfolio', to: '/portfolio' },
+          ]
+        : []),
+      { label: 'Pricing',   to: '/pricing' },
+    ],
+    COMPANY: [
+      { label: 'About',             to: '/' },
+      { label: 'Privacy Policy',    to: '/privacy' },
+      { label: 'Terms of Service',  to: '/terms' },
+    ],
+    INTELLIGENCE: [
+      { label: 'Polymarket', href: 'https://polymarket.com' },
+      { label: 'Kalshi',     href: 'https://kalshi.com' },
+      { label: 'Metaculus',  href: 'https://metaculus.com' },
+      { label: 'ISW Reports', href: 'https://understandingwar.org' },
+    ],
+  }
 }
 
 function useNextScanMins() {
@@ -38,6 +49,8 @@ function useNextScanMins() {
 export default function AppFooter() {
   const nextScan = useNextScanMins()
   const [analysesCount, setAnalysesCount] = useState<number | null>(null)
+  const { user } = useAuthContext()
+  const footerLinks = useMemo(() => buildFooterLinks(!!user), [user])
 
   useEffect(() => {
     api.getAccuracy()
@@ -87,7 +100,7 @@ export default function AppFooter() {
         </div>
 
         {/* Link columns */}
-        {(Object.entries(FOOTER_LINKS) as [string, { label: string; to?: string; href?: string }[]][]).map(([section, links]) => (
+        {(Object.entries(footerLinks) as [string, FooterLink[]][]).map(([section, links]) => (
           <div key={section} className="flex flex-col gap-3">
             <span
               className="text-[10px] font-mono font-bold tracking-widest"

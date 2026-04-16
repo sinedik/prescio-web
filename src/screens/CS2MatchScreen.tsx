@@ -6,6 +6,7 @@ import { usePolling } from '../hooks/usePolling'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { api } from '../lib/api'
 import { ErrorBoundary } from '../components/ErrorBoundary'
+import MarketsPanel from '../components/esports/MarketsPanel'
 import type { EsportsMatchDetail, EsportsGame, EsportsGameTeam, EsportsDraftAction, EsportsPlayer, EsportsTeamDetail, EsportsRound, EsportsPreMatch, EsportsRecentMatch } from '../types'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -1424,85 +1425,10 @@ export default function CS2MatchScreen({ seriesId }: { seriesId: string }) {
         </div>
       )}
 
-      {/* Markets */}
-      {match.markets?.length > 0 && (() => {
-        const rendered = match.markets.map(m => {
-          if (m.type === 'MATCH_WINNER') {
-            if (m.yesPrice === 0.5) return null
-            return (
-              <OddsBar key={m.id} yesPrice={m.yesPrice} noPrice={m.noPrice}
-                teamA={teamA?.name ?? '—'} teamB={teamB?.name ?? '—'}
-                accentA={teamA?.colorPrimary} />
-            )
-          }
-          if (m.type === 'TOTAL_MAPS') {
-            const pct = Math.round(m.yesPrice * 100)
-            if (!pct || pct === 50) return null
-              return (
-                <div key={m.id} className="bg-bg-surface border border-bg-border rounded-lg p-4">
-                  <p className="text-[10px] font-mono text-text-muted mb-2 uppercase tracking-wider">
-                    {m.question ?? 'Total maps'}
-                  </p>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 h-2 rounded-full bg-bg-elevated overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-500"
-                        style={{ width: `${pct}%`, background: accent }} />
-                    </div>
-                    <span className="text-[11px] font-mono font-bold shrink-0" style={{ color: accent }}>
-                      YES {pct}%
-                    </span>
-                    <span className="text-[11px] font-mono font-bold text-text-muted shrink-0">
-                      NO {100 - pct}%
-                    </span>
-                  </div>
-                </div>
-              )
-            }
-            if (m.type === 'MAP_WINNER') {
-              const mapLabel = m.mapNumber ? `Map ${m.mapNumber} winner` : (m.question ?? 'Map winner')
-              if (m.status === 'resolved') {
-                const winner = m.yesPrice === 1 ? (teamA?.name ?? 'YES') : (teamB?.name ?? 'NO')
-                return (
-                  <div key={m.id} className="bg-bg-surface border border-bg-border rounded-lg px-4 py-3 flex items-center justify-between">
-                    <p className="text-[10px] font-mono text-text-muted uppercase tracking-wider">{mapLabel}</p>
-                    <span className="text-[11px] font-mono font-bold" style={{ color: accent }}>{winner}</span>
-                  </div>
-                )
-              }
-              const pct = Math.round(m.yesPrice * 100)
-              if (!pct || pct === 50) return null
-              return (
-                <div key={m.id} className="bg-bg-surface border border-bg-border rounded-lg p-4">
-                  <p className="text-[10px] font-mono text-text-muted mb-2 uppercase tracking-wider">{mapLabel}</p>
-                  <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-mono text-text-muted/70 w-20 truncate">{teamA?.name ?? 'YES'}</span>
-                    <div className="flex-1 h-2 rounded-full bg-bg-elevated overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-500"
-                        style={{ width: `${pct}%`, background: accent }} />
-                    </div>
-                    <span className="text-[10px] font-mono text-text-muted/70 w-20 truncate text-right">{teamB?.name ?? 'NO'}</span>
-                  </div>
-                  <div className="flex justify-between mt-1">
-                    <span className="text-[11px] font-mono font-bold" style={{ color: accent }}>{pct}%</span>
-                    <span className="text-[11px] font-mono font-bold text-text-muted">{100 - pct}%</span>
-                  </div>
-                </div>
-              )
-            }
-            return null
-          })
-        const visible = rendered.filter(Boolean)
-        if (visible.length === 0) {
-          return (
-            <div className="rounded-lg border border-bg-border/60 bg-bg-surface/50 px-4 py-3">
-              <p className="text-[10px] font-mono text-text-muted/70">
-                Рынки прогнозов пока на 50/50 — сигнала нет.
-              </p>
-            </div>
-          )
-        }
-        return <div className="flex flex-col gap-2">{visible}</div>
-      })()}
+      {/* Markets — Prescio Fair Price */}
+      {match.markets?.length > 0 && (
+        <MarketsPanel markets={match.markets} teamA={teamA} teamB={teamB} accent={accent} />
+      )}
 
       {!match.markets?.length && match.yesPrice != null && match.yesPrice !== 0.5 && (
         <OddsBar yesPrice={match.yesPrice} noPrice={match.noPrice}

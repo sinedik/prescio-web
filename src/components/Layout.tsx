@@ -41,7 +41,6 @@ const STATUS_CONFIG: Record<ScanStatus, { dotClass: string; textClass: string; l
 }
 
 const NAV_BASES = [
-  { to: '/feed',       key: 'nav.feed'    },
   { to: '/markets',    key: 'nav.markets' },
   { to: '/sport',      key: 'nav.sport'   },
   { to: '/cybersport', key: 'nav.esports' },
@@ -280,21 +279,24 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               </span>
             )}
 
-            {/* AI Search */}
-            <button
-              onClick={() => setSearchOpen(true)}
-              title="AI Search"
-              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-opacity hover:opacity-80"
-              style={{ background: 'rgb(var(--bg-elevated))', border: '1px solid rgb(var(--bg-border))', fontSize: '11px', color: 'rgb(var(--text-muted))', fontFamily: 'JetBrains Mono, monospace' }}
-            >
-              <span>⌕</span>
-              <span>Search</span>
-              {planForSearch === 'free' && (
-                <span style={{ fontSize: '8px', color: 'rgb(var(--accent))', fontWeight: 700 }}>PRO</span>
-              )}
-            </button>
+            {/* AI Search — only for authed users */}
+            {user && (
+              <button
+                onClick={() => setSearchOpen(true)}
+                title="AI Search"
+                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-opacity hover:opacity-80"
+                style={{ background: 'rgb(var(--bg-elevated))', border: '1px solid rgb(var(--bg-border))', fontSize: '11px', color: 'rgb(var(--text-muted))', fontFamily: 'JetBrains Mono, monospace' }}
+              >
+                <span>⌕</span>
+                <span>Search</span>
+                {planForSearch === 'free' && (
+                  <span style={{ fontSize: '8px', color: 'rgb(var(--accent))', fontWeight: 700 }}>PRO</span>
+                )}
+              </button>
+            )}
 
-            {/* Alerts bell */}
+            {/* Alerts bell — only for authed users */}
+            {user && (
             <div ref={alertsRef} className="relative">
               <button
                 onClick={() => {
@@ -369,22 +371,39 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </div>
               )}
             </div>
+            )}
 
-            {/* Avatar */}
-            <button
-              onClick={() => router.push('/profile')}
-              title={email}
-              className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-mono font-bold transition-all duration-150"
-              style={{
-                background: 'rgb(var(--accent) / 0.1)',
-                border: '1px solid rgb(var(--bg-border))',
-                color: 'rgb(var(--accent))',
-              }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgb(var(--accent) / 0.4)' }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgb(var(--bg-border))' }}
-            >
-              {initials || 'U'}
-            </button>
+            {/* Avatar (authed) or Sign in (guest) */}
+            {user ? (
+              <button
+                onClick={() => router.push('/profile')}
+                title={email}
+                className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-mono font-bold transition-all duration-150"
+                style={{
+                  background: 'rgb(var(--accent) / 0.1)',
+                  border: '1px solid rgb(var(--bg-border))',
+                  color: 'rgb(var(--accent))',
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgb(var(--accent) / 0.4)' }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgb(var(--bg-border))' }}
+              >
+                {initials || 'U'}
+              </button>
+            ) : (
+              <button
+                onClick={() => router.push('/auth')}
+                className="px-3 py-1 rounded-md text-[11px] font-mono font-bold tracking-wider transition-all duration-150"
+                style={{
+                  background: 'rgb(var(--accent) / 0.1)',
+                  border: '1px solid rgb(var(--accent) / 0.3)',
+                  color: 'rgb(var(--accent))',
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgb(var(--accent) / 0.18)' }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgb(var(--accent) / 0.1)' }}
+              >
+                SIGN IN
+              </button>
+            )}
           </div>
         </div>
         {/* Nav transition progress bar */}

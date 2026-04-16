@@ -1,7 +1,7 @@
 import { supabase } from './supabase'
 import type {
   UnifiedEvent, SportEvent, UserProfile,
-  UserInterest, UserSearch, FeedFilters,
+  UserInterest, UserSearch,
   SportPrediction, SportStanding, SportInjury, SportTeam, PlayerProfile,
   SportLineup, SportFixtureStat, SportMatchEvent, SportTopScorer, SportSquadPlayer, TeamFixture,
   LeaguePageData,
@@ -43,20 +43,6 @@ function toSearch(params?: Record<string, string | number | boolean | undefined>
   }
   const s = p.toString()
   return s ? '?' + s : ''
-}
-
-export const feedApi = {
-  getEvents: (filters: FeedFilters, limit = 20, offset = 0) =>
-    apiFetch<{ events: UnifiedEvent[]; total: number }>(
-      `/feed${toSearch({
-        ...(filters.category && { category: filters.category }),
-        ...(filters.subcategory && { subcategory: filters.subcategory }),
-        ...(filters.source_name && { source_name: filters.source_name }),
-        sort: filters.sort,
-        limit,
-        offset,
-      })}`
-    ),
 }
 
 export interface CoinPrice {
@@ -150,10 +136,6 @@ export const authApi = {
 // ─── Прочие эндпоинты (используются Layout и другими существующими экранами) ───
 
 export const api = {
-  // Feed (legacy)
-  getFeed: (params?: Record<string, string>) =>
-    apiFetch(`/feed${toSearch(params)}`),
-
   // Events
   getEvent: (id: string) =>
     apiFetch(`/events/${id}`),
