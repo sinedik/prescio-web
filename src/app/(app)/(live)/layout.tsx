@@ -2,7 +2,8 @@
 import React, { useEffect, useState, useTransition } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { LiveLayoutProvider, useLiveLayout, type SidebarLeague } from '@/contexts/LiveLayoutContext'
-import { WorldBackground, ACCENT, type Discipline } from '@/components/WorldBackground'
+import { WorldBackground } from '@/components/WorldBackground'
+import { ACCENT, type Discipline } from '@/components/disciplines'
 import { LiveHero } from '@/components/LiveHero'
 import { LogoFootball, LogoBasketball, LogoTennis, LogoMMA, LogoCS2, LogoDota2 } from '@/components/icons/games'
 

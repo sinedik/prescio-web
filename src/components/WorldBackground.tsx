@@ -1,21 +1,9 @@
 'use client'
 import React from 'react'
 import { TennisCourtArt } from './artwork/TennisCourtArt'
+import { ACCENT, type Discipline } from './disciplines'
 
-export type Discipline =
-  | 'football' | 'basketball' | 'tennis' | 'mma'
-  | 'cs2' | 'dota2' | 'valorant'
-
-// Exact accent colors from the project
-export const ACCENT: Record<Discipline, string> = {
-  football:   '#e8c032',
-  basketball: '#e66414',
-  tennis:     '#C8E63C',
-  mma:        '#e02020',
-  cs2:        '#e66414',
-  dota2:      '#c0392b',
-  valorant:   '#ff4655',
-}
+export { ACCENT, type Discipline }
 
 // ─── Per-discipline SVG artwork ───────────────────────────────────────────────
 // viewBox 0 0 1440 900, artwork concentrated in top ~450px, fades below.

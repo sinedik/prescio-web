@@ -1,7 +1,7 @@
 'use client'
 import React from 'react'
 import { useLiveLayout } from '@/contexts/LiveLayoutContext'
-import type { Discipline } from './WorldBackground'
+import type { Discipline } from './disciplines'
 import { LogoFootball, LogoBasketball, LogoTennis, LogoMMA, ShimmerGameLogo } from './icons/games'
 
 // ─── Sport heroes ─────────────────────────────────────────────────────────────
