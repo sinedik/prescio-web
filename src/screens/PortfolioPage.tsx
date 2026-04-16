@@ -3,9 +3,10 @@ import { useState, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { usePortfolio, calcPortfolioStats, calcPositionPnl } from '../hooks/usePortfolio'
+import dynamic from 'next/dynamic'
 import PositionCard from '../components/PositionCard'
-import AddPositionModal from '../components/AddPositionModal'
-import PaywallModal from '../components/PaywallModal'
+const AddPositionModal = dynamic(() => import('../components/AddPositionModal'), { ssr: false })
+const PaywallModal = dynamic(() => import('../components/PaywallModal'), { ssr: false })
 import { useAuthContext } from '../contexts/AuthContext'
 import { daysUntil } from '../utils'
 import { api } from '../lib/api'

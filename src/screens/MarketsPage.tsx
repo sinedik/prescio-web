@@ -1,11 +1,12 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
+import dynamic from 'next/dynamic'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { useRouter } from 'next/navigation'
 import { stashMarketNavItem } from '../lib/marketNavCache'
 import MarketCard from '../components/markets/MarketCard'
 import MarketSkeleton from '../components/markets/MarketSkeleton'
-import PaywallModal from '../components/PaywallModal'
+const PaywallModal = dynamic(() => import('../components/PaywallModal'), { ssr: false })
 import { api } from '../lib/api'
 import type { Market, FilterPlatform } from '../types'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

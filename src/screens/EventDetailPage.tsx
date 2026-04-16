@@ -4,8 +4,9 @@ import { usePageTitle } from '../hooks/usePageTitle'
 import { useParams, useRouter } from 'next/navigation'
 import { usePolling } from '../hooks/usePolling'
 import { api } from '../lib/api'
+import dynamic from 'next/dynamic'
 import { useAuthContext } from '../contexts/AuthContext'
-import PaywallModal from '../components/PaywallModal'
+const PaywallModal = dynamic(() => import('../components/PaywallModal'), { ssr: false })
 import AnalysisLoader from '../AnalysisLoader'
 import { markAnalyzing, clearAnalyzing, isAnalyzing, markAnalyzed } from '../lib/activeAnalyses'
 

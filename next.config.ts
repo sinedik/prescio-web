@@ -38,6 +38,9 @@ const publicEnv = {
 
 const nextConfig: NextConfig = {
   env: publicEnv as unknown as Record<string, string>,
+  experimental: {
+    optimizePackageImports: ['lucide-react'],
+  },
   async rewrites() {
     return [
       {

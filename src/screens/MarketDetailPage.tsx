@@ -7,8 +7,9 @@ import {
   formatProb, formatEdge, formatVolume, formatDate, daysUntil,
   edgeColor, platformColor, actionColor,
 } from '../utils'
-import AddPositionModal from '../components/AddPositionModal'
-import PaywallModal from '../components/PaywallModal'
+import dynamic from 'next/dynamic'
+const AddPositionModal = dynamic(() => import('../components/AddPositionModal'), { ssr: false })
+const PaywallModal = dynamic(() => import('../components/PaywallModal'), { ssr: false })
 import { usePortfolio } from '../hooks/usePortfolio'
 import { api } from '../lib/api'
 import { useAuthContext } from '../contexts/AuthContext'
