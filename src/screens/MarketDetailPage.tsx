@@ -12,6 +12,7 @@ const AddPositionModal = dynamic(() => import('../components/AddPositionModal'),
 const PaywallModal = dynamic(() => import('../components/PaywallModal'), { ssr: false })
 import { usePortfolio } from '../hooks/usePortfolio'
 import { api } from '../lib/api'
+import { analyzeEventAction, analyzeMarketAction } from '../actions/analyze'
 import { useAuthContext } from '../contexts/AuthContext'
 import AnalysisLoader from '../AnalysisLoader'
 import { markAnalyzing, clearAnalyzing, isAnalyzing, markAnalyzed } from '../lib/activeAnalyses'
@@ -388,7 +389,7 @@ export default function MarketDetailPage() {
         }
 
         if (!marketId || cancelled) return
-        const { data: { session: dbgSession } } = await (await import('../lib/supabase')).supabase.auth.getSession()
+        const { data: { session: dbgSession } } = await (await import('../lib/supabase/client')).supabase.auth.getSession()
         console.log('[MarketDetail] fetching fresh by UUID=', marketId, 'has_token=', !!dbgSession?.access_token, 'plan=?')
 
         // Запрашиваем полные данные по UUID (включая analysis)
@@ -479,7 +480,7 @@ export default function MarketDetailPage() {
         // Событие не проанализировано — запускаем анализ автоматически
         setEventAnalyzing(true)
         try {
-          await api.analyzeEvent(eventId)
+          await analyzeEventAction(eventId)
           for (let i = 0; i < 20; i++) {
             await new Promise(r => setTimeout(r, 3000))
             if (cancelled) break
@@ -516,7 +517,7 @@ export default function MarketDetailPage() {
     markAnalyzing('market', marketId)
     try {
       const marketQuestion = market.question!
-      const result = await api.analyzeMarket(marketId) as Record<string, unknown>
+      const result = await analyzeMarketAction(marketId) as Record<string, unknown>
 
       // Всегда перечитываем из GET — данные правильно форматированы и гарантированно из БД
       const pollForAnalysis = async () => {

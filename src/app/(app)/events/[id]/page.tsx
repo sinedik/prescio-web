@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { cache } from 'react'
 import { getSiteUrl } from '@/lib/site'
-import { supabase } from '@/lib/supabase'
+import { getSupabaseServerClient } from '@/lib/supabase/server'
 import EventDetailPage from '@/screens/EventDetailPage'
 import { fetchEventDetailSSR } from '@/lib/serverData'
 
@@ -11,6 +11,7 @@ interface Props { params: Promise<{ id: string }> }
 
 const fetchEventMeta = cache(async (id: string) => {
   try {
+    const supabase = await getSupabaseServerClient()
     const { data } = await supabase
       .from('unified_events')
       .select('title, description, category, event_analyses(edge_score, probability)')

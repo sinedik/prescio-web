@@ -8,6 +8,7 @@ import dynamic from 'next/dynamic'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { useSportWs } from '../hooks/useSportWs'
 import { sportApi } from '../lib/api'
+import { syncSportDateAction } from '../actions/sport'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import type { SportEvent, SportOdds, SubscriptionPlan } from '../types/index'
 import { useAuthContext } from '../contexts/AuthContext'
@@ -747,7 +748,7 @@ export function SportScreen({ initialSport, eventId, initialEvents, initialEvent
     if ((countByDateAll.get(d) ?? 0) === 0) {
       setSyncingDate(d)
       try {
-        await sportApi.syncDate(sport, d)
+        await syncSportDateAction(sport, d)
         setSyncVersion(v => v + 1)
       } catch { /* ignore */ } finally {
         setSyncingDate(null)

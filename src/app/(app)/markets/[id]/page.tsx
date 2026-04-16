@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { getSiteUrl } from '@/lib/site'
-import { supabase } from '@/lib/supabase'
+import { getSupabaseServerClient } from '@/lib/supabase/server'
 import MarketDetailPage from '@/screens/MarketDetailPage'
 
 export const revalidate = 300
@@ -9,6 +9,7 @@ interface Props { params: Promise<{ id: string }> }
 
 async function fetchMarketMeta(id: string) {
   try {
+    const supabase = await getSupabaseServerClient()
     const { data } = await supabase
       .from('markets')
       .select('question, probability, platform')

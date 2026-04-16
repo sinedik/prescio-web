@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { User, Session } from '@supabase/supabase-js'
-import { supabase } from '../lib/supabase'
+import { supabase } from '../lib/supabase/client'
+import { updateProfileAction, type ProfileUpdate } from '../actions/profile'
 
 export interface Profile {
   id: string
@@ -133,7 +134,7 @@ export function useAuth() {
   async function signInWithGoogle() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/markets` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=/markets` },
     })
     if (error) throw error
   }
@@ -141,7 +142,7 @@ export function useAuth() {
   async function signInWithTwitter() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'twitter',
-      options: { redirectTo: `${window.location.origin}/markets` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=/markets` },
     })
     if (error) throw error
   }
@@ -150,9 +151,9 @@ export function useAuth() {
     if (user) await fetchProfile(user.id, true)
   }
 
-  async function updateProfile(data: Partial<Omit<Profile, 'id' | 'email' | 'created_at'>>) {
+  async function updateProfile(data: ProfileUpdate) {
     if (!user) return
-    await supabase.from('profiles').update(data).eq('id', user.id)
+    await updateProfileAction(data)
     if (profileCache.data) {
       profileCache.data = { ...profileCache.data, ...data }
       onProfileUpdate?.(profileCache.data)

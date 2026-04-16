@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { getSiteUrl } from '@/lib/site'
 import { fetchMarketsForSitemap, marketPathSegment } from '@/lib/sitemapMarkets'
-import { supabase } from '@/lib/supabase'
+import { getSupabaseServerClient } from '@/lib/supabase/server'
 
 export const revalidate = 3600
 
@@ -12,6 +12,7 @@ async function withTimeout<T>(promise: Promise<T>, ms = 8000): Promise<T | null>
 
 async function fetchEventIds(): Promise<{ id: string; updated_at?: string }[]> {
   try {
+    const supabase = await getSupabaseServerClient()
     const query = supabase
       .from('unified_events')
       .select('id, updated_at')
@@ -27,6 +28,7 @@ async function fetchEventIds(): Promise<{ id: string; updated_at?: string }[]> {
 
 async function fetchSportEventIds(): Promise<{ id: string; updated_at?: string }[]> {
   try {
+    const supabase = await getSupabaseServerClient()
     const query = supabase
       .from('sport_events')
       .select('id, updated_at')

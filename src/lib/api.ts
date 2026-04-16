@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { supabase } from './supabase/client'
 import type {
   UnifiedEvent, SportEvent, UserProfile,
   UserInterest, UserSearch,
@@ -63,10 +63,6 @@ export const cryptoApi = {
 
 export const eventsApi = {
   getEvent: (id: string) => apiFetch<UnifiedEvent>(`/events/${id}`),
-  analyzeMarket: (marketId: string) =>
-    apiFetch<{ queued: boolean }>(`/markets/${marketId}/analyze`, { method: 'POST' }),
-  analyzeEvent: (id: string) =>
-    apiFetch<{ queued: boolean }>(`/events/${id}/analyze`, { method: 'POST' }),
 }
 
 export const sportApi = {
@@ -108,17 +104,9 @@ export const sportApi = {
   getSquad:       (teamExternalId: number) => apiFetch<SportSquadPlayer[]>(`/sport/teams/${teamExternalId}/squad`),
   getTopScorers:  (leagueId: number, season?: number) => apiFetch<SportTopScorer[]>(`/sport/topscorers/${leagueId}${season ? `?season=${season}` : ''}`),
   getLeague:      (leagueId: number, subcategory?: string) => apiFetch<LeaguePageData>(`/sport/leagues/${leagueId}${subcategory ? `?subcategory=${subcategory}` : ''}`),
-  syncDate: (subcategory: string, date: string) =>
-    apiFetch<{ ok: boolean; count: number }>('/sport/sync', { method: 'POST', body: JSON.stringify({ subcategory, date }) }),
 }
 
 export const searchApi = {
-  search: (query: string) =>
-    apiFetch<{ searchId: string; query: string; summary: string; webResults: unknown[]; category?: string }>(
-      '/search', { method: 'POST', body: JSON.stringify({ query }) }
-    ),
-  triggerAnalysis: (searchId: string) =>
-    apiFetch<{ queued: boolean; searchId: string }>(`/search/${searchId}/analyze`, { method: 'POST' }),
   getHistory: (limit = 20, offset = 0) =>
     apiFetch<{ searches: UserSearch[] }>(`/search/history${toSearch({ limit, offset })}`),
 }
@@ -126,11 +114,6 @@ export const searchApi = {
 export const authApi = {
   getMe: () => apiFetch<UserProfile>('/user/me'),
   getInterests: () => apiFetch<{ interests: UserInterest[] }>('/user/interests'),
-  updateInterests: (interests: { category: string; subcategory?: string }[]) =>
-    apiFetch<{ ok: boolean }>('/user/interests', {
-      method: 'PUT',
-      body: JSON.stringify({ interests }),
-    }),
 }
 
 // ─── Прочие эндпоинты (используются Layout и другими существующими экранами) ───
@@ -145,28 +128,14 @@ export const api = {
     apiFetch(`/markets${toSearch(params)}`),
   getMarket: (id: string) =>
     apiFetch(`/markets/${id}`),
-  analyzeMarket: (id: string) =>
-    apiFetch(`/markets/${id}/analyze`, { method: 'POST' }),
-  analyzeEvent: (id: string) =>
-    apiFetch(`/events/${id}/analyze`, { method: 'POST' }),
 
   // Watchlist
   getWatchlist: () =>
     apiFetch('/watchlist'),
-  addToWatchlist: (data: { type: 'event' | 'market'; id: string }) =>
-    apiFetch('/watchlist', { method: 'POST', body: JSON.stringify(data) }),
-  removeFromWatchlist: (id: string) =>
-    apiFetch(`/watchlist/${id}`, { method: 'DELETE' }),
 
   // Portfolio
   getPortfolio: () =>
     apiFetch('/portfolio'),
-  addPosition: (data: unknown) =>
-    apiFetch('/portfolio', { method: 'POST', body: JSON.stringify(data) }),
-  updatePosition: (id: string, data: unknown) =>
-    apiFetch(`/portfolio/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  deletePosition: (id: string) =>
-    apiFetch(`/portfolio/${id}`, { method: 'DELETE' }),
 
   // Polymarket
   getPolymarketPortfolio: () =>
@@ -214,12 +183,4 @@ export const api = {
   getEsportsTeam: (teamId: string) =>
     apiFetch<EsportsTeamPageData>(`/esports/teams/${teamId}`),
 
-  // Paddle
-  activatePro: (transactionId: string) =>
-    apiFetch<{ activated: boolean }>('/paddle/activate', {
-      method: 'POST',
-      body: JSON.stringify({ transactionId }),
-    }),
-  getPaddlePortal: () =>
-    apiFetch<{ url: string }>('/paddle/portal'),
 }

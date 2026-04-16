@@ -6,7 +6,7 @@ import Link from 'next/link'
 import Logo from '@/components/Logo'
 import { usePaddle } from '@/hooks/usePaddle'
 import { useAuthContext } from '@/contexts/AuthContext'
-import { api } from '@/lib/api'
+import { activateProAction } from '@/actions/paddle'
 
 // ── Plan definitions ──────────────────────────────────────────────────────────
 
@@ -95,7 +95,7 @@ export default function PricingClient() {
   const [error, setError] = useState<string | null>(null)
 
   const { openCheckout } = usePaddle(async (transactionId) => {
-    try { await api.activatePro(transactionId) } catch { /* webhook may have already handled */ }
+    try { await activateProAction(transactionId) } catch { /* webhook may have already handled */ }
     await refreshProfile()
   })
 

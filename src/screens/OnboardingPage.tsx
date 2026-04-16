@@ -2,8 +2,7 @@
 import React, { useState, useLayoutEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthContext } from '../contexts/AuthContext'
-import { supabase } from '../lib/supabase'
-import { authApi } from '../lib/api'
+import { completeOnboardingAction, skipOnboardingAction } from '../actions/profile'
 import Logo from '../components/Logo'
 import { CATEGORIES } from '../lib/categories'
 import { IconSprout, IconTrendUp, IconStar } from '../components/icons'
@@ -39,7 +38,7 @@ export default function OnboardingPage() {
 
   async function skip() {
     if (!user) return
-    await supabase.from('profiles').update({ onboarding_done: true }).eq('id', user.id)
+    try { await skipOnboardingAction() } catch { /* ignore */ }
     await refreshProfile()
     router.replace('/markets')
   }
@@ -55,12 +54,11 @@ export default function OnboardingPage() {
       return [{ category: cat }]
     })
     try {
-      if (interests.length > 0) await authApi.updateInterests(interests)
-      if (experience) {
-        await supabase.from('profiles').update({ trading_experience: experience }).eq('id', user.id)
-      }
+      await completeOnboardingAction({
+        interests: interests.length > 0 ? interests : undefined,
+        experience: experience || undefined,
+      })
     } catch { /* ignore — optional */ }
-    await supabase.from('profiles').update({ onboarding_done: true }).eq('id', user.id)
     await refreshProfile()
     router.replace('/markets')
   }

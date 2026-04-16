@@ -4,6 +4,7 @@ import { usePageTitle } from '../hooks/usePageTitle'
 import { useRouter } from 'next/navigation'
 import { usePolling } from '../hooks/usePolling'
 import { api } from '../lib/api'
+import { removeFromWatchlistAction } from '../actions/watchlist'
 import { useAuthContext } from '../contexts/AuthContext'
 
 type WatchlistTab = 'events' | 'markets'
@@ -86,7 +87,7 @@ export default function WatchlistPage() {
     setRemoveError(null)
     setRemovedIds((prev) => new Set([...prev, item.id]))
     try {
-      await api.removeFromWatchlist(item.watchlist_id)
+      await removeFromWatchlistAction(item.watchlist_id)
     } catch {
       setRemovedIds((prev) => { const next = new Set(prev); next.delete(item.id); return next })
       setRemoveError('Failed to remove from watchlist')

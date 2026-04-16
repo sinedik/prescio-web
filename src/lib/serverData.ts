@@ -3,7 +3,7 @@
 // Do not import from client components.
 
 import { cache } from 'react'
-import { supabase } from './supabase'
+import { getSupabaseServerClient } from './supabase/server'
 import type { EsportsMatch, EsportsTeamPageData, Market } from '../types'
 import type { SportEvent, SportTeam, SportStanding, SportInjury, SportSquadPlayer, PlayerProfile, LeaguePageData } from '../types/index'
 
@@ -38,6 +38,7 @@ export const fetchEsportsListSSR = cache(async (game: string, window: string): P
   const to   = new Date(now + horizon * 3600_000).toISOString()
 
   try {
+    const supabase = await getSupabaseServerClient()
     const { data } = await supabase
       .from('esports_markets')
       .select(`
@@ -97,6 +98,7 @@ export const fetchSportEventsSSR = cache(async (subcategory: string): Promise<Sp
   const to   = new Date(from); to.setDate(to.getDate() + 30); to.setHours(23, 59, 59, 999)
 
   try {
+    const supabase = await getSupabaseServerClient()
     const { data } = await supabase
       .from('sport_events')
       .select('id,source,category,subcategory,league,home_team,away_team,starts_at,status,home_score,away_score,raw_data,sport_odds(bookmaker,market_type,outcomes)')
@@ -174,6 +176,7 @@ interface UnifiedEventRow {
 
 export const fetchUnifiedEventSSR = cache(async (id: string): Promise<UnifiedEventRow | null> => {
   try {
+    const supabase = await getSupabaseServerClient()
     const { data } = await supabase
       .from('unified_events')
       .select('id, title, description, category, subcategory, image_url, enrichment_status, updated_at')

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuthContext } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { usePaddle } from '../hooks/usePaddle'
-import { api } from '../lib/api'
+import { activateProAction, getPaddlePortalAction } from '../actions/paddle'
 import PaywallModal from '../components/PaywallModal'
 import { SearchHistoryScreen } from './SearchHistoryScreen'
 import { IconCheck, IconFlame, IconMoon, IconSun, IconMapPin } from '../components/icons'
@@ -69,12 +69,12 @@ export default function ProfilePage() {
   const { user, profile, signOut, refreshProfile, updateProfile } = useAuthContext()
   const { theme, setTheme } = useTheme()
   const { openCheckout } = usePaddle(async (transactionId) => {
-    try { await api.activatePro(transactionId) } catch { /* webhook may have handled it */ }
+    try { await activateProAction(transactionId) } catch { /* webhook may have handled it */ }
     await refreshProfile()
   })
 
   const [activeTab, setActiveTab] = useState<'profile' | 'research'>('profile')
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   const [selectedInterests, setSelectedInterests] = useState<string[]>(profile?.interests ?? [])
   const [interestsDirty, setInterestsDirty] = useState(false)
@@ -142,7 +142,7 @@ export default function ProfilePage() {
   async function handleManageSubscription() {
     setPortalLoading(true)
     try {
-      const { url } = await api.getPaddlePortal()
+      const { url } = await getPaddlePortalAction()
       window.location.href = url
     } catch { setPortalLoading(false) }
   }

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { getSiteUrl } from '@/lib/site'
-import { supabase } from '@/lib/supabase'
+import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { SportScreen } from '@/screens/SportScreen'
 import type { Sport } from '@/screens/SportScreen'
 import SportEventPage from '@/screens/SportEventPage'
@@ -14,6 +14,7 @@ interface Props { params: Promise<{ id: string }> }
 
 async function fetchSportMeta(id: string) {
   try {
+    const supabase = await getSupabaseServerClient()
     const { data } = await supabase
       .from('sport_events')
       .select('home_team, away_team, subcategory, starts_at')

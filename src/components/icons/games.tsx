@@ -1,3 +1,5 @@
+import type { ReactElement } from 'react'
+
 interface LogoProps {
   size?: number
   className?: string
@@ -128,7 +130,7 @@ export function ShimmerGameLogo({ game, size = 88 }: { game: string; size?: numb
 
 // ─── Category map ─────────────────────────────────────────────────────────────
 
-export const GAME_LOGOS: Record<string, (props: LogoProps) => JSX.Element> = {
+export const GAME_LOGOS: Record<string, (props: LogoProps) => ReactElement> = {
   dota2:      LogoDota2,
   cs2:        LogoCS2,
   lol:        LogoLoL,

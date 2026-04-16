@@ -4,6 +4,8 @@ import { usePageTitle } from '../hooks/usePageTitle'
 import { useParams, useRouter } from 'next/navigation'
 import { usePolling } from '../hooks/usePolling'
 import { api } from '../lib/api'
+import { analyzeEventAction } from '../actions/analyze'
+import { addToWatchlistAction } from '../actions/watchlist'
 import dynamic from 'next/dynamic'
 import { useAuthContext } from '../contexts/AuthContext'
 const PaywallModal = dynamic(() => import('../components/PaywallModal'), { ssr: false })
@@ -217,7 +219,7 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
     setAnalyzeError(null)
     markAnalyzing('event', id)
     try {
-      await api.analyzeEvent(id)
+      await analyzeEventAction(id)
 
       const MAX_ATTEMPTS = 30
       for (let i = 0; i < MAX_ATTEMPTS; i++) {
@@ -250,7 +252,7 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
   async function handleWatch() {
     if (!id) return
     try {
-      await api.addToWatchlist({ type: 'event', id })
+      await addToWatchlistAction({ type: 'event', id })
       setWatchAdded(true)
     } catch {
       setWatchAdded(true)

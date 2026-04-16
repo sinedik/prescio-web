@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { usePaddle } from '../hooks/usePaddle'
 import { useAuthContext } from '../contexts/AuthContext'
-import { api } from '../lib/api'
+import { activateProAction } from '../actions/paddle'
 
 interface Props {
   onClose: () => void
@@ -31,7 +31,7 @@ export default function PaywallModal({ onClose, variant = 'pro', analysesToday =
   const { user, refreshProfile } = useAuthContext()
   const { openCheckout } = usePaddle(async (transactionId) => {
     try {
-      await api.activatePro(transactionId)
+      await activateProAction(transactionId)
     } catch {
       // webhook may have already handled it
     }

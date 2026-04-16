@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import { searchApi } from '../../lib/api'
+import { performSearchAction, triggerSearchAnalysisAction } from '../../actions/search'
 import type { SubscriptionPlan } from '../../types/index'
 
 interface Props { isOpen: boolean; onClose: () => void; plan: SubscriptionPlan }
@@ -30,7 +30,7 @@ export function SearchOverlay({ isOpen, onClose, plan }: Props) {
     setState('searching')
     setResult(null)
     try {
-      const res = await searchApi.search(query)
+      const res = await performSearchAction(query)
       setResult({ searchId: res.searchId, summary: res.summary, category: res.category })
       setState('done')
     } catch { setState('error') }
@@ -39,7 +39,7 @@ export function SearchOverlay({ isOpen, onClose, plan }: Props) {
   async function handleAnalyze() {
     if (!result) return
     try {
-      await searchApi.triggerAnalysis(result.searchId)
+      await triggerSearchAnalysisAction(result.searchId)
       setAnalysisQueued(true)
     } catch { /* ignore */ }
   }

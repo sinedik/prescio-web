@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import type { Position, PositionStatus } from '../types'
 import { api } from '../lib/api'
+import { addPositionAction, updatePositionAction, deletePositionAction } from '../actions/portfolio'
 
 const STORAGE_KEY = 'pi_portfolio_v1'
 
@@ -84,7 +85,7 @@ export function usePortfolio() {
     })
 
     try {
-      const created = await api.addPosition({
+      const created = await addPositionAction({
         id: next.id,
         question: next.question,
         platform: next.platform,
@@ -98,7 +99,7 @@ export function usePortfolio() {
         thesis: next.thesis ?? '',
         status: next.status,
         created_at: next.createdAt,
-      }) as Record<string, unknown>
+      })
       // Replace optimistic entry with server response (may include ai_edge_at_entry)
       const serverPos = apiRowToPosition(created)
       setPositions((prev) => {
@@ -124,7 +125,7 @@ export function usePortfolio() {
     })
 
     try {
-      await api.updatePosition(id, { status, close_price: closePrice ?? null, closed_at: closedAt })
+      await updatePositionAction(id, { status, close_price: closePrice ?? null, closed_at: closedAt })
     } catch { /* optimistic update already applied */ }
   }, [])
 
@@ -136,7 +137,7 @@ export function usePortfolio() {
     })
 
     try {
-      await api.deletePosition(id)
+      await deletePositionAction(id)
     } catch { /* optimistic update already applied */ }
   }, [])
 
