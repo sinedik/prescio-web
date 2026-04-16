@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
 import { getSiteUrl } from '@/lib/site'
-import CybersportScreen from '@/screens/CybersportScreen'
+import CybersportMatchOnly from '@/screens/CybersportMatchOnly'
 import type { Game } from '@/screens/CybersportScreen'
+import type { EsportsMatchDetail } from '@/types'
+import { fetchEsportsMatchSSR } from '@/lib/serverData'
 
 const VALID_GAMES: Game[] = ['cs2', 'dota2']
 
@@ -17,22 +19,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   let description = `Live ${label} match stats and AI analysis on Prescio.`
   let imageUrl: string | undefined
 
-  try {
-    const res = await fetch(`${siteUrl}/api/esports/matches/${matchId}`, { next: { revalidate: 60 } })
-    if (res.ok) {
-      const m = await res.json()
-      const aName = m?.teamA?.name
-      const bName = m?.teamB?.name
-      const tour = m?.tournament
-      if (aName && bName) {
-        title = `${aName} vs ${bName} — ${label}`
-        description = tour
-          ? `${aName} vs ${bName} · ${tour}. Live ${label} stats and AI edge on Prescio.`
-          : `${aName} vs ${bName}. Live ${label} stats and AI edge on Prescio.`
-      }
-      imageUrl = m?.teamA?.logoUrl ?? m?.teamB?.logoUrl ?? undefined
-    }
-  } catch { /* best-effort */ }
+  const m = await fetchEsportsMatchSSR(matchId) as { teamA?: { name?: string; logoUrl?: string | null }; teamB?: { name?: string; logoUrl?: string | null }; tournament?: string } | null
+  const aName = m?.teamA?.name
+  const bName = m?.teamB?.name
+  const tour = m?.tournament
+  if (aName && bName) {
+    title = `${aName} vs ${bName} — ${label}`
+    description = tour
+      ? `${aName} vs ${bName} · ${tour}. Live ${label} stats and AI edge on Prescio.`
+      : `${aName} vs ${bName}. Live ${label} stats and AI edge on Prescio.`
+  }
+  imageUrl = m?.teamA?.logoUrl ?? m?.teamB?.logoUrl ?? undefined
 
   return {
     title,
@@ -58,5 +55,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function CybersportMatchPage({ params }: Props) {
   const { game, matchId } = await params
   const safeGame: Game = VALID_GAMES.includes(game as Game) ? (game as Game) : 'cs2'
-  return <CybersportScreen key={safeGame} initialGame={safeGame} matchId={matchId} />
+  const initialData = await fetchEsportsMatchSSR(matchId) as EsportsMatchDetail | null
+  return <CybersportMatchOnly game={safeGame} matchId={matchId} initialData={initialData ?? undefined} />
 }

@@ -390,9 +390,12 @@ interface Props {
   sport: string
 }
 
-export default function LeaguePage({ leagueId, sport }: Props) {
+export default function LeaguePage({ leagueId, sport, initialData }: Props & { initialData?: LeaguePageData }) {
   const router = useRouter()
   const cacheKey = `league:${leagueId}:${sport}`
+  if (initialData && !getCached<LeaguePageData>(cacheKey)) {
+    setCached(cacheKey, initialData)
+  }
   const [data, setData]       = useState<LeaguePageData | null>(() => getCached<LeaguePageData>(cacheKey))
   const [loading, setLoading] = useState(() => !getCached<LeaguePageData>(cacheKey))
   const [notFound, setNotFound] = useState(false)

@@ -8,7 +8,7 @@ import { useAuthContext } from '../contexts/AuthContext'
 import { useSportWs } from '../hooks/useSportWs'
 import type { SportEvent, SportOdds, SportPrediction, SportStanding, SportInjury, SubscriptionPlan, SportLineup, SportFixtureStat, SportMatchEvent, SportTopScorer } from '../types/index'
 
-type EventFastCache = { event: SportEvent; form: { home_form: FormEntry[] | null; away_form: FormEntry[] | null } | null; prediction: SportPrediction | null | undefined }
+export type EventFastCache = { event: SportEvent; form: { home_form: FormEntry[] | null; away_form: FormEntry[] | null } | null; prediction: SportPrediction | null | undefined }
 type EventDetailsCache = { standings: SportStanding[]; topScorers: SportTopScorer[]; homeInj: SportInjury[]; awayInj: SportInjury[]; lineups: SportLineup[]; matchStats: SportFixtureStat[]; matchEvents: SportMatchEvent[] }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -880,7 +880,7 @@ function TopScorersSection({ scorers, accent, sub }: { scorers: SportTopScorer[]
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export interface EventMeta { league: string; leagueId?: number | null; homeTeam: string; awayTeam: string }
 
-export default function SportEventPage({ id: idProp, onBack, onLeagueLoad }: { id?: string; onBack?: () => void; onLeagueLoad?: (meta: EventMeta) => void }) {
+export default function SportEventPage({ id: idProp, onBack, onLeagueLoad, initialFast }: { id?: string; onBack?: () => void; onLeagueLoad?: (meta: EventMeta) => void; initialFast?: EventFastCache }) {
   const params = useParams<{ id: string }>()
   const id     = idProp ?? params?.id ?? ''
   const router = useRouter()
@@ -888,6 +888,10 @@ export default function SportEventPage({ id: idProp, onBack, onLeagueLoad }: { i
   const _plan: SubscriptionPlan = profile?.plan ?? (profile?.is_pro ? 'pro' : 'free')
   const pageRef = useRef<HTMLDivElement>(null)
 
+  // SSR seed: prime cache so initial render shows data without loading flash.
+  if (initialFast && id && !getCached<EventFastCache>(`event_fast:${id}`)) {
+    setCached(`event_fast:${id}`, initialFast)
+  }
   const _fc = id ? getCached<EventFastCache>(`event_fast:${id}`) : null
   const _dc = id ? getCached<EventDetailsCache>(`event_details:${id}`) : null
 

@@ -205,7 +205,6 @@ const EsportsRow = memo(function EsportsRow({ match, accent, href }: {
   return (
     <Link
       href={href}
-      prefetch={false}
       className="rounded-lg px-3.5 py-2 flex items-center gap-3 cursor-pointer transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
       style={{
         background: 'rgba(8,8,8,0.55)',
@@ -270,7 +269,7 @@ const EsportsRow = memo(function EsportsRow({ match, accent, href }: {
 })
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
-export default function CybersportScreen({ initialGame = 'cs2', matchId, initialMatches }: { initialGame?: Game; matchId?: string; initialMatches?: EsportsMatch[] }) {
+export default function CybersportScreen({ initialGame = 'cs2', matchId, initialMatches, initialMatchData }: { initialGame?: Game; matchId?: string; initialMatches?: EsportsMatch[]; initialMatchData?: unknown }) {
   usePageTitle('Esports')
 
   const game   = initialGame
@@ -399,8 +398,8 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId, initial
         {/* Embedded match detail */}
         {matchId ? (
           game === 'dota2'
-            ? <DotaMatchScreen seriesId={matchId} />
-            : <CS2MatchScreen seriesId={matchId} />
+            ? <DotaMatchScreen seriesId={matchId} initialData={initialMatchData as import('../types').EsportsMatchDetail | undefined} />
+            : <CS2MatchScreen  seriesId={matchId} initialData={initialMatchData as import('../types').EsportsMatchDetail | undefined} />
         ) : (
           <>
             {/* Active tournament filter banner */}

@@ -104,9 +104,10 @@ function StatusDot({ status, startsAt }: { status: string; startsAt?: string }) 
 interface Props {
   teamId: string
   game: string
+  initialData?: EsportsTeamPageData
 }
 
-export default function EsportsTeamScreen({ teamId, game }: Props) {
+export default function EsportsTeamScreen({ teamId, game, initialData }: Props) {
   const router = useRouter()
 
   const fetcher = useCallback(
@@ -114,7 +115,12 @@ export default function EsportsTeamScreen({ teamId, game }: Props) {
     [teamId]
   )
 
-  const { data, error, loading } = usePolling<EsportsTeamPageData>(fetcher, 5 * 60_000, `team:${teamId}`)
+  const { data, error, loading } = usePolling<EsportsTeamPageData>(
+    fetcher,
+    5 * 60_000,
+    `team:${teamId}`,
+    ...(initialData ? [{ initialData }] : []),
+  )
 
   // Derive team name from matches when GRID meta is unavailable (dev key limitation)
   const teamNameFromMatches = data?.matches?.flatMap(m => [m.teamA, m.teamB])

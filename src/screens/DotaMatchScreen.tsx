@@ -1349,7 +1349,7 @@ function OddsBar({ yesPrice, noPrice, teamA, teamB, accentA }: {
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
-export default function DotaMatchScreen({ seriesId }: { seriesId: string }) {
+export default function DotaMatchScreen({ seriesId, initialData }: { seriesId: string; initialData?: EsportsMatchDetail }) {
   const router = useRouter()
 
   const fetcher = useCallback(() => api.getEsportsMatch(seriesId), [seriesId])
@@ -1359,6 +1359,7 @@ export default function DotaMatchScreen({ seriesId }: { seriesId: string }) {
        : d?.status === 'live'     ? 10_000
        :                            60_000,
     seriesId,
+    ...(initialData ? [{ initialData }] : []),
   )
   const match = data ?? null
 

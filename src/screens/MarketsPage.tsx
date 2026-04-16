@@ -34,15 +34,20 @@ const moduleCache = {
   TTL: 60 * 1000,
 }
 
-export default function MarketsPage() {
+export default function MarketsPage({ initialMarkets }: { initialMarkets?: Market[] } = {}) {
   usePageTitle('Markets')
   const router = useRouter()
   const { profile } = useAuthContext()
   const isPro = profile?.is_pro ?? false
   const [showPaywall, setShowPaywall] = useState(false)
 
+  if (initialMarkets && initialMarkets.length > 0 && moduleCache.markets.length === 0) {
+    moduleCache.markets = initialMarkets
+    moduleCache.marketsAt = Date.now()
+  }
+
   const [rawMarkets, setRawMarkets] = useState<Market[]>(moduleCache.markets)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(moduleCache.markets.length === 0)
   const [error, setError] = useState<string | null>(null)
 
   const [platform, setPlatform] = useState<FilterPlatform>('all')
@@ -78,7 +83,6 @@ export default function MarketsPage() {
   }, [platform])
 
   useEffect(() => {
-    moduleCache.marketsAt = 0
     load()
   }, [load])
 

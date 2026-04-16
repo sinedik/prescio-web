@@ -324,10 +324,13 @@ function PlayerSkeleton() {
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-export default function PlayerPage({ playerId }: { playerId: number }) {
+export default function PlayerPage({ playerId, initialData }: { playerId: number; initialData?: PlayerProfile }) {
   const router   = useRouter()
   const pathname = usePathname()
   const sport    = pathname.split('/')[2] ?? 'football'
+  if (initialData && !getCached<PlayerProfile>(`player:${playerId}`)) {
+    setCached(`player:${playerId}`, initialData)
+  }
   const [player, setPlayer]     = useState<PlayerProfile | null>(() => getCached<PlayerProfile>(`player:${playerId}`))
   const [loading, setLoading]   = useState(() => !getCached<PlayerProfile>(`player:${playerId}`))
   const [notFound, setNotFound] = useState(false)

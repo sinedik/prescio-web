@@ -1,13 +1,15 @@
 import type { Metadata } from 'next'
+import { cache } from 'react'
 import { getSiteUrl } from '@/lib/site'
 import { supabase } from '@/lib/supabase'
 import EventDetailPage from '@/screens/EventDetailPage'
+import { fetchEventDetailSSR } from '@/lib/serverData'
 
 export const revalidate = 300 // ISR: revalidate metadata every 5 min
 
 interface Props { params: Promise<{ id: string }> }
 
-async function fetchEventMeta(id: string) {
+const fetchEventMeta = cache(async (id: string) => {
   try {
     const { data } = await supabase
       .from('unified_events')
@@ -18,7 +20,7 @@ async function fetchEventMeta(id: string) {
   } catch {
     return null
   }
-}
+})
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params
@@ -63,4 +65,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default EventDetailPage
+export default async function EventPage({ params }: Props) {
+  const { id } = await params
+  const initialData = await fetchEventDetailSSR(id)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return <EventDetailPage initialData={initialData as any ?? undefined} />
+}

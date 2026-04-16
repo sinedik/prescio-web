@@ -1131,7 +1131,7 @@ function OddsBar({ yesPrice, noPrice, teamA, teamB, accentA }: {
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
-export default function CS2MatchScreen({ seriesId }: { seriesId: string }) {
+export default function CS2MatchScreen({ seriesId, initialData }: { seriesId: string; initialData?: EsportsMatchDetail }) {
   const router = useRouter()
 
   const fetcher = useCallback(() => api.getEsportsMatch(seriesId), [seriesId])
@@ -1141,6 +1141,7 @@ export default function CS2MatchScreen({ seriesId }: { seriesId: string }) {
        : d?.status === 'live'     ? 10_000
        :                            60_000,
     seriesId,
+    ...(initialData ? [{ initialData }] : []),
   )
   const match = data ?? null
 

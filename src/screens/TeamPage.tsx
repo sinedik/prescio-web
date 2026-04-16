@@ -388,12 +388,16 @@ function TeamSkeleton() {
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-export default function TeamPage({ teamId }: { teamId: number }) {
+type TeamCacheData = { team: SportTeam|null; standing: SportStanding|null; injuries: SportInjury[]; squad: SportSquadPlayer[]; fixtures: TeamFixture[] }
+
+export default function TeamPage({ teamId, initialData }: { teamId: number; initialData?: TeamCacheData }) {
   const router   = useRouter()
   const pathname = usePathname()
   const sport    = pathname.split('/')[2] ?? 'football'
 
-  type TeamCacheData = { team: SportTeam|null; standing: SportStanding|null; injuries: SportInjury[]; squad: SportSquadPlayer[]; fixtures: TeamFixture[] }
+  if (initialData && !getCached<TeamCacheData>(`team:${teamId}`)) {
+    setCached(`team:${teamId}`, initialData)
+  }
   const _tc = useMemo(() => getCached<TeamCacheData>(`team:${teamId}`), [teamId])
 
   const [team, setTeam]             = useState<SportTeam | null>(_tc?.team ?? null)

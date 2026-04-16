@@ -11,7 +11,7 @@ import { sportApi } from '../lib/api'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import type { SportEvent, SportOdds, SubscriptionPlan } from '../types/index'
 import { useAuthContext } from '../contexts/AuthContext'
-import type { EventMeta } from './SportEventPage'
+import type { EventMeta, EventFastCache } from './SportEventPage'
 import type { SidebarLeague } from '../contexts/LiveLayoutContext'
 
 const SportEventPage = dynamic(() => import('./SportEventPage'), {
@@ -581,7 +581,7 @@ function MatchDetail({ event, sport, accent }: { event: SportEvent; sport: Sport
 }
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
-export function SportScreen({ initialSport, eventId, initialEvents }: { initialSport?: Sport; eventId?: string; initialEvents?: SportEvent[] } = {}) {
+export function SportScreen({ initialSport, eventId, initialEvents, initialEventFull }: { initialSport?: Sport; eventId?: string; initialEvents?: SportEvent[]; initialEventFull?: unknown } = {}) {
   usePageTitle('Sport')
   const router = useRouter()
   const { profile } = useAuthContext()
@@ -827,7 +827,7 @@ export function SportScreen({ initialSport, eventId, initialEvents }: { initialS
 
         {/* Content */}
         {eventId ? (
-          <SportEventPage id={eventId} onBack={() => window.history.length > 1 ? router.back() : router.push(`/sport/${sport}`)} onLeagueLoad={(meta: EventMeta) => { setMatchLeague(meta.league); setMatchLeagueId(meta.leagueId ?? null); setMatchHome(meta.homeTeam); setMatchAway(meta.awayTeam) }} />
+          <SportEventPage id={eventId} initialFast={initialEventFull as EventFastCache | undefined} onBack={() => window.history.length > 1 ? router.back() : router.push(`/sport/${sport}`)} onLeagueLoad={(meta: EventMeta) => { setMatchLeague(meta.league); setMatchLeagueId(meta.leagueId ?? null); setMatchHome(meta.homeTeam); setMatchAway(meta.awayTeam) }} />
         ) : (
           <>
             {/* Active league filter banner */}

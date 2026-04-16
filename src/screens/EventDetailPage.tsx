@@ -101,7 +101,7 @@ const REC_CONFIG: Record<string, { label: string; cls: string }> = {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function EventDetailPage() {
+export default function EventDetailPage({ initialData }: { initialData?: EventDetail } = {}) {
   const params = useParams<{ id: string }>()
   const id = (params?.id ?? '') as string
   const router = useRouter()
@@ -117,6 +117,7 @@ export default function EventDetailPage() {
     () => api.getEvent(id!) as Promise<EventDetail>,
     5 * 60 * 1000,
     id, // refetch when id changes
+    ...(initialData ? [{ initialData }] : []),
   )
 
   // Resume polling if analysis was in progress before reload

@@ -2,9 +2,10 @@
 // Provide lightweight first-paint data; client polling hydrates the full payload.
 // Do not import from client components.
 
+import { cache } from 'react'
 import { supabase } from './supabase'
-import type { EsportsMatch } from '../types'
-import type { SportEvent } from '../types/index'
+import type { EsportsMatch, EsportsTeamPageData, Market } from '../types'
+import type { SportEvent, SportTeam, SportStanding, SportInjury, SportSquadPlayer, PlayerProfile, LeaguePageData } from '../types/index'
 
 const GAME_SUBCATEGORIES: Record<string, string[]> = {
   cs2:   ['cs2', 'csgo'],
@@ -27,7 +28,7 @@ interface EsportsMatchRow {
   }
 }
 
-export async function fetchEsportsListSSR(game: string, window: string): Promise<EsportsMatch[]> {
+export const fetchEsportsListSSR = cache(async (game: string, window: string): Promise<EsportsMatch[]> => {
   const subcats = GAME_SUBCATEGORIES[game]
   if (!subcats) return []
 
@@ -73,7 +74,7 @@ export async function fetchEsportsListSSR(game: string, window: string): Promise
   } catch {
     return []
   }
-}
+})
 
 interface SportEventRow {
   id: string
@@ -91,7 +92,7 @@ interface SportEventRow {
   sport_odds: { bookmaker: string; market_type: string; outcomes: unknown }[] | null
 }
 
-export async function fetchSportEventsSSR(subcategory: string): Promise<SportEvent[]> {
+export const fetchSportEventsSSR = cache(async (subcategory: string): Promise<SportEvent[]> => {
   const from = new Date(); from.setHours(0, 0, 0, 0)
   const to   = new Date(from); to.setDate(to.getDate() + 30); to.setHours(23, 59, 59, 999)
 
@@ -128,4 +129,92 @@ export async function fetchSportEventsSSR(subcategory: string): Promise<SportEve
   } catch {
     return []
   }
+})
+
+// ─── Server-side fetchers via the backend API (for match/event detail) ────────
+// Hitting backend from Server Component adds one hop, but returns the fully
+// enriched payload (live state, team meta). Client polling continues afterward.
+
+const API_ORIGIN = process.env.API_PROXY_TARGET ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
+
+async function serverFetch<T>(path: string, revalidate = 30): Promise<T | null> {
+  try {
+    const res = await fetch(`${API_ORIGIN}${path}`, { next: { revalidate } })
+    if (!res.ok) return null
+    return await res.json() as T
+  } catch {
+    return null
+  }
 }
+
+export const fetchEsportsMatchSSR = cache(async (seriesId: string) => {
+  return serverFetch<unknown>(`/api/esports/matches/${seriesId}`, 15)
+})
+
+interface SportEventFull {
+  event: SportEvent
+  form: { home_form: unknown[] | null; away_form: unknown[] | null }
+  prediction: unknown | null
+}
+
+export const fetchSportEventFullSSR = cache(async (id: string) => {
+  return serverFetch<SportEventFull>(`/api/sport/events/${id}/full`, 30)
+})
+
+interface UnifiedEventRow {
+  id: string
+  title: string | null
+  description: string | null
+  category: string | null
+  subcategory: string | null
+  image_url: string | null
+  enrichment_status: string | null
+  updated_at: string | null
+}
+
+export const fetchUnifiedEventSSR = cache(async (id: string): Promise<UnifiedEventRow | null> => {
+  try {
+    const { data } = await supabase
+      .from('unified_events')
+      .select('id, title, description, category, subcategory, image_url, enrichment_status, updated_at')
+      .eq('id', id)
+      .maybeSingle()
+    return data as UnifiedEventRow | null
+  } catch {
+    return null
+  }
+})
+
+export interface SportTeamSSR {
+  team: SportTeam | null
+  standings: SportStanding[]
+  injuries: SportInjury[]
+  squad: SportSquadPlayer[]
+}
+export const fetchSportTeamSSR = cache(async (teamId: number) => {
+  return serverFetch<SportTeamSSR>(`/api/sport/teams/${teamId}`, 300)
+})
+
+export const fetchSportPlayerSSR = cache(async (playerId: number) => {
+  return serverFetch<PlayerProfile>(`/api/sport/players/${playerId}`, 300)
+})
+
+export const fetchSportLeagueSSR = cache(async (leagueId: number, subcategory?: string) => {
+  const qs = subcategory ? `?subcategory=${subcategory}` : ''
+  return serverFetch<LeaguePageData>(`/api/sport/leagues/${leagueId}${qs}`, 120)
+})
+
+export const fetchEsportsTeamSSR = cache(async (teamId: string) => {
+  return serverFetch<EsportsTeamPageData>(`/api/esports/teams/${teamId}`, 300)
+})
+
+export const fetchEventDetailSSR = cache(async (id: string) => {
+  return serverFetch<unknown>(`/api/events/${id}`, 60)
+})
+
+export const fetchMarketsListSSR = cache(async (params: Record<string, string | number> = {}) => {
+  const qs = new URLSearchParams()
+  for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== '') qs.set(k, String(v))
+  const query = qs.toString()
+  return serverFetch<Market[]>(`/api/markets${query ? '?' + query : ''}`, 60)
+})
