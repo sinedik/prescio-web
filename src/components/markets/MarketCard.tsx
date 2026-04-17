@@ -13,24 +13,6 @@ interface Props {
   analyzed?: boolean
 }
 
-// Deterministic mock sparkline ending at current price
-function genSparkline(seed: string, price: number): number[] {
-  let h = 0
-  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0
-  const p = price > 1 ? price : price * 100
-  const startOffset = (((Math.abs(h) & 0xf) - 8) * 0.7)
-  const pts: number[] = []
-  let cur = Math.max(1, Math.min(99, p + startOffset))
-  for (let i = 0; i < 6; i++) {
-    h = (h * 1664525 + 1013904223) | 0
-    const jitter = ((Math.abs(h) % 100) / 100 - 0.5) * 3
-    cur = Math.max(1, Math.min(99, cur + (p - cur) * 0.35 + jitter))
-    pts.push(cur)
-  }
-  pts.push(p)
-  return pts
-}
-
 function Sparkline({ data, up }: { data: number[]; up: boolean }) {
   const W = 52, H = 22
   const min = Math.min(...data), max = Math.max(...data)
@@ -63,7 +45,9 @@ export default function MarketCard({ market, rank, isPro, onClick, onAnalyze, an
     : prob != null ? (100 - prob) : null
 
   const days = market.resolutionDate ? daysUntil(market.resolutionDate) : null
-  const sparkData = prob != null ? genSparkline(market.question, prob) : null
+  const sparkData = market.price_history && market.price_history.length >= 2
+    ? market.price_history.map(h => h.p)
+    : null
   const sparkUp = sparkData ? sparkData[sparkData.length - 1] >= sparkData[0] : true
 
   const CATEGORY_COLORS: Record<string, string> = {
@@ -88,15 +72,10 @@ export default function MarketCard({ market, rank, isPro, onClick, onAnalyze, an
       }`}
       style={{ animationDelay: `${rank * 30}ms`, animationFillMode: 'both' }}
     >
-      {/* Event image / skeleton */}
-      {ev && (
-        showImage ? (
-          <div className="w-full h-28 overflow-hidden">
-            <img src={ev.image_url!} alt={ev.title} className="w-full h-full object-cover" />
-          </div>
-        ) : ev.enrichment_status === 'pending' ? (
-          <div className="w-full h-28 bg-bg-elevated animate-pulse" />
-        ) : null
+      {ev && showImage && (
+        <div className="w-full h-28 overflow-hidden">
+          <img src={ev.image_url!} alt={ev.title} className="w-full h-full object-cover" />
+        </div>
       )}
 
       <div className="px-4 py-3.5">
@@ -107,6 +86,15 @@ export default function MarketCard({ market, rank, isPro, onClick, onAnalyze, an
           {market.category && (
             <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${catStyle}`}>
               {market.category.replace('_', ' ')}
+            </span>
+          )}
+          {market.ai?.edge != null && Math.abs(market.ai.edge) >= 2 && (
+            <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${
+              market.ai.edge > 0
+                ? 'border-accent/40 bg-accent/10 text-accent'
+                : 'border-danger/40 bg-danger/10 text-danger'
+            }`}>
+              {market.ai.edge > 0 ? '+' : ''}{Math.round(market.ai.edge)}pp {market.ai.edge > 0 ? 'YES' : 'NO'}
             </span>
           )}
           {analyzing && (

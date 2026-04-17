@@ -1,39 +1,48 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { useRouter } from 'next/navigation'
 import { stashMarketNavItem } from '../lib/marketNavCache'
 import MarketCard from '../components/markets/MarketCard'
+import EventCard from '../components/markets/EventCard'
 import MarketSkeleton from '../components/markets/MarketSkeleton'
 const PaywallModal = dynamic(() => import('../components/PaywallModal'), { ssr: false })
 import { api } from '../lib/api'
 import type { Market, FilterPlatform } from '../types'
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const getMarkets = api.getMarkets as (params?: Record<string, string | number>) => Promise<any>
+type MarketsResponse = Market[] | { data?: Market[]; markets?: Market[]; pagination?: { page: number; limit: number; total: number } }
+const getMarkets = api.getMarkets as (params?: Record<string, string | number>) => Promise<MarketsResponse>
 import { useAuthContext } from '../contexts/AuthContext'
 import { getAnalyzingIds, getAnalyzedIds } from '../lib/activeAnalyses'
+
+const PAGE_SIZE = 50
+
+function unwrap(res: MarketsResponse): { data: Market[]; total: number } {
+  if (Array.isArray(res)) return { data: res, total: res.length }
+  const data = res.data ?? res.markets ?? []
+  return { data, total: res.pagination?.total ?? data.length }
+}
 
 const PLATFORM_OPTIONS: { value: FilterPlatform; label: string }[] = [
   { value: 'all', label: 'ALL' },
   { value: 'polymarket', label: 'POLY' },
   { value: 'kalshi', label: 'KALSHI' },
-  { value: 'grid', label: 'ESPORTS' },
 ]
 
-const CATEGORY_OPTIONS = ['GEOPOLITICS', 'CRYPTO', 'ELECTIONS', 'US_POLITICS', 'POLICY', 'ESPORTS']
+const CATEGORY_OPTIONS = ['POLITICS', 'SPORT', 'CRYPTO', 'ESPORTS', 'ECONOMICS', 'SCIENCE_TECH']
 
 const SORT_OPTIONS: { value: string; label: string }[] = [
   { value: 'volume', label: 'VOLUME' },
   { value: 'resolution', label: 'RESOLVES' },
-  { value: 'category', label: 'CATEGORY' },
 ]
 
-const moduleCache = {
-  markets: [] as Market[],
-  marketsAt: 0,
-  TTL: 60 * 1000,
-}
+type HorizonFilter = 'any' | '24h' | '7d' | '30d'
+const HORIZON_OPTIONS: { value: HorizonFilter; label: string }[] = [
+  { value: 'any', label: 'ANY' },
+  { value: '24h', label: '24H' },
+  { value: '7d', label: '7D' },
+  { value: '30d', label: '30D' },
+]
 
 export default function MarketsPage({ initialMarkets }: { initialMarkets?: Market[] } = {}) {
   usePageTitle('Markets')
@@ -42,74 +51,96 @@ export default function MarketsPage({ initialMarkets }: { initialMarkets?: Marke
   const isPro = profile?.is_pro ?? false
   const [showPaywall, setShowPaywall] = useState(false)
 
-  if (initialMarkets && initialMarkets.length > 0 && moduleCache.markets.length === 0) {
-    moduleCache.markets = initialMarkets
-    moduleCache.marketsAt = Date.now()
-  }
-
-  const [rawMarkets, setRawMarkets] = useState<Market[]>(moduleCache.markets)
-  const [loading, setLoading] = useState(moduleCache.markets.length === 0)
+  const [rawMarkets, setRawMarkets] = useState<Market[]>(initialMarkets ?? [])
+  const [loading, setLoading] = useState((initialMarkets?.length ?? 0) === 0)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const [platform, setPlatform] = useState<FilterPlatform>('all')
   const [search, setSearch] = useState('')
-  const [categories, setCategories] = useState<string[]>([])
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [category, setCategory] = useState<string | null>(null)
   const [sort, setSort] = useState('volume')
+  const [horizon, setHorizon] = useState<HorizonFilter>('any')
+
+  const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(initialMarkets?.length ?? 0)
 
   const analyzingMarketIds = useState(() => getAnalyzingIds('market'))[0]
   const analyzedMarketIds  = useState(() => getAnalyzedIds('market'))[0]
 
-  const load = useCallback(async (forceRefresh = false) => {
-    const now = Date.now()
-    const cached = !forceRefresh && moduleCache.markets.length > 0 && (now - moduleCache.marketsAt) < moduleCache.TTL
-    if (cached) {
-      setLoading(false)
-      return
-    }
-    setLoading(true)
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 300)
+    return () => clearTimeout(t)
+  }, [search])
+
+  const filterKey = `${platform}|${category ?? ''}|${horizon}|${sort}|${debouncedSearch}`
+  const lastFilterKey = useRef(filterKey)
+
+  const buildParams = useCallback((targetPage: number) => {
+    const params: Record<string, string | number> = { limit: PAGE_SIZE, page: targetPage, sort }
+    if (platform !== 'all') params.platform = platform
+    if (category) params.category = category.toLowerCase()
+    if (horizon !== 'any') params.horizon = horizon
+    if (debouncedSearch) params.q = debouncedSearch
+    return params
+  }, [platform, category, horizon, sort, debouncedSearch])
+
+  const load = useCallback(async (targetPage: number, append: boolean) => {
+    if (append) setLoadingMore(true)
+    else if (rawMarkets.length === 0) setLoading(true)
+    else setLoadingMore(true)
     setError(null)
     try {
-      const params: Record<string, string | number> = { limit: 50 }
-      if (platform !== 'all') params.platform = platform
-      if (platform === 'grid') params.sort = 'resolution'
-      const markets = await getMarkets(params)
-      moduleCache.markets = markets
-      moduleCache.marketsAt = Date.now()
-      setRawMarkets(markets)
+      const res = await getMarkets(buildParams(targetPage))
+      const { data, total } = unwrap(res)
+      setRawMarkets(prev => append ? [...prev, ...data] : data)
+      setTotal(total)
+      setPage(targetPage)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load data')
     } finally {
       setLoading(false)
+      setLoadingMore(false)
     }
-  }, [platform])
+  }, [buildParams, rawMarkets.length])
 
   useEffect(() => {
-    load()
-  }, [load])
+    if (lastFilterKey.current !== filterKey) {
+      lastFilterKey.current = filterKey
+    }
+    load(1, false)
+  }, [filterKey, load])
 
-  const filteredMarkets = rawMarkets
-    .filter((m) => {
-      if (platform !== 'all' && !m.platform?.toLowerCase().includes(platform.toLowerCase())) return false
-      if (categories.length > 0 && !categories.includes((m.category ?? '').toUpperCase())) return false
-      if (search && !m.question.toLowerCase().includes(search.toLowerCase())) return false
-      return true
-    })
-    .sort((a, b) => {
-      const aAna = analyzingMarketIds.has(a.id ?? '')
-      const bAna = analyzingMarketIds.has(b.id ?? '')
-      if (aAna !== bAna) return aAna ? -1 : 1
-      if (sort === 'volume') return (b.volume ?? 0) - (a.volume ?? 0)
-      if (sort === 'resolution') {
-        const da = a.resolutionDate ? new Date(a.resolutionDate).getTime() : Infinity
-        const db = b.resolutionDate ? new Date(b.resolutionDate).getTime() : Infinity
-        return da - db
+  type Group = { key: string; eventId: string | null; markets: Market[] }
+  const groups: Group[] = []
+  const eventIndex = new Map<string, number>()
+  for (const m of rawMarkets) {
+    const evId = m.event?.id ?? null
+    if (evId) {
+      const existing = eventIndex.get(evId)
+      if (existing !== undefined) {
+        groups[existing].markets.push(m)
+        continue
       }
-      if (sort === 'category') return (a.category ?? '').localeCompare(b.category ?? '')
-      return 0
-    })
+      eventIndex.set(evId, groups.length)
+      groups.push({ key: `ev-${evId}`, eventId: evId, markets: [m] })
+    } else {
+      groups.push({ key: `m-${m.id ?? m.question}`, eventId: null, markets: [m] })
+    }
+  }
 
-  const hasActiveFilters = platform !== 'all' || search !== '' || categories.length > 0
-  const resultCount = filteredMarkets.length
+  // Keep original order from server (already sorted there); only bubble analyzing to top.
+  const sortedGroups = groups.sort((a, b) => {
+    const aAny = a.markets.some(m => analyzingMarketIds.has(m.id ?? ''))
+    const bAny = b.markets.some(m => analyzingMarketIds.has(m.id ?? ''))
+    if (aAny !== bAny) return aAny ? -1 : 1
+    return 0
+  })
+
+  const hasActiveFilters = platform !== 'all' || search !== '' || category !== null || horizon !== 'any'
+  const resultCount = sortedGroups.length
+  const hasMore = rawMarkets.length < total
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
@@ -119,12 +150,12 @@ export default function MarketsPage({ initialMarkets }: { initialMarkets?: Marke
             MARKETS
           </h1>
           <p className="text-xs font-mono text-text-muted mt-0.5">
-            Live prediction markets · Updated every 2h
+            Live prediction markets · Prices every 5m
           </p>
         </div>
 
         <button
-          onClick={() => load(true)}
+          onClick={() => load(1, false)}
           disabled={loading}
           className="flex items-center gap-2 px-3 py-1.5 text-xs font-mono font-medium text-text-secondary
             border border-bg-border rounded hover:border-text-muted hover:text-text-primary
@@ -177,9 +208,9 @@ export default function MarketsPage({ initialMarkets }: { initialMarkets?: Marke
         {CATEGORY_OPTIONS.map((cat) => (
           <button
             key={cat}
-            onClick={() => setCategories(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat])}
+            onClick={() => setCategory(prev => prev === cat ? null : cat)}
             className={`px-2.5 py-1 text-[10px] font-mono font-bold rounded border transition-colors ${
-              categories.includes(cat)
+              category === cat
                 ? 'border-accent/40 bg-accent/10 text-accent'
                 : 'border-bg-border text-text-muted hover:text-text-secondary hover:border-text-muted/30'
             }`}
@@ -187,11 +218,28 @@ export default function MarketsPage({ initialMarkets }: { initialMarkets?: Marke
             {cat.replace('_', ' ')}
           </button>
         ))}
-        {categories.length > 0 && (
-          <button onClick={() => setCategories([])} className="text-[10px] font-mono text-text-muted hover:text-text-secondary">
+        {category && (
+          <button onClick={() => setCategory(null)} className="text-[10px] font-mono text-text-muted hover:text-text-secondary">
             CLEAR
           </button>
         )}
+      </div>
+
+      <div className="flex items-center gap-3 mb-3 flex-wrap">
+        <span className="text-[10px] font-mono text-text-muted">RESOLVES:</span>
+        {HORIZON_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            onClick={() => setHorizon(opt.value)}
+            className={`px-2 py-1 text-[10px] font-mono rounded transition-colors ${
+              horizon === opt.value
+                ? 'text-accent border border-accent/30 bg-accent/5'
+                : 'text-text-muted hover:text-text-secondary'
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
       </div>
 
       <div className="flex items-center gap-3 mb-4 flex-wrap">
@@ -213,7 +261,7 @@ export default function MarketsPage({ initialMarkets }: { initialMarkets?: Marke
 
       <div className="flex items-center justify-end mb-5">
         <span className="text-xs font-mono text-text-muted">
-          {resultCount} MARKETS
+          {resultCount} {resultCount === 1 ? 'GROUP' : 'GROUPS'} · {total} MARKETS
           {hasActiveFilters && <span className="text-accent/60"> · filtered</span>}
         </span>
       </div>
@@ -231,7 +279,7 @@ export default function MarketsPage({ initialMarkets }: { initialMarkets?: Marke
           <p className="text-sm font-mono text-danger mb-2">CONNECTION ERROR</p>
           <p className="text-xs font-mono text-text-muted mb-4">{error}</p>
           <button
-            onClick={() => load()}
+            onClick={() => load(1, false)}
             className="mt-2 px-4 py-2 text-xs font-mono border border-danger/30 text-danger rounded hover:bg-danger/10 transition-colors"
           >
             RETRY
@@ -248,33 +296,61 @@ export default function MarketsPage({ initialMarkets }: { initialMarkets?: Marke
         </div>
       )}
 
-      {!loading && !error && filteredMarkets.length > 0 && (
+      {!loading && !error && sortedGroups.length > 0 && (
+        <>
         <div className="flex flex-col gap-3">
-          {filteredMarkets.map((market, i) => (
-            <MarketCard
-              key={`${market.platform}-${market.id ?? i}`}
-              market={market}
-              rank={i}
-              isPro={isPro}
-              analyzing={analyzingMarketIds.has(market.id ?? '')}
-              analyzed={analyzedMarketIds.has(market.id ?? '')}
-              onClick={() => {
-                const s = slugify(market.question)
-                stashMarketNavItem(s, { market })
-                router.push(`/market/${s}`)
-              }}
-              onAnalyze={() => {
-                if (isPro) {
+          {sortedGroups.map((g, i) => {
+            if (g.markets.length > 1 && g.eventId) {
+              return (
+                <EventCard
+                  key={g.key}
+                  markets={g.markets}
+                  rank={i}
+                  onClick={() => router.push(`/events/${g.eventId}`)}
+                />
+              )
+            }
+            const market = g.markets[0]
+            return (
+              <MarketCard
+                key={g.key}
+                market={market}
+                rank={i}
+                isPro={isPro}
+                analyzing={analyzingMarketIds.has(market.id ?? '')}
+                analyzed={analyzedMarketIds.has(market.id ?? '')}
+                onClick={() => {
                   const s = slugify(market.question)
                   stashMarketNavItem(s, { market })
                   router.push(`/market/${s}`)
-                } else {
-                  setShowPaywall(true)
-                }
-              }}
-            />
-          ))}
+                }}
+                onAnalyze={() => {
+                  if (isPro) {
+                    const s = slugify(market.question)
+                    stashMarketNavItem(s, { market })
+                    router.push(`/market/${s}`)
+                  } else {
+                    setShowPaywall(true)
+                  }
+                }}
+              />
+            )
+          })}
         </div>
+
+        {hasMore && (
+          <div className="flex justify-center mt-6">
+            <button
+              onClick={() => load(page + 1, true)}
+              disabled={loadingMore}
+              className="px-6 py-2 text-xs font-mono font-bold text-text-secondary border border-bg-border rounded
+                hover:border-accent/40 hover:text-accent transition-colors disabled:opacity-40"
+            >
+              {loadingMore ? 'LOADING…' : `LOAD MORE (${total - rawMarkets.length} left)`}
+            </button>
+          </div>
+        )}
+        </>
       )}
 
       {showPaywall && (

@@ -265,5 +265,8 @@ export const fetchMarketsListSSR = cache(async (params: Record<string, string | 
   const qs = new URLSearchParams()
   for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== '') qs.set(k, String(v))
   const query = qs.toString()
-  return serverFetch<Market[]>(`/api/markets${query ? '?' + query : ''}`, 60)
+  const res = await serverFetch<Market[] | { data?: Market[]; markets?: Market[] }>(`/api/markets${query ? '?' + query : ''}`, 60)
+  if (!res) return null
+  if (Array.isArray(res)) return res
+  return res.data ?? res.markets ?? []
 })

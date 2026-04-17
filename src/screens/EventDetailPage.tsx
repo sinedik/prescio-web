@@ -31,6 +31,7 @@ interface Scenario {
 interface RelatedMarket {
   id: string
   question: string
+  outcome_label?: string | null
   platform: string
   slug?: string
   price: number
@@ -578,7 +579,14 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
                   {/* Top row: question + price */}
                   <div className="flex items-start gap-3">
                     <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-mono text-text-secondary leading-snug">{m.question}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {m.outcome_label && (
+                          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border border-accent/30 bg-accent/5 text-accent uppercase tracking-wider">
+                            {m.outcome_label}
+                          </span>
+                        )}
+                        <p className="text-[13px] font-mono text-text-secondary leading-snug">{m.question}</p>
+                      </div>
                       <p className="text-[10px] font-mono text-text-muted mt-0.5">{m.platform}{m.volume > 0 ? ` · ${formatVolume(m.volume)}` : ''}</p>
                     </div>
                     <div className="text-right shrink-0">

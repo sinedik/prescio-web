@@ -369,7 +369,11 @@ export default function MarketDetailPage() {
         if (!marketId) {
           // Пробуем найти по slug — API возвращает массив
           const results = await api.getMarkets({ limit: 50 })
-          const raw = Array.isArray(results) ? results : ((results as { markets?: unknown[] }).markets ?? [])
+          const raw = Array.isArray(results)
+            ? results
+            : ((results as { data?: unknown[]; markets?: unknown[] }).data
+              ?? (results as { data?: unknown[]; markets?: unknown[] }).markets
+              ?? [])
           const list = raw as (Market & { analysis?: Analysis })[]
           const found = list.find(m => {
             const s = m.question?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -853,68 +857,31 @@ export default function MarketDetailPage() {
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xs font-mono font-bold text-text-muted tracking-widest">PRICE HISTORY</h2>
           <div className="flex items-center gap-2">
-            {market.platform === 'polymarket' && (
-              <div className="flex items-center gap-0.5">
-                {(['1w', '1m', '6m', 'max'] as const).map(iv => (
-                  <button
-                    key={iv}
-                    onClick={() => setHistoryInterval(iv)}
-                    className={`px-2 py-0.5 text-[10px] font-mono rounded transition-colors ${
-                      historyInterval === iv
-                        ? 'text-accent bg-accent/10'
-                        : 'text-text-muted hover:text-text-secondary'
-                    }`}
-                  >
-                    {iv.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-            )}
+            <div className="flex items-center gap-0.5">
+              {(['1w', '1m', '6m', 'max'] as const).map(iv => (
+                <button
+                  key={iv}
+                  onClick={() => setHistoryInterval(iv)}
+                  className={`px-2 py-0.5 text-[10px] font-mono rounded transition-colors ${
+                    historyInterval === iv
+                      ? 'text-accent bg-accent/10'
+                      : 'text-text-muted hover:text-text-secondary'
+                  }`}
+                >
+                  {iv.toUpperCase()}
+                </button>
+              ))}
+            </div>
             <span className={`text-[10px] font-mono ${
               historyLoading ? 'text-text-muted animate-pulse' :
               historyReal ? 'text-accent/60' : 'text-text-muted'
             }`}>
-              {historyLoading ? 'LOADING...' : historyReal ? '● POLYMARKET CLOB' :
-               market.platform === 'kalshi' ? 'KALSHI (AUTH REQUIRED)' :
-               market.platform === 'metaculus' ? 'METACULUS' : 'NO DATA'}
+              {historyLoading ? 'LOADING...' : historyReal ? '● LIVE' : 'NO DATA'}
             </span>
           </div>
         </div>
 
-        {historyLoading ? (
-          <div className="w-full bg-bg-elevated rounded animate-pulse" style={{ height: 160 }} />
-        ) : market.platform !== 'polymarket' ? (
-          <div className="flex flex-col items-center justify-center gap-3 py-8">
-            <div className="flex items-center gap-3">
-              {/* Current price pill */}
-              {prob != null && (
-                <div className="flex flex-col items-center gap-1">
-                  <span className="text-[10px] font-mono text-text-muted tracking-wider">CURRENT</span>
-                  <span className="text-3xl font-mono font-bold text-text-primary">{Math.round(prob)}%</span>
-                </div>
-              )}
-            </div>
-            <div className="flex items-center gap-2 text-center">
-              <svg className="w-4 h-4 text-text-muted/40 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <path d="M3 9h18M9 21V9" />
-              </svg>
-              <p className="text-[11px] font-mono text-text-muted">
-                {market.platform === 'kalshi'
-                  ? 'Historical chart requires Kalshi API credentials'
-                  : 'Price history not available for this platform'}
-              </p>
-            </div>
-            {market.platform === 'kalshi' && market.url && (
-              <a href={market.url} target="_blank" rel="noopener noreferrer"
-                className="text-[10px] font-mono text-accent/60 hover:text-accent transition-colors">
-                View chart on Kalshi →
-              </a>
-            )}
-          </div>
-        ) : (
-          <PriceChart history={history} loading={false} />
-        )}
+        <PriceChart history={history} loading={historyLoading} />
       </div>
 
       {/* ── AI Analysis — tiered access ── */}

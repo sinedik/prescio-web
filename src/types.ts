@@ -7,6 +7,7 @@ export interface Market {
   conditionId?: string
   clobTokenId?: string
   question: string
+  outcome_label?: string | null
   description?: string
   yesPrice: number
   noPrice?: number
@@ -26,7 +27,19 @@ export interface Market {
     title: string
     image_url?: string | null
     description?: string | null
+    total_volume?: number | null
+    market_count?: number | null
+    tradable_count?: number | null
     enrichment_status?: 'pending' | 'ready' | 'failed'
+  } | null
+  // Price history: last 24h snapshots (from /api/markets). {t: unix seconds, p: 0-100}
+  price_history?: { t: number; p: number }[]
+  // Fresh AI analysis signal (from /api/markets). Null if no valid analysis.
+  ai?: {
+    edge: number | null
+    recommendation: string | null
+    confidence: string | null
+    fairProb: number | null
   } | null
 }
 
