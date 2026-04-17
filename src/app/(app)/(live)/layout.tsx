@@ -205,6 +205,7 @@ function LiveLayoutInner({ children }: { children: React.ReactNode }) {
     <>
       {/* Background — starts after sidebar on desktop, full width on mobile */}
       <div className="live-world-bg fixed top-[52px] left-0 md:left-[200px] right-0 bottom-0 pointer-events-none overflow-hidden"
+        data-discipline={discipline}
         style={{ zIndex: 0, opacity: isPending ? 0.35 : 1, transition: 'opacity 0.4s ease' }}>
         <WorldBackground discipline={discipline} />
       </div>
@@ -240,6 +241,7 @@ function LiveLayoutInner({ children }: { children: React.ReactNode }) {
         <div
           id="live-content"
           className="live-content flex-1 min-w-0"
+          data-discipline={discipline}
           style={{ opacity: isPending ? 0.45 : 1, transition: 'opacity 0.25s ease', position: 'relative', overflowY: 'auto' }}
         >
           {/* Progress bar */}
@@ -254,9 +256,9 @@ function LiveLayoutInner({ children }: { children: React.ReactNode }) {
             </div>
           )}
 
-          <div className="max-w-[1280px] mx-auto w-full">
+          <div className="max-w-[1280px] mx-auto w-full pt-3 sm:pt-4">
             {!hideHero && !pathname.includes('/team/') && (
-              <div style={{ position: 'sticky', top: 0, zIndex: 20 }}>
+              <div style={{ position: 'sticky', top: 12, zIndex: 20 }}>
                 <div className="px-3 sm:px-4 md:px-6">
                   <LiveHero discipline={discipline} />
                 </div>

@@ -24,7 +24,6 @@ const SportEventPage = dynamic(() => import('./SportEventPage'), {
   ),
 })
 
-import { LogoFootball, LogoBasketball, LogoTennis, LogoMMA } from '../components/icons/games'
 import { mix } from '../components/disciplines'
 import { useLiveLayout } from '../contexts/LiveLayoutContext'
 import { useLang } from '../contexts/LanguageContext'
@@ -43,13 +42,6 @@ const SPORT_ACCENT: Record<Sport, string> = {
   tennis:     'var(--sport-tennis)',
   mma:        'var(--sport-mma)',
 }
-
-const SPORTS: { key: Sport; label: string; icon: React.ReactNode }[] = [
-  { key: 'football',   label: 'Football',   icon: <LogoFootball size={16} />   },
-  { key: 'basketball', label: 'Basketball', icon: <LogoBasketball size={16} /> },
-  { key: 'tennis',     label: 'Tennis',     icon: <LogoTennis size={16} />     },
-  { key: 'mma',        label: 'MMA',        icon: <LogoMMA size={16} />        },
-]
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
 function toLocalDateStr(date: Date): string {
@@ -439,7 +431,7 @@ const SportRow = memo(function SportRow({ event, sport, accent }: {
                     style={{ color: homeLeads ? '#ff5252' : awayLeads ? 'rgba(var(--surface-tint-rgb),0.4)' : '#ff5252' }}>
                     {event.home_score}
                   </span>
-                  <span className="text-[12px] font-mono text-[#666]">:</span>
+                  <span className="text-[12px] font-mono text-text-muted/45">:</span>
                   <span className="text-[18px] font-mono font-black"
                     style={{ color: awayLeads ? '#ff5252' : homeLeads ? 'rgba(var(--surface-tint-rgb),0.4)' : '#ff5252' }}>
                     {event.away_score}
@@ -578,7 +570,7 @@ function MatchDetail({ event, sport, accent }: { event: SportEvent; sport: Sport
                 <p className="text-[8px] font-mono font-bold tracking-[0.1em] uppercase text-text-muted">
                   {MARKET_LABELS[marketType] ?? marketType}
                 </p>
-                <span className="text-[8px] font-mono text-[#666]">{marketOdds.length} {t('sport.bk_abbr')}</span>
+                <span className="text-[8px] font-mono text-text-muted">{marketOdds.length} {t('sport.bk_abbr')}</span>
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {Array.from(bestByName.entries()).map(([name, { price, bookmaker }]) => (
@@ -656,6 +648,7 @@ export function SportScreen({ initialSport, eventId, initialEvents, initialEvent
   useEffect(() => {
     const key = `sport_events:${sport}`
     const cached = getCached<SportEvent[]>(key)
+    // Don't clear SSR-provided events — only show skeleton when we have nothing at all
     if (!cached && !(initialEvents && initialEvents.length)) { setEvents([]); setLoading(true) }
 
     sportApi.getEvents(fetchParams)
@@ -671,10 +664,10 @@ export function SportScreen({ initialSport, eventId, initialEvents, initialEvent
   // WS: patch score/status in-place without re-fetching the full list
   useSportWs({
     subscribeList: true,
-    onListUpdate: useCallback((data: { id: string; status: string; home_score: number | null; away_score: number | null }) => {
+    onListUpdate: useCallback((data: { id: string; status: string; home_score: number | null; away_score: number | null; elapsed: number | null }) => {
       setEvents(prev => prev.map(e =>
         e.id === data.id
-          ? { ...e, status: data.status as SportEvent['status'], home_score: data.home_score ?? undefined, away_score: data.away_score ?? undefined }
+          ? { ...e, status: data.status as SportEvent['status'], home_score: data.home_score ?? undefined, away_score: data.away_score ?? undefined, raw_data: { ...(e.raw_data as Record<string, unknown> | null ?? {}), elapsed: data.elapsed } }
           : e
       ))
     }, []),
@@ -756,8 +749,6 @@ export function SportScreen({ initialSport, eventId, initialEvents, initialEvent
   const pageStart    = filteredEvents.length > 0 ? eventsBefore + 1 : 0
   const pageEnd      = eventsBefore + eventsOnPage
 
-  const sportLabel = SPORTS.find(s => s.key === sport)?.label ?? 'Sport'
-
   const handleDateSelect = useCallback(async (d: SelectedDate) => {
     setSelectedDate(d)
     setCached(`sport_date:${sport}`, d)
@@ -788,12 +779,11 @@ export function SportScreen({ initialSport, eventId, initialEvents, initialEvent
     <ErrorBoundary>
       <main className="flex-1 min-w-0 px-3 sm:px-4 md:px-6 pb-5 pt-0">
 
-        {/* Page header */}
-        <div className="flex items-center gap-0 mb-3 -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6 pt-3 pb-2 sport-sticky-header"
-          style={{ position: 'sticky', zIndex: 15, background: 'rgba(var(--bg-base-rgb), 0.75)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
-        >
-          {eventId ? (
-            /* BreadcrumbBar style — same as TeamPage / PlayerPage */
+        {/* Page header — breadcrumbs only when viewing a match */}
+        {eventId && (
+          <div className="flex items-center gap-0 mb-3 -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6 pt-3 pb-2 sport-sticky-header"
+            style={{ position: 'sticky', zIndex: 15, background: 'rgba(var(--bg-base-rgb), 0.75)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
+          >
             <div className="flex items-center gap-0 min-w-0">
               <button
                 onClick={() => window.history.length > 1 ? router.back() : router.push(`/sport/${sport}`)}
@@ -818,17 +808,13 @@ export function SportScreen({ initialSport, eventId, initialEvents, initialEvent
                 </>
               )}
             </div>
-          ) : (
-            <h1 className="text-xl font-bold tracking-wider uppercase text-text-primary" style={{ fontFamily: 'var(--font-sans)' }}>
-              {sportLabel}
-            </h1>
-          )}
-          {isRefreshing && (
-            <svg className="w-3 h-3 animate-spin text-text-muted/40 shrink-0 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 12a9 9 0 11-6.219-8.56"/>
-            </svg>
-          )}
-        </div>
+            {isRefreshing && (
+              <svg className="w-3 h-3 animate-spin text-text-muted/40 shrink-0 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 12a9 9 0 11-6.219-8.56"/>
+              </svg>
+            )}
+          </div>
+        )}
 
         {/* Date strip — hidden inside match */}
         {!showSkeleton && !eventId && (

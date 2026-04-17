@@ -48,8 +48,10 @@ export default function ProtectedAppLayout({ children }: { children: React.React
     }
   }, [user, profile, loading, router, isPublic])
 
-  // Public paths always render immediately
-  if (isPublic && !user) {
+  // Public paths always render immediately — never gate on auth state, so SSR
+  // content (and brand loader from suspense) shows without a green-dot flash
+  // while the auth context resolves in the background.
+  if (isPublic) {
     return <Layout>{children}</Layout>
   }
 

@@ -24,28 +24,34 @@ const GRID_LINE    = 'var(--hero-grid-line)'
 function FootballHero({ liveCount, totalCount, today }: { liveCount: number; totalCount: number; today: string }) {
   const accent = 'rgb(var(--sport-football-rgb))'
   const a = (x: number) => `rgb(var(--sport-football-rgb) / ${x})`
+  const SPOT_SOFT   = 'var(--hero-football-spotlight-soft)'
+  const SPOT_STRONG = 'var(--hero-football-spotlight-strong)'
+  const STRIPE_D    = 'var(--hero-football-stripe-dark)'
+  const STRIPE_L    = 'var(--hero-football-stripe-light)'
+  const MARKING     = 'var(--hero-football-marking)'
+  const BEAM_A      = 'var(--hero-football-beam-strong)'
+  const BEAM_B      = 'var(--hero-football-beam-soft)'
+  const LIGHT_CORE  = 'var(--hero-football-light-core)'
+  const LIGHT_GLOW  = 'var(--hero-football-light-glow)'
   return (
-    <div style={{ position:'relative', width:'100%', height:'100%', overflow:'hidden', borderRadius:'12px 12px 0 0', background:SURFACE_A }}>
-      <div style={{ position:'absolute', top:-40, left:'22%', width:200, height:280, background:'conic-gradient(from 80deg at 50% 0%,transparent,rgba(255,240,180,0.07) 10deg,rgba(255,230,150,0.11) 18deg,rgba(255,240,180,0.07) 26deg,transparent 36deg)', zIndex:1 }} />
-      <div style={{ position:'absolute', top:-40, right:'22%', width:200, height:280, background:'conic-gradient(from 74deg at 50% 0%,transparent,rgba(255,240,180,0.06) 10deg,rgba(255,230,150,0.10) 18deg,rgba(255,240,180,0.06) 26deg,transparent 36deg)', zIndex:1 }} />
+    <div style={{ position:'relative', width:'100%', height:'100%', overflow:'hidden', borderRadius:0, background:SURFACE_A }}>
+      <div style={{ position:'absolute', top:-40, left:'22%', width:200, height:280, background:`conic-gradient(from 80deg at 50% 0%,transparent,${SPOT_SOFT} 10deg,${SPOT_STRONG} 18deg,${SPOT_SOFT} 26deg,transparent 36deg)`, zIndex:1 }} />
+      <div style={{ position:'absolute', top:-40, right:'22%', width:200, height:280, background:`conic-gradient(from 74deg at 50% 0%,transparent,${SPOT_SOFT} 10deg,${SPOT_STRONG} 18deg,${SPOT_SOFT} 26deg,transparent 36deg)`, zIndex:1 }} />
       <div style={{ position:'absolute', bottom:-10, left:'-5%', right:'-5%', height:70, zIndex:2, background:`linear-gradient(180deg,transparent,${SURFACE_B05} 40%,${SURFACE_B08})` }} />
-      <div style={{ position:'absolute', bottom:-10, left:'-5%', right:'-5%', height:65, zIndex:2, backgroundImage:'repeating-linear-gradient(90deg,rgba(50,38,5,0.18) 0px,rgba(50,38,5,0.18) 28px,rgba(60,45,6,0.10) 28px,rgba(60,45,6,0.10) 56px)', clipPath:'polygon(8% 0%,92% 0%,100% 100%,0% 100%)' }} />
-      <div style={{ position:'absolute', bottom:-80, left:'50%', transform:'translateX(-50%)', width:280, height:280, border:`1px solid ${GRID_LINE}`, borderRadius:'50%', zIndex:3 }} />
-      <div style={{ position:'absolute', bottom:18, left:'50%', transform:'translateX(-50%)', width:5, height:5, borderRadius:'50%', background:TEXT_SOFT, zIndex:4 }} />
+      <div style={{ position:'absolute', bottom:-10, left:'-5%', right:'-5%', height:65, zIndex:2, backgroundImage:`repeating-linear-gradient(90deg,${STRIPE_D} 0px,${STRIPE_D} 28px,${STRIPE_L} 28px,${STRIPE_L} 56px)`, clipPath:'polygon(8% 0%,92% 0%,100% 100%,0% 100%)' }} />
+      <div style={{ position:'absolute', bottom:-80, left:'50%', transform:'translateX(-50%)', width:280, height:280, border:`1px solid ${MARKING}`, borderRadius:'50%', zIndex:3 }} />
+      <div style={{ position:'absolute', bottom:18, left:'50%', transform:'translateX(-50%)', width:5, height:5, borderRadius:'50%', background:MARKING, zIndex:4 }} />
       <div style={{ position:'absolute', inset:0, zIndex:3, background:`linear-gradient(90deg,${VIGNETTE_92},${VIGNETTE_70} 25%,transparent 60%)` }} />
-      <div style={{ position:'absolute', inset:0, zIndex:3, pointerEvents:'none', backgroundImage:`linear-gradient(${GRID_LINE} 1px,transparent 1px),linear-gradient(90deg,${GRID_LINE} 1px,transparent 1px)`, backgroundSize:'40px 40px', maskImage:'linear-gradient(90deg,transparent,rgba(0,0,0,0.5) 40%,rgba(0,0,0,0.5))' }} />
       <svg style={{ position:'absolute', inset:0, zIndex:4, width:'100%', height:'100%' } as React.CSSProperties} viewBox="0 0 1200 200" preserveAspectRatio="none">
-        <rect x="460" y="142" width="280" height="48" style={{ stroke:GRID_LINE }} strokeWidth="0.8" fill="none"/>
-        <rect x="545" y="168" width="110" height="24" style={{ stroke:GRID_LINE }} strokeWidth="0.8" fill="none"/>
-        <line x1="600" y1="130" x2="600" y2="200" style={{ stroke:GRID_LINE }} strokeWidth="0.7"/>
-        <line x1="220" y1="0" x2="400" y2="200" stroke="rgba(255,240,180,0.04)" strokeWidth="18"/>
-        <line x1="230" y1="0" x2="460" y2="200" stroke="rgba(255,240,180,0.05)" strokeWidth="10"/>
-        <line x1="980" y1="0" x2="800" y2="200" stroke="rgba(255,240,180,0.04)" strokeWidth="18"/>
-        <line x1="970" y1="0" x2="740" y2="200" stroke="rgba(255,240,180,0.05)" strokeWidth="10"/>
-        <circle cx="220" cy="5" r="4" fill="rgba(255,245,200,0.45)"/>
-        <circle cx="220" cy="5" r="8" fill="rgba(255,240,180,0.1)"/>
-        <circle cx="980" cy="5" r="4" fill="rgba(255,245,200,0.45)"/>
-        <circle cx="980" cy="5" r="8" fill="rgba(255,240,180,0.1)"/>
+        <line x1="600" y1="130" x2="600" y2="200" style={{ stroke:MARKING }} strokeWidth="0.7"/>
+        <line x1="220" y1="0" x2="400" y2="200" stroke={BEAM_B} strokeWidth="18"/>
+        <line x1="230" y1="0" x2="460" y2="200" stroke={BEAM_A} strokeWidth="10"/>
+        <line x1="980" y1="0" x2="800" y2="200" stroke={BEAM_B} strokeWidth="18"/>
+        <line x1="970" y1="0" x2="740" y2="200" stroke={BEAM_A} strokeWidth="10"/>
+        <circle cx="220" cy="5" r="4" fill={LIGHT_CORE}/>
+        <circle cx="220" cy="5" r="8" fill={LIGHT_GLOW}/>
+        <circle cx="980" cy="5" r="4" fill={LIGHT_CORE}/>
+        <circle cx="980" cy="5" r="8" fill={LIGHT_GLOW}/>
       </svg>
       <div style={{ position:'absolute', bottom:0, left:'25%', right:'25%', height:28, zIndex:9, background:`radial-gradient(ellipse,${a(0.12)},transparent 70%)` }} />
       <div style={{ position:'absolute', bottom:0, left:0, right:0, height:2, zIndex:10, background:`linear-gradient(90deg,transparent,${a(0)} 10%,${a(0.65)} 40%,${a(0.95)} 50%,${a(0.65)} 60%,${a(0)} 90%,transparent)` }} />
@@ -87,7 +93,7 @@ function BasketballHero({ liveCount, totalCount, today }: { liveCount: number; t
   const accent = 'rgb(var(--sport-basketball-rgb))'
   const a = (x: number) => `rgb(var(--sport-basketball-rgb) / ${x})`
   return (
-    <div style={{ position:'relative', width:'100%', height:'100%', overflow:'hidden', borderRadius:'12px 12px 0 0', background:SURFACE_A }}>
+    <div style={{ position:'relative', width:'100%', height:'100%', overflow:'hidden', borderRadius:0, }}>
       <div style={{ position:'absolute', inset:0, zIndex:4, background:`linear-gradient(90deg,${VIGNETTE_92},${VIGNETTE_70} 28%,transparent 62%)` }} />
       <div style={{ position:'absolute', bottom:0, left:0, right:0, height:2, zIndex:10, background:`linear-gradient(90deg,transparent,${a(0)} 10%,${a(0.7)} 50%,${a(0)} 90%,transparent)` }} />
       <div className="live-hero-content" style={{ position:'absolute', inset:0, zIndex:10, display:'flex', alignItems:'center' }}>
@@ -128,7 +134,7 @@ function TennisHero({ liveCount, totalCount, today }: { liveCount: number; total
   const accent = 'rgb(var(--sport-tennis-rgb))'
   const a = (x: number) => `rgb(var(--sport-tennis-rgb) / ${x})`
   return (
-    <div style={{ position:'relative', width:'100%', height:'100%', overflow:'hidden', borderRadius:'12px 12px 0 0', background:SURFACE_A }}>
+    <div style={{ position:'relative', width:'100%', height:'100%', overflow:'hidden', borderRadius:0, background:SURFACE_A }}>
       <div style={{ position:'absolute', top:-30, left:'15%', width:180, height:250, background:`conic-gradient(from 78deg at 50% 0%,transparent,${a(0.07)} 14deg,${a(0.11)} 22deg,${a(0.07)} 30deg,transparent 44deg)`, zIndex:1 }} />
       <div style={{ position:'absolute', top:-30, right:'10%', width:180, height:250, background:`conic-gradient(from 70deg at 50% 0%,transparent,${a(0.06)} 14deg,${a(0.09)} 22deg,${a(0.06)} 30deg,transparent 44deg)`, zIndex:1 }} />
       <div style={{ position:'absolute', bottom:-8, left:'-5%', right:'-5%', height:68, zIndex:2, background:`linear-gradient(180deg,${SURFACE_B04},${SURFACE_B075})`, clipPath:'polygon(8% 0%,92% 0%,100% 100%,0% 100%)' }} />
@@ -184,7 +190,7 @@ function MMAHero({ liveCount, totalCount, today }: { liveCount: number; totalCou
   const accent = 'rgb(var(--sport-mma-rgb))'
   const a = (x: number) => `rgb(var(--sport-mma-rgb) / ${x})`
   return (
-    <div style={{ position:'relative', width:'100%', height:'100%', overflow:'hidden', borderRadius:'12px 12px 0 0', background:SURFACE_A }}>
+    <div style={{ position:'relative', width:'100%', height:'100%', overflow:'hidden', borderRadius:0, background:SURFACE_A }}>
       <div style={{ position:'absolute', top:-10, left:'50%', transform:'translateX(-50%)', width:200, height:240, background:`conic-gradient(from 76deg at 50% 0%,transparent,${a(0.06)} 12deg,${a(0.12)} 24deg,${a(0.06)} 36deg,transparent 48deg)`, zIndex:1 }} />
       <div style={{ position:'absolute', bottom:-8, left:'-5%', right:'-5%', height:52, zIndex:1, background:`linear-gradient(180deg,${SURFACE_B04},${SURFACE_B065})`, clipPath:'polygon(8% 0%,92% 0%,100% 100%,0% 100%)' }} />
       <div style={{ position:'absolute', bottom:-8, left:'-5%', right:'-5%', height:75, zIndex:2, backgroundImage:`repeating-linear-gradient(0deg,${GRID_LINE} 0px,${GRID_LINE} 1px,transparent 1px,transparent 14px),repeating-linear-gradient(90deg,${GRID_LINE} 0px,${GRID_LINE} 1px,transparent 1px,transparent 14px)` }} />
@@ -249,7 +255,7 @@ function CS2Hero({ liveCount, totalCount }: { liveCount: number; totalCount: num
   const noise   = 'var(--hero-cs2-noise)'
   const text    = 'var(--hero-cs2-base-text)'
   return (
-    <div style={{ position:'relative', width:'100%', height:'100%', overflow:'hidden', borderRadius:'12px 12px 0 0', background:base }}>
+    <div style={{ position:'relative', width:'100%', height:'100%', overflow:'hidden', borderRadius:0, background:base }}>
       <div style={{ position:'absolute', left:0, top:0, bottom:0, width:'42%', background:`linear-gradient(105deg,${base} 60%,transparent 100%)`, zIndex:2 }} />
       <div style={{ position:'absolute', right:-60, top:-40, bottom:-40, width:'75%', zIndex:1, transform:'skewX(-12deg)', transformOrigin:'top right', display:'flex' }}>
         <div style={{ height:'100%', width:'55%', background:deep }} />
@@ -307,7 +313,7 @@ function Dota2Hero({ liveCount, totalCount }: { liveCount: number; totalCount: n
   const noiseLine    = 'var(--hero-dota-noise)'
   const titleShadow  = 'var(--hero-dota-text-shadow)'
   return (
-    <div style={{ position:'relative', width:'100%', height:'100%', overflow:'hidden', borderRadius:'12px 12px 0 0' }}>
+    <div style={{ position:'relative', width:'100%', height:'100%', overflow:'hidden', borderRadius:0 }}>
       <div style={{ position:'absolute', inset:0, background:baseGradient }} />
       <div style={{ position:'absolute', right:'5%', top:'-30%', width:'55%', height:'160%', background:'radial-gradient(ellipse,rgba(160,20,20,0.22) 0%,rgba(100,10,10,0.12) 40%,transparent 70%)', zIndex:1 }} />
       <div style={{ position:'absolute', right:'-5%', top:'-20%', width:'35%', height:'140%', background:'radial-gradient(ellipse,rgba(180,120,20,0.15) 0%,rgba(140,80,10,0.07) 50%,transparent 70%)', zIndex:1 }} />

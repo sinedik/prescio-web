@@ -92,7 +92,7 @@ function SectionNav({ items }: { items: { id: string; label: string }[] }) {
 
   return (
     <div className="sticky top-[242px] z-10 rounded-xl border border-bg-border overflow-hidden"
-      style={{ background: 'rgba(10,10,15,0.94)', backdropFilter: 'blur(12px)' }}>
+      style={{ background: 'rgba(var(--bg-base-rgb), 0.94)', backdropFilter: 'blur(12px)' }}>
       <div className="px-3 py-2 flex gap-1 overflow-x-auto">
         {items.map(({ id, label }) => (
           <button key={id} onClick={() => scroll(id)}
@@ -137,11 +137,11 @@ function FixtureRow({ f }: { f: TeamFixture }) {
           {f.my_goals}:{f.opp_goals}
         </span>
       ) : (
-        <span className="text-[11px] font-mono text-[#666] shrink-0">—</span>
+        <span className="text-[11px] font-mono text-text-muted shrink-0">—</span>
       )}
       <div className="flex flex-col items-end shrink-0">
         <span className="text-[10px] font-mono text-text-muted truncate max-w-[120px] text-right" title={f.league}>{f.league}</span>
-        <span className="text-[9px] font-mono text-[#666]">
+        <span className="text-[9px] font-mono text-text-muted">
           {new Date(f.date).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'short' })}
         </span>
       </div>
@@ -478,7 +478,7 @@ export default function TeamPage({ teamId, initialData }: { teamId: number; init
   // ── Breadcrumb bar ──────────────────────────────────────────────────────────
   const BreadcrumbBar = () => (
     <div className="sport-sticky-header sticky z-20 -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6 py-2.5 flex items-center gap-2 border-b border-bg-border"
-      style={{ background: 'rgba(10,10,15,0.92)', backdropFilter: 'blur(12px)' }}>
+      style={{ background: 'rgba(var(--bg-base-rgb), 0.92)', backdropFilter: 'blur(12px)' }}>
       <button onClick={handleBack}
         className="flex items-center gap-1.5 text-[13px] font-mono text-text-muted hover:text-text-primary transition-colors shrink-0">
         <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>

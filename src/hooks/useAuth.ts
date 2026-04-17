@@ -68,7 +68,10 @@ export function useAuth() {
   useEffect(() => {
     onProfileUpdate = setProfile
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const sessionTimeout = new Promise<{ data: { session: null } }>(resolve =>
+      setTimeout(() => resolve({ data: { session: null } }), 5000)
+    )
+    Promise.race([supabase.auth.getSession(), sessionTimeout]).then(({ data: { session } }) => {
       setSession(session)
       setUser(session?.user ?? null)
       if (session?.user) {

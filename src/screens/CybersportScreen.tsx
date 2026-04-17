@@ -12,6 +12,7 @@ import type { EsportsMatch } from '../types'
 import { useLiveLayout } from '../contexts/LiveLayoutContext'
 import { useLang } from '../contexts/LanguageContext'
 import { useT } from '../lib/i18n'
+import PrescioLoader from '../components/PrescioLoader'
 
 const CS2MatchScreen  = dynamic(() => import('./CS2MatchScreen'),  { loading: () => <MatchSkeleton /> })
 const DotaMatchScreen = dynamic(() => import('./DotaMatchScreen'), { loading: () => <MatchSkeleton /> })
@@ -25,6 +26,7 @@ function MatchSkeleton() {
     </div>
   )
 }
+
 
 export type Game = 'cs2' | 'dota2'
 type TimeWin = 'live' | '1h' | '3h' | '12h' | 'all'
@@ -297,7 +299,7 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId, initial
 
   const { selectedLeague: activeTournament, setSelectedLeague: setActiveTournament, setLeagues, setLiveCount, setTotalCount, setHideHero } = useLiveLayout()
 
-  const { data, loading, isRefreshing } = usePolling<EsportsMatch[]>(
+  const { data, loading } = usePolling<EsportsMatch[]>(
     async () => {
       const res = await api.getEsportsMatches(game, timeWin)
       return (res as { matches?: EsportsMatch[] })?.matches ?? []
@@ -308,6 +310,39 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId, initial
     ...(initialMatches && timeWin === 'all' ? [{ initialData: initialMatches }] : []),
   )
   const matches = data ?? []
+
+  // Loader visibility: show until data for the *current* filter has arrived.
+  // usePolling doesn't reset its `loading` flag on dep change, so on filter
+  // switches the underlying flag stays false — we track which filter the
+  // currently-displayed data belongs to and treat any mismatch as loading.
+  const filterKey = `${game}:${timeWin}`
+  // Lazy init: if SSR seeded data into the cache, dataKey starts in-sync with
+  // filterKey so the very first render shows matches (not the loader).
+  // Otherwise hydration renders PrescioLoader, then useEffect updates state
+  // and re-renders the list — a visible double-render flash.
+  const [dataKey, setDataKey] = useState<string | null>(() =>
+    data !== null ? filterKey : null
+  )
+  useEffect(() => {
+    if (data !== null) setDataKey(filterKey)
+  }, [data, filterKey])
+  const showLoaderRaw = loading || dataKey !== filterKey
+
+  // Minimum hold: once the spin is shown, keep it for one full animation cycle
+  // (1.3s) so a fast fetch doesn't make the rhombus flash. The end of the
+  // cycle lands back at the rest pose, so the transition to idle is seamless.
+  const [minHold, setMinHold] = useState(false)
+  const minHoldTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    if (!showLoaderRaw) return
+    setMinHold(true)
+    if (minHoldTimer.current) clearTimeout(minHoldTimer.current)
+    minHoldTimer.current = setTimeout(() => setMinHold(false), 1300)
+    // No cleanup here — let the timer fire even after showLoaderRaw flips to false,
+    // so the minimum-hold is respected. Unmount cleanup is in the effect below.
+  }, [showLoaderRaw])
+  useEffect(() => () => { if (minHoldTimer.current) clearTimeout(minHoldTimer.current) }, [])
+  const showLoader = showLoaderRaw || minHold
 
   // Reset page on filter change
   useEffect(() => { setCurrentPage(1) }, [game, timeWin, activeTournament])
@@ -372,13 +407,15 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId, initial
 
         {/* Time filter bar */}
         {!matchId && (
-          <div className="sport-sticky-header flex items-center gap-1.5 mb-4 pt-3 -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6"
+          <div className="dota-filters sport-sticky-header flex items-center gap-1.5 mb-4 pt-3 -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6"
+            data-discipline={game}
             style={{ position: 'sticky', zIndex: 15, background: 'rgba(var(--bg-base-rgb), 0.75)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
           >
             {(['live', '1h', '3h', '12h', 'all'] as TimeWin[]).map(tw => (
               <button
                 key={tw}
                 onClick={() => { setTimeWin(tw); setCurrentPage(1) }}
+                data-active={timeWin === tw ? 'true' : 'false'}
                 className="px-2.5 py-1 rounded text-[9px] font-mono font-bold tracking-wider uppercase transition-all"
                 style={timeWin === tw
                   ? { background: `color-mix(in srgb, ${accent} 10%, transparent)`, border: `1px solid color-mix(in srgb, ${accent} 33%, transparent)`, color: accent }
@@ -388,11 +425,6 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId, initial
                 {TIME_LABELS[tw]}
               </button>
             ))}
-            {isRefreshing && (
-              <svg className="w-3 h-3 animate-spin text-text-muted/40 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 12a9 9 0 11-6.219-8.56"/>
-              </svg>
-            )}
             {liveCount > 0 && (
               <div className="ml-auto flex items-center gap-1.5 px-2 py-1 rounded text-[9px] font-bold tracking-wider uppercase"
                 style={{ background: 'rgba(255,50,50,0.1)', border: '1px solid rgba(255,50,50,0.25)', color: '#ff5252' }}>
@@ -411,7 +443,7 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId, initial
         ) : (
           <>
             {/* Active tournament filter banner */}
-            {activeTournament && !loading && (
+            {activeTournament && !showLoader && (
               <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-lg border border-bg-border bg-bg-surface">
                 <span className="text-[11px] font-mono text-text-muted truncate flex-1">{activeTournament}</span>
                 <button
@@ -423,33 +455,26 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId, initial
               </div>
             )}
 
-            {/* Skeleton */}
-            {loading && (
-              <div className="flex flex-col gap-1.5">
-                {[0,1,2,3,4,5].map(i => (
-                  <div key={i} className="rounded-lg animate-pulse bg-bg-surface border border-bg-border"
-                    style={{ height: 56, animationDelay: `${i * 50}ms` }} />
-                ))}
-              </div>
-            )}
-
-            {/* Empty state */}
-            {!loading && matches.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 bg-bg-surface border border-bg-border">
-                  <svg className="w-5 h-5 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
-                  </svg>
-                </div>
-                <p className="text-sm font-mono text-text-muted mb-1">No matches found</p>
-                <p className="text-xs font-mono text-text-muted opacity-60">
-                  {timeWin === 'live' ? 'No live matches right now' : 'Try a different time window'}
-                </p>
-              </div>
+            {/* Loading + empty share the same rhombus mark — when fetch ends
+                with no data the spin just stops in place and the label swaps,
+                so the brand mark stays visible across filter switches. */}
+            {(showLoader || matches.length === 0) && (
+              <PrescioLoader
+                color={accent}
+                state={showLoader ? 'loading' : 'idle'}
+                label={showLoader ? 'Loading matches' : 'No matches found'}
+                sublabel={
+                  showLoader
+                    ? undefined
+                    : timeWin === 'live'
+                      ? 'No live matches right now'
+                      : 'Try a different time window'
+                }
+              />
             )}
 
             {/* Match list */}
-            {!loading && pageGroups.length > 0 && (
+            {!showLoader && pageGroups.length > 0 && (
               <>
                 <div className="flex flex-col gap-1.5">
                   {pageGroups.map(({ tournament, matches: ms }, idx) => {

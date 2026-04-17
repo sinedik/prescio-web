@@ -217,7 +217,7 @@ function SectionNav({ items }: { items: { id: string; label: string }[] }) {
       </div>
       {/* scroll fade indicator */}
       <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-10"
-        style={{ background: 'linear-gradient(to right, transparent, rgba(10,10,15,0.92))' }} />
+        style={{ background: 'linear-gradient(to right, transparent, rgba(var(--bg-base-rgb), 0.92))' }} />
     </div>
   )
 }
@@ -342,7 +342,7 @@ function H2HSection({ h2h, homeId, awayId, homeName, awayName, accent }: {
           <div key={label} className="flex-1 flex flex-col items-center py-5 gap-1 border-r border-bg-border last:border-r-0">
             <span className="text-4xl font-mono font-black leading-none" style={{ color }}>{val}</span>
             <span className="text-[10px] font-mono text-text-muted uppercase tracking-wider text-center">{label}</span>
-            {sub && <span className="text-[9px] font-mono text-[#666] truncate max-w-[80px] text-center">{sub}</span>}
+            {sub && <span className="text-[9px] font-mono text-text-muted truncate max-w-[80px] text-center">{sub}</span>}
           </div>
         ))}
       </div>
@@ -427,7 +427,7 @@ function StandingsSection({ standings, homeId, awayId, leagueName, accent }: {
       }
     >
       <div className="flex flex-col">
-        <div className="grid px-4 py-2 text-[10px] font-mono uppercase tracking-wide text-[#666]"
+        <div className="grid px-4 py-2 text-[10px] font-mono uppercase tracking-wide text-text-muted"
           style={{ gridTemplateColumns: '28px 1fr 44px 52px 52px' }}>
           <span>#</span><span>{t('sport.standings.team_col')}</span>
           <span className="text-right">{t('sport.standings.played_col')}</span>
@@ -756,7 +756,7 @@ function MatchEventsSection({ events, homeTeamId, accent, status }: {
                 {e.assist && (
                   <span className="text-[11px] font-mono text-text-muted truncate">↗ {e.assist}</span>
                 )}
-                {!isGoal && <span className="text-[10px] font-mono text-[#666] truncate">{e.detail}</span>}
+                {!isGoal && <span className="text-[10px] font-mono text-text-muted truncate">{e.detail}</span>}
               </div>
               <span className="text-[9px] font-mono px-1.5 py-0.5 rounded border shrink-0"
                 style={home
@@ -1210,7 +1210,7 @@ export default function SportEventPage({ id: idProp, onBack, onLeagueLoad, initi
                 </div>
               )}
               {referee && (
-                <div className="flex items-center gap-1.5 text-[11px] font-mono text-[#777]">
+                <div className="flex items-center gap-1.5 text-[11px] font-mono text-text-muted">
                   <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0112 0v2"/></svg>
                   <span>{referee}</span>
                 </div>

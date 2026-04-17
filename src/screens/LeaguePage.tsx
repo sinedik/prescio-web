@@ -88,16 +88,16 @@ function StandingsTable({ standings, sport }: { standings: SportStanding[]; spor
       <table className="w-full text-[12px] font-mono min-w-[560px]">
         <thead>
           <tr className="border-b border-bg-border/40">
-            <th className="text-left pl-4 pr-2 py-2.5 text-[#666] font-medium w-8">#</th>
-            <th className="text-left px-2 py-2.5 text-[#666] font-medium">{t('sport.th.team')}</th>
-            <th className="text-center px-2 py-2.5 text-[#666] font-medium w-8 hidden sm:table-cell">{t('sport.th.played')}</th>
-            <th className="text-center px-2 py-2.5 text-[#666] font-medium w-8">{t('sport.th.wins')}</th>
-            <th className="text-center px-2 py-2.5 text-[#666] font-medium w-8">{t('sport.th.draws')}</th>
-            <th className="text-center px-2 py-2.5 text-[#666] font-medium w-8">{t('sport.th.losses')}</th>
-            <th className="text-center px-2 py-2.5 text-[#666] font-medium w-14 hidden md:table-cell">{t('sport.th.goals')}</th>
-            <th className="text-center px-2 py-2.5 text-[#666] font-medium w-8">{t('sport.th.goal_diff')}</th>
-            <th className="text-center px-2 py-2.5 text-[#666] font-medium w-9 font-bold text-text-muted">{t('sport.th.points')}</th>
-            <th className="text-center pr-4 pl-2 py-2.5 text-[#666] font-medium hidden lg:table-cell">{t('sport.th.form')}</th>
+            <th className="text-left pl-4 pr-2 py-2.5 text-text-muted font-medium w-8">#</th>
+            <th className="text-left px-2 py-2.5 text-text-muted font-medium">{t('sport.th.team')}</th>
+            <th className="text-center px-2 py-2.5 text-text-muted font-medium w-8 hidden sm:table-cell">{t('sport.th.played')}</th>
+            <th className="text-center px-2 py-2.5 text-text-muted font-medium w-8">{t('sport.th.wins')}</th>
+            <th className="text-center px-2 py-2.5 text-text-muted font-medium w-8">{t('sport.th.draws')}</th>
+            <th className="text-center px-2 py-2.5 text-text-muted font-medium w-8">{t('sport.th.losses')}</th>
+            <th className="text-center px-2 py-2.5 text-text-muted font-medium w-14 hidden md:table-cell">{t('sport.th.goals')}</th>
+            <th className="text-center px-2 py-2.5 text-text-muted font-medium w-8">{t('sport.th.goal_diff')}</th>
+            <th className="text-center px-2 py-2.5 text-text-muted font-medium w-9 font-bold text-text-muted">{t('sport.th.points')}</th>
+            <th className="text-center pr-4 pl-2 py-2.5 text-text-muted font-medium hidden lg:table-cell">{t('sport.th.form')}</th>
           </tr>
         </thead>
         <tbody>
@@ -159,7 +159,7 @@ function TopScorersSection({ scorers, sport }: { scorers: SportTopScorer[]; spor
         {scorers.map((s, i) => (
           <Link key={i} href={`/sport/${sport}/player/${s.player_id}`}
             className="flex items-center gap-3 px-4 py-2.5 border-b border-bg-border/20 hover:bg-text-primary/[0.025] transition-colors last:border-0 group">
-            <span className="text-[11px] font-mono text-[#666] w-5 shrink-0 tabular-nums">{i + 1}</span>
+            <span className="text-[11px] font-mono text-text-muted w-5 shrink-0 tabular-nums">{i + 1}</span>
             <PlayerPhoto photo={s.player_photo} name={s.player_name} />
             <div className="flex flex-col min-w-0 flex-1">
               <span className="text-[12px] font-medium truncate group-hover:underline decoration-dotted underline-offset-2">{s.player_name}</span>
@@ -204,11 +204,11 @@ function FixtureRow({ f, sport }: { f: LeagueFixture; sport: string }) {
         {isLive ? (
           <span className="text-[10px] font-mono font-bold" style={{ color: '#e55e5b' }}>LIVE</span>
         ) : isFinished ? (
-          <span className="text-[10px] font-mono text-[#666]">FT</span>
+          <span className="text-[10px] font-mono text-text-muted">FT</span>
         ) : (
           <div className="flex flex-col items-end">
             <span className="text-[10px] font-mono text-text-muted">{dateStr}</span>
-            <span className="text-[10px] font-mono text-[#666]">{timeStr}</span>
+            <span className="text-[10px] font-mono text-text-muted">{timeStr}</span>
           </div>
         )}
       </div>
@@ -226,7 +226,7 @@ function FixtureRow({ f, sport }: { f: LeagueFixture; sport: string }) {
             {f.home_score ?? 0} — {f.away_score ?? 0}
           </span>
         ) : (
-          <span className="text-[10px] font-mono text-[#666]">vs</span>
+          <span className="text-[10px] font-mono text-text-muted">vs</span>
         )}
       </div>
 
@@ -367,7 +367,7 @@ function LeagueCard({ data, sport }: { data: LeaguePageData; sport: string }) {
             return (
               <Link key={s.id} href={`/sport/${sport}/team/${s.team_external_id}`}
                 className="flex items-center gap-2 px-1 py-1.5 rounded hover:bg-text-primary/[0.03] transition-colors">
-                <span className="text-[10px] font-mono text-[#666] w-4 tabular-nums">{s.rank}</span>
+                <span className="text-[10px] font-mono text-text-muted w-4 tabular-nums">{s.rank}</span>
                 {color && <div className="w-1 h-3.5 rounded-full shrink-0" style={{ background: color }} />}
                 <TeamLogo logo={s.team_logo} name={s.team_name} size={16} />
                 <span className="text-[11px] truncate flex-1">{s.team_name}</span>

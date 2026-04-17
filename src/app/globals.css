@@ -10,15 +10,15 @@
 
 /* ── Theme: CSS variable definitions (RGB channels for Tailwind opacity support) ── */
 :root {
-  /* Dark theme — default */
-  --bg-base:     14 14 14;
-  --bg-surface:  26 26 26;
-  --bg-elevated: 36 36 36;
-  --bg-border:   48 48 48;
+  /* Dark theme — default (GitHub-style lifted) */
+  --bg-base:     22 24 28;
+  --bg-surface:  30 33 38;
+  --bg-elevated: 42 46 53;
+  --bg-border:   60 66 76;
 
-  --text-primary:   255 255 255;
-  --text-secondary: 136 136 136;
-  --text-muted:     68 68 68;
+  --text-primary:   240 243 248;
+  --text-secondary: 156 163 173;
+  --text-muted:     94 100 110;
 
   --accent:       0 255 136;
   --accent-hover: 0 232 122;
@@ -29,9 +29,9 @@
   --metaculus:    167 139 250;
 
   /* Алиасы для совместимости компонентов */
-  --border:       rgb(48 48 48);
-  --bg-card:      rgb(26 26 26);
-  --bg-base-rgb:  14, 14, 14;
+  --border:       rgb(60 66 76);
+  --bg-card:      rgb(30 33 38);
+  --bg-base-rgb:  22, 24, 28;
   --accent-rgb:   0, 255, 136;
   /* Surface tint — overlay colour for subtle dividers/cards (white on dark, black on light) */
   --surface-tint-rgb: 255, 255, 255;
@@ -61,9 +61,9 @@
   --player-pos-fwd: 229 94 91;
 
   /* Hero palette — dark theme defaults. Used by LiveHero to avoid hydration mismatch. */
-  --hero-surface-a:    10 9 6;
-  --hero-surface-b:    18 13 7;
-  --hero-vignette:     10 9 6;
+  --hero-surface-a:    18 19 22;
+  --hero-surface-b:    24 22 18;
+  --hero-vignette:     18 19 22;
   --hero-text-primary: #f4f0e0;
   --hero-text-soft:    rgba(255,255,255,0.06);
   --hero-grid-line:    rgba(255,255,255,0.05);
@@ -82,20 +82,34 @@
   --hero-dota-noise:     rgba(0,0,0,0.10);
   --hero-dota-text-shadow: 0 0 40px rgba(192,57,43,0.5),0 0 80px rgba(192,57,43,0.2);
 
+  --hero-football-spotlight-soft:   rgba(255,240,180,0.07);
+  --hero-football-spotlight-strong: rgba(255,230,150,0.11);
+  --hero-football-stripe-dark:      rgba(50,38,5,0.18);
+  --hero-football-stripe-light:     rgba(60,45,6,0.10);
+  --hero-football-marking:          rgba(244,240,224,0.08);
+  --hero-football-beam-strong:      rgba(255,240,180,0.05);
+  --hero-football-beam-soft:        rgba(255,240,180,0.04);
+  --hero-football-light-core:       rgba(255,245,200,0.45);
+  --hero-football-light-glow:       rgba(255,240,180,0.10);
+
+  --hero-bb-mid-opacity:  0.7;
+  --hero-bb-thin-opacity: 0.15;
+  --hero-bb-solid:        rgb(var(--hero-surface-a));
+
   /* Logo symbol colour — theme-aware via CSS var to avoid hydration mismatch */
   --logo-symbol: rgb(var(--accent));
 }
 
 [data-theme="light"] {
-  /* ── Warm Paper (Concept A) ── */
-  --bg-base:     245 243 238;
-  --bg-surface:  255 254 251;
-  --bg-elevated: 237 235 229;
-  --bg-border:   218 215 207;
+  /* ── Warm Paper (refined: softer feel, sharper hierarchy) ── */
+  --bg-base:     248 245 238;
+  --bg-surface:  255 253 247;
+  --bg-elevated: 234 230 220;
+  --bg-border:   206 200 186;
 
-  --text-primary:   12 11 10;
-  --text-secondary: 62 60 56;
-  --text-muted:     128 124 116;
+  --text-primary:   10 8 6;
+  --text-secondary: 56 52 46;
+  --text-muted:     112 106 96;
 
   --accent:       2 163 80;
   --accent-hover: 0 145 68;
@@ -106,14 +120,14 @@
   --metaculus:    109 40 217;
 
   /* Алиасы для совместимости компонентов */
-  --border:       rgb(218 215 207);
-  --bg-card:      rgb(255 254 251);
-  --bg-base-rgb:  245, 243, 238;
+  --border:       rgb(206 200 186);
+  --bg-card:      rgb(255 253 247);
+  --bg-base-rgb:  248, 245, 238;
   --accent-rgb:   2, 163, 80;
   --surface-tint-rgb: 0, 0, 0;
 
   /* Sport accents — darker for AA contrast on warm-paper bg */
-  --sport-football:   #8a6f10;
+  --sport-football:   #8b6914;
   --sport-basketball: #a0420c;
   --sport-tennis:     #5a7a18;
   --sport-mma:        #a01010;
@@ -121,7 +135,7 @@
   --sport-dota2:      #8e2820;
   --sport-valorant:   #c8323d;
 
-  --sport-football-rgb:   138 111 16;
+  --sport-football-rgb:   139 105 20;
   --sport-basketball-rgb: 160 66 12;
   --sport-tennis-rgb:     90 122 24;
   --sport-mma-rgb:        160 16 16;
@@ -132,7 +146,7 @@
   /* Football position accents (RGB) */
   --player-pos-gk:  37 112 184;
   --player-pos-def: 45 163 64;
-  --player-pos-mid: 138 111 16;
+  --player-pos-mid: 139 105 20;
   --player-pos-fwd: 177 58 55;
 
   /* Hero palette — warm paper overrides */
@@ -157,6 +171,20 @@
   --hero-dota-noise:     rgba(120,60,20,0.07);
   --hero-dota-text-shadow: 0 0 30px rgba(142,40,32,0.18);
 
+  --hero-football-spotlight-soft:   rgba(139,105,20,0.10);
+  --hero-football-spotlight-strong: rgba(139,105,20,0.18);
+  --hero-football-stripe-dark:      rgba(139,105,20,0.06);
+  --hero-football-stripe-light:     rgba(139,105,20,0.03);
+  --hero-football-marking:          rgba(139,105,20,0.32);
+  --hero-football-beam-strong:      rgba(139,105,20,0.10);
+  --hero-football-beam-soft:        rgba(139,105,20,0.06);
+  --hero-football-light-core:       rgba(139,105,20,0.85);
+  --hero-football-light-glow:       rgba(139,105,20,0.20);
+
+  --hero-bb-mid-opacity:  0.40;
+  --hero-bb-thin-opacity: 0.05;
+  --hero-bb-solid:        rgb(238 218 190);
+
   --logo-symbol: rgb(var(--accent));
 }
 
@@ -173,12 +201,29 @@
 [data-theme="light"] .text-indigo-400 { color: rgb(67 56 202); }
 [data-theme="light"] .text-yellow-400 { color: rgb(161 98 7); }
 
-/* Light theme: opacity-modifier on muted text (e.g. text-text-muted/30) can drop
-   below WCAG AA on warm-paper bg. Clamp to text-muted solid for /30 and below. */
-[data-theme="light"] [class*="text-text-muted/3"],
-[data-theme="light"] [class*="text-text-muted/4"],
-[data-theme="light"] [class*="text-text-muted/5"] {
+/* ── Light theme: opacity-modified theme tokens lose contrast on warm-paper bg.
+   On dark bases low opacity reads as subtle gray; on light cream it disappears.
+   Clamp these to their solid base color. ── */
+
+/* Muted text — any opacity becomes too pale on warm-paper bg */
+[data-theme="light"] [class*="text-text-muted/"] {
   color: rgb(var(--text-muted));
+}
+
+/* Card / panel surfaces — low-opacity elevated/surface vanish on light bg */
+[data-theme="light"] [class*="bg-bg-elevated/"] {
+  background-color: rgb(var(--bg-elevated));
+}
+[data-theme="light"] [class*="bg-bg-surface/"] {
+  background-color: rgb(var(--bg-surface));
+}
+[data-theme="light"] [class*="hover:bg-bg-elevated/"]:hover {
+  background-color: rgb(var(--bg-elevated));
+}
+
+/* Borders — opacity-modified borders fade out completely on light */
+[data-theme="light"] [class*="border-bg-border/"] {
+  border-color: rgb(var(--bg-border));
 }
 
 @layer base {
@@ -345,18 +390,18 @@
   overflow: hidden;
 }
 
-/* Sport/Cybersport sticky sub-header — offset matches live-hero-wrap height */
+/* Sport/Cybersport sticky sub-header — offset matches live-hero-wrap height + 8px top margin */
 .sport-sticky-header {
-  top: 120px;
+  top: 128px;
 }
 @media (min-width: 640px) {
   .sport-sticky-header {
-    top: 160px;
+    top: 168px;
   }
 }
 @media (min-width: 768px) {
   .sport-sticky-header {
-    top: 200px;
+    top: 208px;
   }
 }
 
@@ -364,6 +409,9 @@
 .live-hero-wrap {
   overflow: hidden;
   height: 120px;
+  border-radius: 12px;
+  border: 1px solid rgb(var(--bg-border) / 0.25);
+  margin: 8px 0;
 }
 @media (min-width: 640px) {
   .live-hero-wrap {
@@ -416,22 +464,536 @@
   -webkit-backdrop-filter: blur(6px);
 }
 [data-theme="light"] .live-content {
-  background: rgba(var(--bg-base-rgb), 0.88);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(var(--bg-base-rgb), 0.42);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
 }
 /* WorldBackground SVG art is dark-tuned. On light theme, multiply blend-mode
    keeps the dark decorative strokes visible against the parchment-like base
    (the white parts of the artwork drop out, the dark lines stay as sepia). */
 [data-theme="light"] .live-world-bg svg,
 [data-theme="light"] .live-world-bg image {
-  opacity: 0.35;
+  opacity: 0.85;
   mix-blend-mode: multiply;
-  filter: saturate(0.8) hue-rotate(-8deg);
+  filter: saturate(0.95) hue-rotate(-6deg) contrast(1.25);
 }
 [data-theme="light"] .live-world-bg > div > div {
-  opacity: 0.25;
+  opacity: 0.7;
   mix-blend-mode: multiply;
+}
+
+/* MMA — stronger presence on light theme: higher contrast + saturation. */
+[data-theme="light"] .live-world-bg[data-discipline="mma"] image {
+  opacity: 1;
+  mix-blend-mode: multiply;
+  filter: saturate(1.6) contrast(1.5) brightness(0.88);
+}
+
+/* Tennis — multiply keeps dark court geometry visible on cream; boost contrast to punch through. */
+[data-theme="light"] .live-world-bg[data-discipline="tennis"] image {
+  opacity: 1;
+  mix-blend-mode: multiply;
+  filter: saturate(0.6) contrast(1.8) brightness(0.72) hue-rotate(4deg);
+}
+
+/* Tennis content area on light theme — mostly opaque cream to mask dark bg bleed. */
+[data-theme="light"] .live-content[data-discipline="tennis"] {
+  position: relative;
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(90, 122, 24, 0.07), transparent 70%),
+    linear-gradient(180deg,
+      rgba(240, 238, 228, 0.92) 0%,
+      rgba(245, 242, 232, 0.94) 25%,
+      rgba(248, 245, 236, 0.96) 60%,
+      rgba(248, 245, 238, 0.98) 100%);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+[data-theme="light"] .live-content[data-discipline="tennis"] > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* CS2 dark SVG (used in dark theme) — when light theme briefly mounts before
+   the cs2-art-light overrides via display, scope adaptation only to the dark
+   group so the hand-built light variant stays clean. */
+[data-theme="light"] .live-world-bg[data-discipline="cs2"] .cs2-art-dark image {
+  opacity: 1;
+  mix-blend-mode: multiply;
+  filter: contrast(1.4) saturate(0.85) brightness(0.95);
+}
+
+/* Dota 2 — separate dark/light SVG variants render side-by-side, CSS toggles. */
+.dota-art-dark, .dota-art-light { display: none; }
+[data-theme="dark"]  .dota-art-dark  { display: block; }
+[data-theme="light"] .dota-art-light { display: block; }
+
+/* CS2 — same dark/light split. */
+.cs2-art-dark, .cs2-art-light { display: none; }
+[data-theme="dark"]  .cs2-art-dark  { display: block; }
+[data-theme="light"] .cs2-art-light { display: block; }
+
+/* CS2 / Dota content area on light theme — pull palette from the hero so
+   content area "flows" from the hero band instead of looking like a flat cream
+   sheet. Each discipline gets its signature warm tone. */
+[data-theme="light"] .live-content[data-discipline="cs2"] {
+  position: relative;
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(230, 100, 20, 0.10), transparent 70%),
+    linear-gradient(180deg,
+      rgba(238, 223, 192, 0.85) 0%,
+      rgba(245, 235, 215, 0.78) 25%,
+      rgba(248, 242, 230, 0.72) 60%,
+      rgba(248, 245, 238, 0.65) 100%);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+/* Noise overlay for CS2 — matches Dota for material consistency. */
+[data-theme="light"] .live-content[data-discipline="cs2"]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(120, 50, 10, 0.04) 3px,
+    rgba(120, 50, 10, 0.04) 4px
+  );
+}
+[data-theme="light"] .live-content[data-discipline="cs2"] > * {
+  position: relative;
+  z-index: 2;
+}
+[data-theme="light"] .live-content[data-discipline="dota2"] {
+  position: relative;
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(192, 57, 43, 0.12), transparent 70%),
+    linear-gradient(180deg,
+      rgba(237, 212, 184, 0.85) 0%,
+      rgba(244, 224, 198, 0.78) 25%,
+      rgba(248, 234, 215, 0.72) 60%,
+      rgba(248, 240, 226, 0.65) 100%);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+/* Noise overlay — same 3px lines as in Dota hero, makes content area feel like one material. */
+[data-theme="light"] .live-content[data-discipline="dota2"]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(120, 60, 20, 0.05) 3px,
+    rgba(120, 60, 20, 0.05) 4px
+  );
+}
+[data-theme="light"] .live-content[data-discipline="dota2"] > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* ── Dota 2 filter-bar (LIVE / 1H / 3H / 12H / ALL) — light theme ── */
+[data-theme="light"] .dota-filters[data-discipline="dota2"] {
+  background: transparent !important;
+  border-bottom: 1px solid rgba(180, 110, 30, 0.18);
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+[data-theme="light"] .dota-filters[data-discipline="dota2"] button {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: rgba(58, 26, 8, 0.55) !important;
+  background: transparent !important;
+  border: 1px solid rgba(120, 60, 20, 0.28) !important;
+  border-radius: 3px;
+  position: relative;
+  transition: color 0.15s, border-color 0.15s;
+}
+[data-theme="light"] .dota-filters[data-discipline="dota2"] button:hover {
+  color: rgba(58, 26, 8, 0.85) !important;
+  border-color: rgba(120, 60, 20, 0.5) !important;
+}
+[data-theme="light"] .dota-filters[data-discipline="dota2"] button[data-active="true"] {
+  color: var(--sport-dota2) !important;
+  border: 1.5px solid var(--sport-dota2) !important;
+  background: rgba(var(--sport-dota2-rgb), 0.04) !important;
+}
+[data-theme="light"] .dota-filters[data-discipline="dota2"] button[data-active="true"]::before,
+[data-theme="light"] .dota-filters[data-discipline="dota2"] button[data-active="true"]::after {
+  content: '';
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #b46e1e;
+  opacity: 0.6;
+  transform: rotate(45deg);
+  top: 50%;
+  margin-top: -2px;
+}
+[data-theme="light"] .dota-filters[data-discipline="dota2"] button[data-active="true"]::before { left: -9px; }
+[data-theme="light"] .dota-filters[data-discipline="dota2"] button[data-active="true"]::after { right: -9px; }
+
+/* ── Dota 2 empty-state — light theme ── */
+[data-theme="light"] .live-content[data-discipline="dota2"] .dota-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 100px 20px;
+  text-align: center;
+}
+[data-theme="light"] .live-content[data-discipline="dota2"] .dota-empty-frame {
+  width: 64px;
+  height: 64px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(180, 110, 30, 0.4);
+  background: rgba(180, 110, 30, 0.04);
+  transform: rotate(45deg);
+  will-change: transform;
+}
+[data-theme="light"] .live-content[data-discipline="dota2"] .dota-empty-frame > * {
+  color: var(--sport-dota2);
+  opacity: 0.85;
+  transform: rotate(-45deg);
+  will-change: transform;
+}
+[data-theme="light"] .live-content[data-discipline="dota2"] .dota-empty-frame::before,
+[data-theme="light"] .live-content[data-discipline="dota2"] .dota-empty-frame::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: #b46e1e;
+  opacity: 0.6;
+  left: 50%;
+  margin-left: -3px;
+}
+[data-theme="light"] .live-content[data-discipline="dota2"] .dota-empty-frame::before { top: -4px; }
+[data-theme="light"] .live-content[data-discipline="dota2"] .dota-empty-frame::after  { bottom: -4px; }
+[data-theme="light"] .live-content[data-discipline="dota2"] .dota-empty-title {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--hero-dota-text);
+  opacity: 0.85;
+}
+[data-theme="light"] .live-content[data-discipline="dota2"] .dota-empty-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 4px 0;
+}
+[data-theme="light"] .live-content[data-discipline="dota2"] .dota-empty-divider .ln {
+  height: 1px;
+  width: 32px;
+}
+[data-theme="light"] .live-content[data-discipline="dota2"] .dota-empty-divider .ln-l {
+  background: linear-gradient(90deg, transparent, rgba(180, 110, 30, 0.4));
+}
+[data-theme="light"] .live-content[data-discipline="dota2"] .dota-empty-divider .ln-r {
+  background: linear-gradient(90deg, rgba(180, 110, 30, 0.4), transparent);
+}
+[data-theme="light"] .live-content[data-discipline="dota2"] .dota-empty-divider .dmd {
+  width: 4px;
+  height: 4px;
+  background: rgba(180, 110, 30, 0.6);
+  transform: rotate(45deg);
+}
+[data-theme="light"] .live-content[data-discipline="dota2"] .dota-empty-sub {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(58, 26, 8, 0.5);
+}
+
+/* ── CS2 filter-bar (LIVE / 1H / 3H / 12H / ALL) — light theme ── */
+[data-theme="light"] .dota-filters[data-discipline="cs2"] {
+  background: transparent !important;
+  border-bottom: 1px solid rgba(var(--sport-cs2-rgb), 0.18);
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+[data-theme="light"] .dota-filters[data-discipline="cs2"] button {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: rgba(26, 20, 8, 0.55) !important;
+  background: transparent !important;
+  border: 1px solid rgba(var(--sport-cs2-rgb), 0.28) !important;
+  border-radius: 2px;
+  position: relative;
+  transition: color 0.15s, border-color 0.15s;
+}
+[data-theme="light"] .dota-filters[data-discipline="cs2"] button:hover {
+  color: rgba(26, 20, 8, 0.85) !important;
+  border-color: rgba(var(--sport-cs2-rgb), 0.5) !important;
+}
+[data-theme="light"] .dota-filters[data-discipline="cs2"] button[data-active="true"] {
+  color: var(--sport-cs2) !important;
+  border: 1.5px solid var(--sport-cs2) !important;
+  background: rgba(var(--sport-cs2-rgb), 0.04) !important;
+}
+/* Tactical L-corner brackets on active filter button */
+[data-theme="light"] .dota-filters[data-discipline="cs2"] button[data-active="true"]::before,
+[data-theme="light"] .dota-filters[data-discipline="cs2"] button[data-active="true"]::after {
+  content: '';
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border: 1.5px solid var(--sport-cs2);
+}
+[data-theme="light"] .dota-filters[data-discipline="cs2"] button[data-active="true"]::before {
+  top: -3px; left: -3px;
+  border-right: none; border-bottom: none;
+}
+[data-theme="light"] .dota-filters[data-discipline="cs2"] button[data-active="true"]::after {
+  bottom: -3px; right: -3px;
+  border-left: none; border-top: none;
+}
+
+/* ── CS2 empty-state — light theme ── */
+[data-theme="light"] .live-content[data-discipline="cs2"] .empty-state-cs2 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 100px 20px;
+}
+
+[data-theme="light"] .live-content[data-discipline="cs2"] .empty-state-frame {
+  width: 68px;
+  height: 56px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(var(--sport-cs2-rgb), 0.4);
+  background: rgba(var(--sport-cs2-rgb), 0.04);
+}
+
+/* 4 тактические L-скобки по углам frame */
+[data-theme="light"] .live-content[data-discipline="cs2"] .empty-state-frame .bracket {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+}
+[data-theme="light"] .live-content[data-discipline="cs2"] .empty-state-frame .bracket::before,
+[data-theme="light"] .live-content[data-discipline="cs2"] .empty-state-frame .bracket::after {
+  content: '';
+  position: absolute;
+  background: var(--sport-cs2);
+}
+[data-theme="light"] .live-content[data-discipline="cs2"] .empty-state-frame .bracket::before {
+  width: 10px; height: 1.5px;
+}
+[data-theme="light"] .live-content[data-discipline="cs2"] .empty-state-frame .bracket::after {
+  width: 1.5px; height: 10px;
+}
+
+[data-theme="light"] .live-content[data-discipline="cs2"] .empty-state-frame .bracket.tl { top: -5px; left: -5px; }
+[data-theme="light"] .live-content[data-discipline="cs2"] .empty-state-frame .bracket.tl::before { top: 0; left: 0; }
+[data-theme="light"] .live-content[data-discipline="cs2"] .empty-state-frame .bracket.tl::after  { top: 0; left: 0; }
+
+[data-theme="light"] .live-content[data-discipline="cs2"] .empty-state-frame .bracket.tr { top: -5px; right: -5px; }
+[data-theme="light"] .live-content[data-discipline="cs2"] .empty-state-frame .bracket.tr::before { top: 0; right: 0; }
+[data-theme="light"] .live-content[data-discipline="cs2"] .empty-state-frame .bracket.tr::after  { top: 0; right: 0; }
+
+[data-theme="light"] .live-content[data-discipline="cs2"] .empty-state-frame .bracket.bl { bottom: -5px; left: -5px; }
+[data-theme="light"] .live-content[data-discipline="cs2"] .empty-state-frame .bracket.bl::before { bottom: 0; left: 0; }
+[data-theme="light"] .live-content[data-discipline="cs2"] .empty-state-frame .bracket.bl::after  { bottom: 0; left: 0; }
+
+[data-theme="light"] .live-content[data-discipline="cs2"] .empty-state-frame .bracket.br { bottom: -5px; right: -5px; }
+[data-theme="light"] .live-content[data-discipline="cs2"] .empty-state-frame .bracket.br::before { bottom: 0; right: 0; }
+[data-theme="light"] .live-content[data-discipline="cs2"] .empty-state-frame .bracket.br::after  { bottom: 0; right: 0; }
+
+[data-theme="light"] .live-content[data-discipline="cs2"] .empty-state-title {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--hero-cs2-base-text);
+  opacity: 0.82;
+  text-align: center;
+}
+
+/* Простой hairline — точь-в-точь как в CS2 hero между title и "BLAST · ESL · PGL · IEM" */
+[data-theme="light"] .live-content[data-discipline="cs2"] .empty-state-divider {
+  height: 1px;
+  width: 24px;
+  background: rgba(var(--sport-cs2-rgb), 0.4);
+  margin: 10px auto;
+}
+
+[data-theme="light"] .live-content[data-discipline="cs2"] .empty-state-sub {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(26, 20, 8, 0.5);
+  text-align: center;
+}
+
+/* ── Football — separate dark/light SVG variants render side-by-side, CSS toggles. */
+.football-art-dark, .football-art-light { display: none; }
+[data-theme="dark"]  .football-art-dark  { display: block; }
+[data-theme="light"] .football-art-light { display: block; }
+
+/* Disable global mix-blend-mode adaptation for football light variant — the
+   hand-built perspective stadium uses theme-correct values directly,
+   blending it would muddy the amber pitch markings. */
+[data-theme="light"] .live-world-bg[data-discipline="football"] svg,
+[data-theme="light"] .live-world-bg[data-discipline="football"] image {
+  mix-blend-mode: normal;
+  filter: none;
+  opacity: 1;
+}
+[data-theme="light"] .live-world-bg[data-discipline="football"] > div > div {
+  mix-blend-mode: normal;
+  opacity: 1;
+}
+
+/* MMA content area on light theme — subtle blood-red warmth to match octagon hero. */
+[data-theme="light"] .live-content[data-discipline="mma"] {
+  position: relative;
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(160, 16, 16, 0.08), transparent 70%),
+    linear-gradient(180deg,
+      rgba(240, 230, 218, 0.85) 0%,
+      rgba(245, 237, 226, 0.78) 25%,
+      rgba(248, 242, 232, 0.72) 60%,
+      rgba(248, 245, 238, 0.65) 100%);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+[data-theme="light"] .live-content[data-discipline="mma"] > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* ── Brand-wide Prescio loader (rhombus + Logo) ──
+   Layout mirrors the original dota-empty design: pin-marked rhombus, Cinzel
+   title, gradient divider with diamond, mono sublabel. The whole composition
+   is tinted via --loader-color so each discipline keeps its accent. */
+.prescio-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 80px 20px;
+  text-align: center;
+}
+.prescio-loader-frame {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--loader-color, currentColor) 42%, transparent);
+  background: color-mix(in srgb, var(--loader-color, currentColor) 5%, transparent);
+  transform: rotate(45deg);
+  will-change: transform;
+}
+.prescio-loader-frame > * {
+  color: var(--loader-color, currentColor);
+  opacity: 0.92;
+  transform: rotate(-45deg);
+  will-change: transform;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* Pin dots above and below the rhombus — they orbit with the spin during
+   loading and settle at the top/bottom corners in idle (rest pose). */
+.prescio-loader-frame::before,
+.prescio-loader-frame::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--loader-color, currentColor);
+  opacity: 0.6;
+  left: 50%;
+  margin-left: -3px;
+}
+.prescio-loader-frame::before { top: -4px; }
+.prescio-loader-frame::after  { bottom: -4px; }
+/* Loader variant — rotates each 1.3s with ease-in-out so each cycle visibly
+   accelerates → peaks → decelerates back to the rhombus rest pose. */
+.prescio-loader-frame.is-loading {
+  animation: prescio-loader-spin 1.3s cubic-bezier(0.55, 0.05, 0.45, 0.95) infinite;
+}
+.prescio-loader-frame.is-loading > * {
+  animation: prescio-loader-counter-spin 1.3s cubic-bezier(0.55, 0.05, 0.45, 0.95) infinite;
+}
+@keyframes prescio-loader-spin {
+  from { transform: rotate(45deg); }
+  to   { transform: rotate(405deg); }
+}
+@keyframes prescio-loader-counter-spin {
+  from { transform: rotate(-45deg); }
+  to   { transform: rotate(-405deg); }
+}
+.prescio-loader-label {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--loader-color, currentColor) 90%, transparent);
+  margin-top: 4px;
+}
+.prescio-loader-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 2px 0;
+}
+.prescio-loader-divider .ln {
+  height: 1px;
+  width: 32px;
+}
+.prescio-loader-divider .ln-l {
+  background: linear-gradient(90deg, transparent,
+    color-mix(in srgb, var(--loader-color, currentColor) 40%, transparent));
+}
+.prescio-loader-divider .ln-r {
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--loader-color, currentColor) 40%, transparent), transparent);
+}
+.prescio-loader-divider .dmd {
+  width: 4px;
+  height: 4px;
+  background: color-mix(in srgb, var(--loader-color, currentColor) 60%, transparent);
+  transform: rotate(45deg);
+}
+.prescio-loader-sublabel {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(var(--text-muted), 0.6);
 }
 
 /* Theme toggle buttons — driven by data-theme attribute, not React state.

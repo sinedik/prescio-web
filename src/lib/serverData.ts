@@ -39,7 +39,7 @@ async function fetchEsportsListImpl(game: string, window: string): Promise<Espor
   const to   = new Date(now + horizon * 3600_000).toISOString()
 
   const supabase = getSupabaseAnonClient()
-  const { data, error } = await supabase
+  const queryPromise = supabase
     .from('esports_markets')
     .select(`
       id, yes_price, no_price,
@@ -51,6 +51,12 @@ async function fetchEsportsListImpl(game: string, window: string): Promise<Espor
     .gte('esports_matches.starts_at', from)
     .lte('esports_matches.starts_at', to)
     .limit(60)
+
+  const timeoutPromise = new Promise<{ data: null; error: Error }>(resolve =>
+    setTimeout(() => resolve({ data: null, error: new Error('SSR timeout') }), 4000)
+  )
+
+  const { data, error } = await Promise.race([queryPromise, timeoutPromise])
 
   if (error) throw error
 
@@ -111,7 +117,7 @@ async function fetchSportEventsImpl(subcategory: string): Promise<SportEvent[]> 
   const to   = new Date(from); to.setDate(to.getDate() + 30); to.setHours(23, 59, 59, 999)
 
   const supabase = getSupabaseAnonClient()
-  const { data, error } = await supabase
+  const queryPromise = supabase
     .from('sport_events')
     .select('id,source,category,subcategory,league,home_team,away_team,starts_at,status,home_score,away_score,raw_data,sport_odds(bookmaker,market_type,outcomes)')
     .eq('subcategory', subcategory)
@@ -119,6 +125,12 @@ async function fetchSportEventsImpl(subcategory: string): Promise<SportEvent[]> 
     .lte('starts_at', to.toISOString())
     .order('starts_at', { ascending: true })
     .limit(100)
+
+  const timeoutPromise = new Promise<{ data: null; error: Error }>(resolve =>
+    setTimeout(() => resolve({ data: null, error: new Error('SSR timeout') }), 4000)
+  )
+
+  const { data, error } = await Promise.race([queryPromise, timeoutPromise])
 
   if (error) throw error
 
