@@ -1172,7 +1172,7 @@ export default function CS2MatchScreen({ seriesId, initialData }: { seriesId: st
   // ─── Skeleton ────────────────────────────────────────────────────────────────
   if (loading && !match) {
     return (
-      <div className="w-full max-w-3xl mx-auto px-6 py-6 flex flex-col gap-4">
+      <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex flex-col gap-4">
         <div className="h-5 w-20 rounded animate-pulse bg-bg-surface" />
         <div className="h-36 rounded-lg animate-pulse bg-bg-surface border border-bg-border" />
         {[0,1,2].map(i => (
@@ -1185,7 +1185,7 @@ export default function CS2MatchScreen({ seriesId, initialData }: { seriesId: st
 
   if (!match) {
     return (
-      <div className="w-full max-w-3xl mx-auto px-6 py-20 text-center flex flex-col items-center gap-3">
+      <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 py-16 sm:py-20 text-center flex flex-col items-center gap-3">
         <p className="text-sm font-mono text-text-muted">Match not found</p>
         <Link href="/cybersport/cs2"
           className="text-[11px] font-mono text-text-muted/70 hover:text-text-primary underline underline-offset-2">
@@ -1197,7 +1197,7 @@ export default function CS2MatchScreen({ seriesId, initialData }: { seriesId: st
 
   return (
     <ErrorBoundary>
-    <div className="w-full max-w-3xl mx-auto px-6 py-6 flex flex-col gap-4">
+    <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex flex-col gap-4">
 
       {/* Back + badges */}
       <div className="flex items-center justify-between">

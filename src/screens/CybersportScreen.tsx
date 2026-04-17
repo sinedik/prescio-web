@@ -368,12 +368,12 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId, initial
 
   return (
     <ErrorBoundary>
-      <main className="flex-1 min-w-0 px-6 pb-5 pt-0">
+      <main className="flex-1 min-w-0 px-3 sm:px-4 md:px-6 pb-5 pt-0">
 
         {/* Time filter bar */}
         {!matchId && (
-          <div className="flex items-center gap-1.5 mb-4 pt-3"
-            style={{ position: 'sticky', top: 200, zIndex: 15, background: 'rgba(var(--bg-base-rgb), 0.75)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', marginLeft: -24, marginRight: -24, paddingLeft: 24, paddingRight: 24 }}
+          <div className="sport-sticky-header flex items-center gap-1.5 mb-4 pt-3 -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6"
+            style={{ position: 'sticky', zIndex: 15, background: 'rgba(var(--bg-base-rgb), 0.75)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
           >
             {(['live', '1h', '3h', '12h', 'all'] as TimeWin[]).map(tw => (
               <button

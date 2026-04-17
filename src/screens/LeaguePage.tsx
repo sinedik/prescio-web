@@ -429,7 +429,7 @@ export default function LeaguePage({ leagueId, sport, initialData }: Props & { i
   }, [leagueId, sport])
 
   const BreadcrumbBar = () => (
-    <div className="sticky top-[200px] z-20 -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6 py-2.5 flex items-center gap-2 border-b border-bg-border"
+    <div className="sport-sticky-header sticky z-20 -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6 py-2.5 flex items-center gap-2 border-b border-bg-border"
       style={{ background: 'rgba(var(--bg-base-rgb), 0.85)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}>
       <button onClick={() => router.push(`/sport/${sport}`)}
         className="flex items-center gap-1.5 text-[12px] font-mono text-text-muted/60 hover:text-text-secondary transition-colors shrink-0">

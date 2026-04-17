@@ -70,7 +70,7 @@ function LiveSidebar({
 
   return (
     <aside
-      className={`fixed md:static top-[52px] left-0 bottom-0 w-[200px] shrink-0 border-r border-bg-border bg-bg-surface flex flex-col z-[100] ${mobileOpen ? 'translate-x-0' : '-translate-x-[200px] md:translate-x-0'}`}
+      className={`fixed md:static top-[52px] left-0 bottom-[56px] md:bottom-0 w-[200px] shrink-0 border-r border-bg-border bg-bg-surface flex flex-col z-[100] ${mobileOpen ? 'translate-x-0' : '-translate-x-[200px] md:translate-x-0'}`}
       style={{ opacity: isPending ? 0.6 : 1, transition: 'opacity 0.2s ease, transform 0.2s ease', overflowY: 'hidden' }}
     >
       {/* Mobile close */}
@@ -209,23 +209,24 @@ function LiveLayoutInner({ children }: { children: React.ReactNode }) {
         <WorldBackground discipline={discipline} />
       </div>
 
-      {/* Mobile backdrop */}
+      {/* Mobile backdrop — sidebar leagues drawer */}
       {mobileOpen && (
         <div className="fixed inset-0 z-[99] bg-black/60 md:hidden" onClick={() => setMobileOpen(false)} />
       )}
 
-      {/* Mobile hamburger */}
+      {/* Mobile leagues button — bottom-left above tab bar */}
       <button
-        className="md:hidden fixed top-[60px] left-3 z-[90] w-8 h-8 flex items-center justify-center rounded-lg border border-bg-border bg-bg-surface/90 text-text-muted hover:text-text-primary transition-colors"
+        className="md:hidden fixed bottom-[64px] left-3 z-[90] h-8 px-3 flex items-center gap-1.5 rounded-lg border border-bg-border bg-bg-surface/90 text-text-muted hover:text-text-primary transition-colors text-[10px] font-mono font-bold tracking-wider"
         style={{ backdropFilter: 'blur(6px)' }}
         onClick={() => setMobileOpen(true)}
       >
-        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M4 6h16M4 12h16M4 18h16"/>
         </svg>
+        LEAGUES
       </button>
 
-      <div className="flex relative" style={{ zIndex: 1, height: 'calc(100vh - 52px)', overflow: 'hidden' }}>
+      <div className="live-shell flex relative" style={{ zIndex: 1 }}>
 
         <LiveSidebar
           discipline={discipline}

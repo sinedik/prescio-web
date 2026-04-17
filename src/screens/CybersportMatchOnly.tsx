@@ -36,7 +36,7 @@ export default function CybersportMatchOnly({
 
   return (
     <ErrorBoundary>
-      <main className="flex-1 min-w-0 px-6 pb-5 pt-0">
+      <main className="flex-1 min-w-0 pb-5 pt-0">
         {game === 'dota2'
           ? <DotaMatchScreen seriesId={matchId} initialData={initialData} />
           : <CS2MatchScreen  seriesId={matchId} initialData={initialData} />}

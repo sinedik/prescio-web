@@ -209,7 +209,7 @@ export default function PortfolioPage() {
   const hasPnl = stats.totalPnl !== 0 || stats.closed > 0
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-6">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>

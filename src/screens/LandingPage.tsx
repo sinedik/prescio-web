@@ -991,7 +991,7 @@ export default function LandingPage() {
 
       {/* ── NAVBAR ── */}
       <header
-        className="fixed top-0 left-0 right-0 z-50 h-14 flex items-center px-8 border-b border-bg-border bg-bg-base/95 backdrop-blur-md"
+        className="fixed top-0 left-0 right-0 z-50 h-14 flex items-center px-4 sm:px-8 border-b border-bg-border bg-bg-base/95 backdrop-blur-md"
       >
         <div className="flex items-center justify-between w-full">
           <Logo size={24} textSize={14} />

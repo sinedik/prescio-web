@@ -112,8 +112,8 @@ export default function MarketsPage({ initialMarkets }: { initialMarkets?: Marke
   const resultCount = filteredMarkets.length
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
+      <div className="flex items-center justify-between mb-4 sm:mb-6">
         <div>
           <h1 className="text-lg font-mono font-bold text-text-primary tracking-wider">
             MARKETS
@@ -131,11 +131,11 @@ export default function MarketsPage({ initialMarkets }: { initialMarkets?: Marke
             transition-colors disabled:opacity-40"
         >
           <RefreshIcon className={loading ? 'animate-spin' : ''} />
-          REFRESH
+          <span className="hidden sm:inline">REFRESH</span>
         </button>
       </div>
 
-      <div className="flex gap-2 mb-4">
+      <div className="flex flex-col sm:flex-row gap-2 mb-4">
         <div className="flex-1 relative">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted w-3.5 h-3.5" />
           <input
@@ -156,12 +156,12 @@ export default function MarketsPage({ initialMarkets }: { initialMarkets?: Marke
           )}
         </div>
 
-        <div className="flex items-center gap-0.5 bg-bg-surface border border-bg-border rounded p-1">
+        <div className="flex items-center gap-0.5 bg-bg-surface border border-bg-border rounded p-1 overflow-x-auto scrollbar-hide">
           {PLATFORM_OPTIONS.map((opt) => (
             <button
               key={opt.value}
               onClick={() => setPlatform(opt.value)}
-              className={`px-2.5 py-1 text-[10px] font-mono font-bold rounded transition-colors ${
+              className={`px-2.5 py-1 text-[10px] font-mono font-bold rounded transition-colors shrink-0 ${
                 platform === opt.value
                   ? 'bg-accent/10 text-accent'
                   : 'text-text-muted hover:text-text-secondary'

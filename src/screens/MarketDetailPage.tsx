@@ -573,7 +573,7 @@ export default function MarketDetailPage() {
 
   if (marketLoading) {
     return (
-      <div className="max-w-5xl mx-auto px-6 py-6 animate-pulse">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6 animate-pulse">
         {/* Back */}
         <div className="h-3 w-10 bg-bg-elevated rounded mb-5" />
         {/* Event context */}
@@ -650,7 +650,7 @@ export default function MarketDetailPage() {
   const uncertCfg = eventAi ? UNCERT_CFG[eventAi.uncertainty_level] : null
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-6">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
       {/* Back */}
       <button onClick={() => router.back()}
         className="flex items-center gap-1.5 text-xs font-mono text-text-muted hover:text-text-secondary transition-colors mb-5">
@@ -1165,7 +1165,7 @@ export default function MarketDetailPage() {
                   <div>
                     <p className="text-[10px] font-mono text-text-muted tracking-wider mb-3">SCENARIOS</p>
                     {isAlpha ? (
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         {eventAi.scenarios.map((s, i) => {
                           const cfg = s.label === 'bull'
                             ? { border: 'border-accent/30 bg-accent/5', lbl: 'text-accent', prob: 'text-accent' }
@@ -1186,7 +1186,7 @@ export default function MarketDetailPage() {
                       </div>
                     ) : (
                       <div className="relative">
-                        <div className="grid grid-cols-3 gap-2 blur-sm opacity-40 pointer-events-none select-none">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 blur-sm opacity-40 pointer-events-none select-none">
                           {['BULL', 'BASE', 'BEAR'].map((lbl) => (
                             <div key={lbl} className="rounded-lg border border-bg-border p-3">
                               <div className="flex items-center justify-between mb-1.5">

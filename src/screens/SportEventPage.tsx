@@ -100,15 +100,15 @@ function PlayerAvatar({ name, photo, size = 34 }: { name: string | null; photo?:
 function FormDots({ form, align = 'left' }: { form: FormEntry[] | null; align?: 'left' | 'right' }) {
   const dots: (FormEntry | null)[] = form ?? Array(5).fill(null)
   return (
-    <div className={`flex gap-1.5 ${align === 'right' ? 'flex-row-reverse' : ''}`}>
+    <div className={`flex gap-1 sm:gap-1.5 ${align === 'right' ? 'flex-row-reverse' : ''}`}>
       {dots.map((f, i) => f ? (
         <div key={i} title={`${f.home} ${f.score} ${f.away}`}
-          className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0"
+          className="w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center text-[8px] sm:text-[9px] font-bold shrink-0"
           style={{ background: FORM_COLOR[f.result], color: f.result === 'W' ? '#052010' : '#fff' }}>
           {f.result}
         </div>
       ) : (
-        <div key={i} className="w-5 h-5 rounded-full border border-bg-border bg-bg-elevated animate-pulse shrink-0" />
+        <div key={i} className="w-4 h-4 sm:w-5 sm:h-5 rounded-full border border-bg-border bg-bg-elevated animate-pulse shrink-0" />
       ))}
     </div>
   )
@@ -1123,7 +1123,7 @@ export default function SportEventPage({ id: idProp, onBack, onLeagueLoad, initi
         </div>
 
         {/* Matchup */}
-        <div className="px-6 pt-8 pb-6">
+        <div className="px-4 sm:px-6 pt-6 sm:pt-8 pb-4 sm:pb-6">
           <div className="grid items-start gap-2" style={{ gridTemplateColumns: '1fr auto 1fr' }}>
             {/* Home */}
             <div className="flex flex-col items-center gap-3">
@@ -1141,10 +1141,10 @@ export default function SportEventPage({ id: idProp, onBack, onLeagueLoad, initi
             </div>
 
             {/* Score */}
-            <div className="flex flex-col items-center justify-start pt-2 px-4 gap-1">
+            <div className="flex flex-col items-center justify-start pt-2 px-2 sm:px-4 gap-1">
               {hasScore ? (
                 <>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
                     {(() => {
                       const hs = event.home_score ?? 0, as_ = event.away_score ?? 0
                       const homeLeads = hs > as_, awayLeads = as_ > hs
@@ -1152,9 +1152,9 @@ export default function SportEventPage({ id: idProp, onBack, onLeagueLoad, initi
                       const homeColor = isLive ? liveColor : homeLeads ? accent : awayLeads ? 'rgba(var(--surface-tint-rgb),0.3)' : accent
                       const awayColor = isLive ? liveColor : awayLeads ? 'rgba(var(--surface-tint-rgb),0.9)' : homeLeads ? 'rgba(var(--surface-tint-rgb),0.3)' : accent
                       return (<>
-                        <span className="text-5xl font-mono font-black leading-none" style={{ color: homeColor }}>{event.home_score}</span>
-                        <span className="text-3xl font-mono text-text-muted/35 leading-none">:</span>
-                        <span className="text-5xl font-mono font-black leading-none" style={{ color: awayColor }}>{event.away_score}</span>
+                        <span className="text-4xl sm:text-5xl font-mono font-black leading-none" style={{ color: homeColor }}>{event.home_score}</span>
+                        <span className="text-2xl sm:text-3xl font-mono text-text-muted/35 leading-none">:</span>
+                        <span className="text-4xl sm:text-5xl font-mono font-black leading-none" style={{ color: awayColor }}>{event.away_score}</span>
                       </>)
                     })()}
                   </div>

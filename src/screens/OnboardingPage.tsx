@@ -239,7 +239,7 @@ function StepUseCase({
       <h1 className="text-2xl font-mono font-bold text-text-primary mb-2">How do you use prediction markets?</h1>
       <p className="text-sm font-mono text-text-muted mb-8">Help us tailor your analysis depth.</p>
 
-      <div className="grid grid-cols-3 gap-3 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
         {EXPERIENCE_OPTIONS.map((opt) => (
           <button
             key={opt.id}
@@ -280,7 +280,7 @@ function StepReady({ onFinish, saving }: { onFinish: () => void; saving: boolean
         Prescio is scanning markets right now. Your first edge signals are waiting.
       </p>
 
-      <div className="grid grid-cols-3 gap-3 mb-10 text-left">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-10 text-left">
         {[
           { icon: '⬡', title: 'Scan', desc: 'Markets scanned every 2h' },
           { icon: '⬢', title: 'Signal', desc: 'Edge scores for every event' },

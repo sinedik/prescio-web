@@ -209,8 +209,8 @@ function DateStrip({ dates, selected, onSelect, countByDate, liveCount, accent, 
   lang: Lang
 }) {
   return (
-    <div className="relative -mx-6">
-      <div className="flex overflow-x-auto gap-1.5 px-6 pb-2 pt-1 scrollbar-none"
+    <div className="relative -mx-3 sm:-mx-4 md:-mx-6">
+      <div className="flex overflow-x-auto gap-1.5 px-3 sm:px-4 md:px-6 pb-2 pt-1 scrollbar-none"
         style={{ scrollbarWidth: 'none' }}>
 
         {/* Live tab */}
@@ -789,8 +789,8 @@ export function SportScreen({ initialSport, eventId, initialEvents, initialEvent
       <main className="flex-1 min-w-0 px-3 sm:px-4 md:px-6 pb-5 pt-0">
 
         {/* Page header */}
-        <div className="flex items-center gap-0 mb-3 -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6 pt-3 pb-2"
-          style={{ position: 'sticky', top: 200, zIndex: 15, background: 'rgba(var(--bg-base-rgb), 0.75)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
+        <div className="flex items-center gap-0 mb-3 -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6 pt-3 pb-2 sport-sticky-header"
+          style={{ position: 'sticky', zIndex: 15, background: 'rgba(var(--bg-base-rgb), 0.75)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
         >
           {eventId ? (
             /* BreadcrumbBar style — same as TeamPage / PlayerPage */

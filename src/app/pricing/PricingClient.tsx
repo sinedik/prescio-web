@@ -126,7 +126,7 @@ export default function PricingClient() {
 
       {/* Navbar */}
       <header
-        className="h-14 flex items-center px-8 border-b"
+        className="h-14 flex items-center px-4 sm:px-8 border-b"
         style={{ borderColor: 'rgb(var(--bg-border))', background: 'rgb(var(--bg-base) / 0.95)' }}
       >
         <div className="flex items-center justify-between w-full max-w-5xl mx-auto">
@@ -164,7 +164,7 @@ export default function PricingClient() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-5xl px-6 py-20">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 py-10 sm:py-20">
 
         {/* Header */}
         <div className="text-center mb-16">

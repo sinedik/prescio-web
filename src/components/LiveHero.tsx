@@ -25,7 +25,7 @@ function FootballHero({ liveCount, totalCount, today }: { liveCount: number; tot
   const accent = 'rgb(var(--sport-football-rgb))'
   const a = (x: number) => `rgb(var(--sport-football-rgb) / ${x})`
   return (
-    <div style={{ position:'relative', width:'100%', height:200, overflow:'hidden', borderRadius:'12px 12px 0 0', background:SURFACE_A }}>
+    <div style={{ position:'relative', width:'100%', height:'100%', overflow:'hidden', borderRadius:'12px 12px 0 0', background:SURFACE_A }}>
       <div style={{ position:'absolute', top:-40, left:'22%', width:200, height:280, background:'conic-gradient(from 80deg at 50% 0%,transparent,rgba(255,240,180,0.07) 10deg,rgba(255,230,150,0.11) 18deg,rgba(255,240,180,0.07) 26deg,transparent 36deg)', zIndex:1 }} />
       <div style={{ position:'absolute', top:-40, right:'22%', width:200, height:280, background:'conic-gradient(from 74deg at 50% 0%,transparent,rgba(255,240,180,0.06) 10deg,rgba(255,230,150,0.10) 18deg,rgba(255,240,180,0.06) 26deg,transparent 36deg)', zIndex:1 }} />
       <div style={{ position:'absolute', bottom:-10, left:'-5%', right:'-5%', height:70, zIndex:2, background:`linear-gradient(180deg,transparent,${SURFACE_B05} 40%,${SURFACE_B08})` }} />
@@ -49,21 +49,21 @@ function FootballHero({ liveCount, totalCount, today }: { liveCount: number; tot
       </svg>
       <div style={{ position:'absolute', bottom:0, left:'25%', right:'25%', height:28, zIndex:9, background:`radial-gradient(ellipse,${a(0.12)},transparent 70%)` }} />
       <div style={{ position:'absolute', bottom:0, left:0, right:0, height:2, zIndex:10, background:`linear-gradient(90deg,transparent,${a(0)} 10%,${a(0.65)} 40%,${a(0.95)} 50%,${a(0.65)} 60%,${a(0)} 90%,transparent)` }} />
-      <div style={{ position:'absolute', inset:0, zIndex:10, display:'flex', alignItems:'center', padding:'0 44px', gap:28 }}>
+      <div className="live-hero-content" style={{ position:'absolute', inset:0, zIndex:10, display:'flex', alignItems:'center' }}>
         <div style={{ width:56, height:56, borderRadius:12, flexShrink:0, background:a(0.1), border:`1px solid ${a(0.3)}`, display:'flex', alignItems:'center', justifyContent:'center', color:accent }}>
           <LogoFootball size={32} />
         </div>
         <div style={{ flex:1 }}>
-          <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:a(0.85), marginBottom:7 }}>Football · Prediction Markets</div>
+          <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:accent, marginBottom:7 }}>Football · Prediction Markets</div>
           <div style={{ fontFamily:'"Oswald",sans-serif', fontSize:50, fontWeight:700, lineHeight:0.9, textTransform:'uppercase', letterSpacing:'0.04em', color:TEXT_PRIMARY, whiteSpace:'nowrap' }}>
             FOOT<span style={{ color:accent }}>BALL</span>
           </div>
           <div style={{ marginTop:10, display:'flex', alignItems:'center', gap:8 }}>
             <div style={{ height:1, width:24, background:a(0.35) }} />
-            <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, color:a(0.7), letterSpacing:'0.12em', textTransform:'uppercase' }}>EPL · La Liga · Bundesliga · Serie A</div>
+            <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, color:accent, letterSpacing:'0.12em', textTransform:'uppercase' }}>EPL · La Liga · Bundesliga · Serie A</div>
           </div>
         </div>
-        <div style={{ display:'flex', gap:20, alignItems:'center', flexShrink:0 }}>
+        <div className="live-hero-stats" style={{ gap:20, alignItems:'center', flexShrink:0 }}>
           <div style={{ textAlign:'center' }}>
             <div style={{ fontFamily:'"Oswald",sans-serif', fontSize:22, fontWeight:700, color:accent, lineHeight:1 }}>{liveCount}</div>
             <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'"JetBrains Mono",monospace' }}>Live</div>
@@ -74,7 +74,7 @@ function FootballHero({ liveCount, totalCount, today }: { liveCount: number; tot
             <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'"JetBrains Mono",monospace' }}>{today}</div>
           </div>
         </div>
-        <div style={{ display:'flex', alignItems:'center', gap:6, background:a(0.08), border:`1px solid ${a(0.28)}`, borderRadius:6, padding:'5px 12px', fontSize:10, fontWeight:700, letterSpacing:'0.12em', color:accent, textTransform:'uppercase', flexShrink:0, fontFamily:'"JetBrains Mono",monospace' }}>
+        <div style={{ alignItems:'center', gap:6, background:a(0.08), border:`1px solid ${a(0.28)}`, borderRadius:6, padding:'5px 12px', fontSize:10, fontWeight:700, letterSpacing:'0.12em', color:accent, textTransform:'uppercase', flexShrink:0, fontFamily:'"JetBrains Mono",monospace' }} className="live-hero-badge">
           <span className="animate-pulse" style={{ width:5, height:5, borderRadius:'50%', background:accent, display:'inline-block', boxShadow:`0 0 6px ${a(0.85)}` }} />
           Live
         </div>
@@ -87,24 +87,24 @@ function BasketballHero({ liveCount, totalCount, today }: { liveCount: number; t
   const accent = 'rgb(var(--sport-basketball-rgb))'
   const a = (x: number) => `rgb(var(--sport-basketball-rgb) / ${x})`
   return (
-    <div style={{ position:'relative', width:'100%', height:200, overflow:'hidden', borderRadius:'12px 12px 0 0', background:SURFACE_A }}>
+    <div style={{ position:'relative', width:'100%', height:'100%', overflow:'hidden', borderRadius:'12px 12px 0 0', background:SURFACE_A }}>
       <div style={{ position:'absolute', inset:0, zIndex:4, background:`linear-gradient(90deg,${VIGNETTE_92},${VIGNETTE_70} 28%,transparent 62%)` }} />
       <div style={{ position:'absolute', bottom:0, left:0, right:0, height:2, zIndex:10, background:`linear-gradient(90deg,transparent,${a(0)} 10%,${a(0.7)} 50%,${a(0)} 90%,transparent)` }} />
-      <div style={{ position:'absolute', inset:0, zIndex:10, display:'flex', alignItems:'center', padding:'0 44px', gap:28 }}>
+      <div className="live-hero-content" style={{ position:'absolute', inset:0, zIndex:10, display:'flex', alignItems:'center' }}>
         <div style={{ width:56, height:56, borderRadius:12, flexShrink:0, background:a(0.1), border:`1px solid ${a(0.3)}`, display:'flex', alignItems:'center', justifyContent:'center', color:accent }}>
           <LogoBasketball size={32} />
         </div>
         <div style={{ flex:1 }}>
-          <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:a(0.85), marginBottom:7 }}>Basketball · Prediction Markets</div>
+          <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:accent, marginBottom:7 }}>Basketball · Prediction Markets</div>
           <div style={{ fontFamily:'"Bebas Neue",sans-serif', fontSize:56, fontWeight:700, lineHeight:0.9, textTransform:'uppercase', letterSpacing:'0.06em', color:TEXT_PRIMARY, whiteSpace:'nowrap' }}>
             BASKET<span style={{ color:accent }}>BALL</span>
           </div>
           <div style={{ marginTop:10, display:'flex', alignItems:'center', gap:8 }}>
             <div style={{ height:1, width:24, background:a(0.3) }} />
-            <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, color:a(0.7), letterSpacing:'0.12em', textTransform:'uppercase' }}>NBA · EuroLeague · FIBA</div>
+            <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, color:accent, letterSpacing:'0.12em', textTransform:'uppercase' }}>NBA · EuroLeague · FIBA</div>
           </div>
         </div>
-        <div style={{ display:'flex', gap:20, alignItems:'center', flexShrink:0 }}>
+        <div className="live-hero-stats" style={{ gap:20, alignItems:'center', flexShrink:0 }}>
           <div style={{ textAlign:'center' }}>
             <div style={{ fontFamily:'"Bebas Neue",sans-serif', fontSize:22, fontWeight:700, color:accent, lineHeight:1 }}>{liveCount}</div>
             <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'"JetBrains Mono",monospace' }}>Live</div>
@@ -115,7 +115,7 @@ function BasketballHero({ liveCount, totalCount, today }: { liveCount: number; t
             <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'"JetBrains Mono",monospace' }}>{today}</div>
           </div>
         </div>
-        <div style={{ display:'flex', alignItems:'center', gap:6, background:a(0.08), border:`1px solid ${a(0.28)}`, borderRadius:6, padding:'5px 12px', fontSize:10, fontWeight:700, letterSpacing:'0.12em', color:accent, textTransform:'uppercase', flexShrink:0, fontFamily:'"JetBrains Mono",monospace' }}>
+        <div style={{ alignItems:'center', gap:6, background:a(0.08), border:`1px solid ${a(0.28)}`, borderRadius:6, padding:'5px 12px', fontSize:10, fontWeight:700, letterSpacing:'0.12em', color:accent, textTransform:'uppercase', flexShrink:0, fontFamily:'"JetBrains Mono",monospace' }} className="live-hero-badge">
           <span className="animate-pulse" style={{ width:5, height:5, borderRadius:'50%', background:accent, display:'inline-block', boxShadow:`0 0 6px ${a(0.8)}` }} />
           Live
         </div>
@@ -128,7 +128,7 @@ function TennisHero({ liveCount, totalCount, today }: { liveCount: number; total
   const accent = 'rgb(var(--sport-tennis-rgb))'
   const a = (x: number) => `rgb(var(--sport-tennis-rgb) / ${x})`
   return (
-    <div style={{ position:'relative', width:'100%', height:200, overflow:'hidden', borderRadius:'12px 12px 0 0', background:SURFACE_A }}>
+    <div style={{ position:'relative', width:'100%', height:'100%', overflow:'hidden', borderRadius:'12px 12px 0 0', background:SURFACE_A }}>
       <div style={{ position:'absolute', top:-30, left:'15%', width:180, height:250, background:`conic-gradient(from 78deg at 50% 0%,transparent,${a(0.07)} 14deg,${a(0.11)} 22deg,${a(0.07)} 30deg,transparent 44deg)`, zIndex:1 }} />
       <div style={{ position:'absolute', top:-30, right:'10%', width:180, height:250, background:`conic-gradient(from 70deg at 50% 0%,transparent,${a(0.06)} 14deg,${a(0.09)} 22deg,${a(0.06)} 30deg,transparent 44deg)`, zIndex:1 }} />
       <div style={{ position:'absolute', bottom:-8, left:'-5%', right:'-5%', height:68, zIndex:2, background:`linear-gradient(180deg,${SURFACE_B04},${SURFACE_B075})`, clipPath:'polygon(8% 0%,92% 0%,100% 100%,0% 100%)' }} />
@@ -146,12 +146,12 @@ function TennisHero({ liveCount, totalCount, today }: { liveCount: number; total
       </svg>
       <div style={{ position:'absolute', bottom:0, left:'25%', right:'25%', height:28, zIndex:9, background:`radial-gradient(ellipse,${a(0.1)},transparent 70%)` }} />
       <div style={{ position:'absolute', bottom:0, left:0, right:0, height:2, zIndex:10, background:`linear-gradient(90deg,transparent,${a(0)} 10%,${a(0.7)} 50%,${a(0)} 90%,transparent)` }} />
-      <div style={{ position:'absolute', inset:0, zIndex:10, display:'flex', alignItems:'center', padding:'0 44px', gap:28 }}>
+      <div className="live-hero-content" style={{ position:'absolute', inset:0, zIndex:10, display:'flex', alignItems:'center' }}>
         <div style={{ width:56, height:56, borderRadius:12, flexShrink:0, background:a(0.1), border:`1px solid ${a(0.3)}`, display:'flex', alignItems:'center', justifyContent:'center', color:accent }}>
           <LogoTennis size={32} />
         </div>
         <div style={{ flex:1 }}>
-          <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:a(0.85), marginBottom:7 }}>Tennis · Prediction Markets</div>
+          <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:accent, marginBottom:7 }}>Tennis · Prediction Markets</div>
           <div style={{ fontFamily:'"Barlow Condensed",sans-serif', fontSize:54, fontWeight:800, lineHeight:0.9, textTransform:'uppercase', letterSpacing:'0.05em', color:TEXT_PRIMARY, whiteSpace:'nowrap' }}>
             TEN<span style={{ color:accent }}>NIS</span>
           </div>
@@ -160,7 +160,7 @@ function TennisHero({ liveCount, totalCount, today }: { liveCount: number; total
             <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase' }}>ATP · WTA · Grand Slams</div>
           </div>
         </div>
-        <div style={{ display:'flex', gap:20, alignItems:'center', flexShrink:0 }}>
+        <div className="live-hero-stats" style={{ gap:20, alignItems:'center', flexShrink:0 }}>
           <div style={{ textAlign:'center' }}>
             <div style={{ fontFamily:'"Barlow Condensed",sans-serif', fontSize:22, fontWeight:700, color:accent, lineHeight:1 }}>{liveCount}</div>
             <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'"JetBrains Mono",monospace' }}>Live</div>
@@ -171,7 +171,7 @@ function TennisHero({ liveCount, totalCount, today }: { liveCount: number; total
             <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'"JetBrains Mono",monospace' }}>{today}</div>
           </div>
         </div>
-        <div style={{ display:'flex', alignItems:'center', gap:6, background:a(0.08), border:`1px solid ${a(0.28)}`, borderRadius:6, padding:'5px 12px', fontSize:10, fontWeight:700, letterSpacing:'0.12em', color:accent, textTransform:'uppercase', flexShrink:0, fontFamily:'"JetBrains Mono",monospace' }}>
+        <div style={{ alignItems:'center', gap:6, background:a(0.08), border:`1px solid ${a(0.28)}`, borderRadius:6, padding:'5px 12px', fontSize:10, fontWeight:700, letterSpacing:'0.12em', color:accent, textTransform:'uppercase', flexShrink:0, fontFamily:'"JetBrains Mono",monospace' }} className="live-hero-badge">
           <span className="animate-pulse" style={{ width:5, height:5, borderRadius:'50%', background:accent, display:'inline-block', boxShadow:`0 0 6px ${a(0.8)}` }} />
           Live
         </div>
@@ -184,7 +184,7 @@ function MMAHero({ liveCount, totalCount, today }: { liveCount: number; totalCou
   const accent = 'rgb(var(--sport-mma-rgb))'
   const a = (x: number) => `rgb(var(--sport-mma-rgb) / ${x})`
   return (
-    <div style={{ position:'relative', width:'100%', height:200, overflow:'hidden', borderRadius:'12px 12px 0 0', background:SURFACE_A }}>
+    <div style={{ position:'relative', width:'100%', height:'100%', overflow:'hidden', borderRadius:'12px 12px 0 0', background:SURFACE_A }}>
       <div style={{ position:'absolute', top:-10, left:'50%', transform:'translateX(-50%)', width:200, height:240, background:`conic-gradient(from 76deg at 50% 0%,transparent,${a(0.06)} 12deg,${a(0.12)} 24deg,${a(0.06)} 36deg,transparent 48deg)`, zIndex:1 }} />
       <div style={{ position:'absolute', bottom:-8, left:'-5%', right:'-5%', height:52, zIndex:1, background:`linear-gradient(180deg,${SURFACE_B04},${SURFACE_B065})`, clipPath:'polygon(8% 0%,92% 0%,100% 100%,0% 100%)' }} />
       <div style={{ position:'absolute', bottom:-8, left:'-5%', right:'-5%', height:75, zIndex:2, backgroundImage:`repeating-linear-gradient(0deg,${GRID_LINE} 0px,${GRID_LINE} 1px,transparent 1px,transparent 14px),repeating-linear-gradient(90deg,${GRID_LINE} 0px,${GRID_LINE} 1px,transparent 1px,transparent 14px)` }} />
@@ -202,21 +202,21 @@ function MMAHero({ liveCount, totalCount, today }: { liveCount: number; totalCou
       </svg>
       <div style={{ position:'absolute', bottom:0, left:'25%', right:'25%', height:28, zIndex:9, background:`radial-gradient(ellipse,${a(0.12)},transparent 70%)` }} />
       <div style={{ position:'absolute', bottom:0, left:0, right:0, height:2, zIndex:10, background:`linear-gradient(90deg,transparent,${a(0)} 10%,${a(0.8)} 50%,${a(0)} 90%,transparent)` }} />
-      <div style={{ position:'absolute', inset:0, zIndex:10, display:'flex', alignItems:'center', padding:'0 44px', gap:28 }}>
+      <div className="live-hero-content" style={{ position:'absolute', inset:0, zIndex:10, display:'flex', alignItems:'center' }}>
         <div style={{ width:56, height:56, borderRadius:12, flexShrink:0, background:a(0.1), border:`1px solid ${a(0.35)}`, display:'flex', alignItems:'center', justifyContent:'center', color:accent }}>
           <LogoMMA size={32} />
         </div>
         <div style={{ flex:1 }}>
-          <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:a(0.85), marginBottom:7 }}>Mixed Martial Arts · Prediction Markets</div>
+          <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:accent, marginBottom:7 }}>Mixed Martial Arts · Prediction Markets</div>
           <div style={{ fontFamily:'"Barlow Condensed",sans-serif', fontSize:54, fontWeight:800, lineHeight:0.9, textTransform:'uppercase', letterSpacing:'0.06em', color:TEXT_PRIMARY, whiteSpace:'nowrap' }}>
             MMA <span style={{ color:accent }}>FIGHTS</span>
           </div>
           <div style={{ marginTop:10, display:'flex', alignItems:'center', gap:8 }}>
             <div style={{ height:1, width:24, background:a(0.35) }} />
-            <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, color:a(0.7), letterSpacing:'0.12em', textTransform:'uppercase' }}>UFC · Bellator · ONE Championship</div>
+            <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, color:accent, letterSpacing:'0.12em', textTransform:'uppercase' }}>UFC · Bellator · ONE Championship</div>
           </div>
         </div>
-        <div style={{ display:'flex', gap:20, alignItems:'center', flexShrink:0 }}>
+        <div className="live-hero-stats" style={{ gap:20, alignItems:'center', flexShrink:0 }}>
           <div style={{ textAlign:'center' }}>
             <div style={{ fontFamily:'"Barlow Condensed",sans-serif', fontSize:22, fontWeight:700, color:accent, lineHeight:1 }}>{liveCount}</div>
             <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'"JetBrains Mono",monospace' }}>Live</div>
@@ -227,7 +227,7 @@ function MMAHero({ liveCount, totalCount, today }: { liveCount: number; totalCou
             <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'"JetBrains Mono",monospace' }}>{today}</div>
           </div>
         </div>
-        <div style={{ display:'flex', alignItems:'center', gap:6, background:a(0.08), border:`1px solid ${a(0.3)}`, borderRadius:6, padding:'5px 12px', fontSize:10, fontWeight:700, letterSpacing:'0.12em', color:accent, textTransform:'uppercase', flexShrink:0, fontFamily:'"JetBrains Mono",monospace' }}>
+        <div style={{ alignItems:'center', gap:6, background:a(0.08), border:`1px solid ${a(0.3)}`, borderRadius:6, padding:'5px 12px', fontSize:10, fontWeight:700, letterSpacing:'0.12em', color:accent, textTransform:'uppercase', flexShrink:0, fontFamily:'"JetBrains Mono",monospace' }} className="live-hero-badge">
           <span className="animate-pulse" style={{ width:5, height:5, borderRadius:'50%', background:accent, display:'inline-block', boxShadow:`0 0 6px ${a(0.8)}` }} />
           Live
         </div>
@@ -249,7 +249,7 @@ function CS2Hero({ liveCount, totalCount }: { liveCount: number; totalCount: num
   const noise   = 'var(--hero-cs2-noise)'
   const text    = 'var(--hero-cs2-base-text)'
   return (
-    <div style={{ position:'relative', width:'100%', height:200, overflow:'hidden', borderRadius:'12px 12px 0 0', background:base }}>
+    <div style={{ position:'relative', width:'100%', height:'100%', overflow:'hidden', borderRadius:'12px 12px 0 0', background:base }}>
       <div style={{ position:'absolute', left:0, top:0, bottom:0, width:'42%', background:`linear-gradient(105deg,${base} 60%,transparent 100%)`, zIndex:2 }} />
       <div style={{ position:'absolute', right:-60, top:-40, bottom:-40, width:'75%', zIndex:1, transform:'skewX(-12deg)', transformOrigin:'top right', display:'flex' }}>
         <div style={{ height:'100%', width:'55%', background:deep }} />
@@ -263,19 +263,19 @@ function CS2Hero({ liveCount, totalCount }: { liveCount: number; totalCount: num
       <div style={{ position:'absolute', inset:0, zIndex:2, pointerEvents:'none', backgroundImage:`repeating-linear-gradient(-12deg,transparent,transparent 28px,${noise} 28px,${noise} 29px)` }} />
       <div style={{ position:'absolute', bottom:0, left:'25%', right:'25%', height:28, zIndex:9, background:`radial-gradient(ellipse,${a(0.1)},transparent 70%)` }} />
       <div style={{ position:'absolute', bottom:0, left:0, right:0, height:2, zIndex:10, background:`linear-gradient(90deg,transparent,${a(0)} 10%,${a(0.7)} 50%,${a(0)} 90%,transparent)` }} />
-      <div style={{ position:'absolute', inset:0, zIndex:10, display:'flex', alignItems:'center', padding:'0 44px', gap:28 }}>
+      <div className="live-hero-content" style={{ position:'absolute', inset:0, zIndex:10, display:'flex', alignItems:'center' }}>
         <ShimmerGameLogo game="cs2" size={72} />
         <div style={{ flex:1 }}>
-          <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:a(0.85), marginBottom:7 }}>Esports · Prediction Markets</div>
+          <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:accent, marginBottom:7 }}>Esports · Prediction Markets</div>
           <div style={{ fontFamily:'"Rajdhani",sans-serif', fontSize:52, fontWeight:700, lineHeight:0.9, textTransform:'uppercase', letterSpacing:'0.04em', color:text, whiteSpace:'nowrap' }}>
             COUNTER<br />STRIKE <span style={{ color:accent }}>2</span>
           </div>
           <div style={{ marginTop:10, display:'flex', alignItems:'center', gap:8 }}>
             <div style={{ height:1, width:24, background:a(0.3) }} />
-            <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, color:a(0.7), letterSpacing:'0.12em', textTransform:'uppercase' }}>BLAST · ESL · PGL · IEM</div>
+            <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, color:accent, letterSpacing:'0.12em', textTransform:'uppercase' }}>BLAST · ESL · PGL · IEM</div>
           </div>
         </div>
-        <div style={{ display:'flex', gap:20, alignItems:'center', flexShrink:0 }}>
+        <div className="live-hero-stats" style={{ gap:20, alignItems:'center', flexShrink:0 }}>
           <div style={{ textAlign:'center' }}>
             <div style={{ fontFamily:'"Rajdhani",sans-serif', fontSize:22, fontWeight:700, color:accent, lineHeight:1 }}>{liveCount}</div>
             <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'"JetBrains Mono",monospace' }}>Live</div>
@@ -287,7 +287,7 @@ function CS2Hero({ liveCount, totalCount }: { liveCount: number; totalCount: num
           </div>
         </div>
         {liveCount > 0 && (
-          <div style={{ display:'flex', alignItems:'center', gap:6, background:a(0.08), border:`1px solid ${a(0.28)}`, borderRadius:6, padding:'5px 12px', fontSize:10, fontWeight:700, letterSpacing:'0.12em', color:accent, textTransform:'uppercase', flexShrink:0, fontFamily:'"JetBrains Mono",monospace' }}>
+          <div style={{ alignItems:'center', gap:6, background:a(0.08), border:`1px solid ${a(0.28)}`, borderRadius:6, padding:'5px 12px', fontSize:10, fontWeight:700, letterSpacing:'0.12em', color:accent, textTransform:'uppercase', flexShrink:0, fontFamily:'"JetBrains Mono",monospace' }} className="live-hero-badge">
             <span className="animate-pulse" style={{ width:5, height:5, borderRadius:'50%', background:accent, display:'inline-block', boxShadow:`0 0 6px ${a(0.8)}` }} />
             Live
           </div>
@@ -307,7 +307,7 @@ function Dota2Hero({ liveCount, totalCount }: { liveCount: number; totalCount: n
   const noiseLine    = 'var(--hero-dota-noise)'
   const titleShadow  = 'var(--hero-dota-text-shadow)'
   return (
-    <div style={{ position:'relative', width:'100%', height:200, overflow:'hidden', borderRadius:'12px 12px 0 0' }}>
+    <div style={{ position:'relative', width:'100%', height:'100%', overflow:'hidden', borderRadius:'12px 12px 0 0' }}>
       <div style={{ position:'absolute', inset:0, background:baseGradient }} />
       <div style={{ position:'absolute', right:'5%', top:'-30%', width:'55%', height:'160%', background:'radial-gradient(ellipse,rgba(160,20,20,0.22) 0%,rgba(100,10,10,0.12) 40%,transparent 70%)', zIndex:1 }} />
       <div style={{ position:'absolute', right:'-5%', top:'-20%', width:'35%', height:'140%', background:'radial-gradient(ellipse,rgba(180,120,20,0.15) 0%,rgba(140,80,10,0.07) 50%,transparent 70%)', zIndex:1 }} />
@@ -328,10 +328,10 @@ function Dota2Hero({ liveCount, totalCount }: { liveCount: number; totalCount: n
       </svg>
       <div style={{ position:'absolute', bottom:0, left:'20%', right:'20%', height:30, zIndex:9, background:`radial-gradient(ellipse,${a(0.12)},transparent 70%)` }} />
       <div style={{ position:'absolute', bottom:0, left:0, right:0, height:2, zIndex:10, background:`linear-gradient(90deg,transparent,${gold}00 10%,${gold}80 35%,${a(0.8)} 50%,${gold}80 65%,${gold}00 90%,transparent)` }} />
-      <div style={{ position:'absolute', inset:0, zIndex:10, display:'flex', alignItems:'center', padding:'0 44px', gap:28 }}>
+      <div className="live-hero-content" style={{ position:'absolute', inset:0, zIndex:10, display:'flex', alignItems:'center' }}>
         <ShimmerGameLogo game="dota2" size={72} />
         <div style={{ flex:1 }}>
-          <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, letterSpacing:'0.22em', textTransform:'uppercase', color:a(0.85), marginBottom:8 }}>Defense of the Ancients · Prediction Markets</div>
+          <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, letterSpacing:'0.22em', textTransform:'uppercase', color:accent, marginBottom:8 }}>Defense of the Ancients · Prediction Markets</div>
           <div style={{ fontFamily:'"Cinzel",serif', fontSize:44, fontWeight:900, lineHeight:0.88, textTransform:'uppercase', letterSpacing:'0.06em', color:textColor, textShadow:titleShadow, whiteSpace:'nowrap' }}>
             DOTA <span style={{ color:accent, textShadow:`0 0 20px ${a(0.8)},0 0 60px ${a(0.3)}` }}>2</span>
           </div>
@@ -341,7 +341,7 @@ function Dota2Hero({ liveCount, totalCount }: { liveCount: number; totalCount: n
             <div style={{ height:1, width:32, background:`linear-gradient(90deg,${gold}66,transparent)` }} />
           </div>
         </div>
-        <div style={{ display:'flex', gap:20, alignItems:'center', flexShrink:0 }}>
+        <div className="live-hero-stats" style={{ gap:20, alignItems:'center', flexShrink:0 }}>
           <div style={{ textAlign:'center' }}>
             <div style={{ fontFamily:'"Cinzel",serif', fontSize:20, fontWeight:700, color:accent, lineHeight:1 }}>{liveCount}</div>
             <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'"JetBrains Mono",monospace' }}>Live</div>
@@ -353,7 +353,7 @@ function Dota2Hero({ liveCount, totalCount }: { liveCount: number; totalCount: n
           </div>
         </div>
         {liveCount > 0 && (
-          <div style={{ display:'flex', alignItems:'center', gap:6, background:a(0.1), border:`1px solid ${a(0.3)}`, borderRadius:6, padding:'5px 12px', fontSize:10, fontWeight:700, letterSpacing:'0.12em', color:accent, textTransform:'uppercase', flexShrink:0, fontFamily:'"JetBrains Mono",monospace' }}>
+          <div style={{ alignItems:'center', gap:6, background:a(0.1), border:`1px solid ${a(0.3)}`, borderRadius:6, padding:'5px 12px', fontSize:10, fontWeight:700, letterSpacing:'0.12em', color:accent, textTransform:'uppercase', flexShrink:0, fontFamily:'"JetBrains Mono",monospace' }} className="live-hero-badge">
             <span className="animate-pulse" style={{ width:5, height:5, borderRadius:'50%', background:accent, display:'inline-block', boxShadow:`0 0 6px ${a(0.8)}` }} />
             Live
           </div>
@@ -370,11 +370,14 @@ export function LiveHero({ discipline }: { discipline: Discipline }) {
   const t = useT(lang)
   const today = t('common.today')
 
-  if (discipline === 'football')   return <FootballHero   liveCount={liveCount} totalCount={totalCount} today={today} />
-  if (discipline === 'basketball') return <BasketballHero liveCount={liveCount} totalCount={totalCount} today={today} />
-  if (discipline === 'tennis')     return <TennisHero     liveCount={liveCount} totalCount={totalCount} today={today} />
-  if (discipline === 'mma')        return <MMAHero        liveCount={liveCount} totalCount={totalCount} today={today} />
-  if (discipline === 'cs2')        return <CS2Hero        liveCount={liveCount} totalCount={totalCount} />
-  if (discipline === 'dota2')      return <Dota2Hero      liveCount={liveCount} totalCount={totalCount} />
-  return null
+  let hero: React.ReactNode = null
+  if (discipline === 'football')   hero = <FootballHero   liveCount={liveCount} totalCount={totalCount} today={today} />
+  else if (discipline === 'basketball') hero = <BasketballHero liveCount={liveCount} totalCount={totalCount} today={today} />
+  else if (discipline === 'tennis')     hero = <TennisHero     liveCount={liveCount} totalCount={totalCount} today={today} />
+  else if (discipline === 'mma')        hero = <MMAHero        liveCount={liveCount} totalCount={totalCount} today={today} />
+  else if (discipline === 'cs2')        hero = <CS2Hero        liveCount={liveCount} totalCount={totalCount} />
+  else if (discipline === 'dota2')      hero = <Dota2Hero      liveCount={liveCount} totalCount={totalCount} />
+  if (!hero) return null
+
+  return <div className="live-hero-wrap">{hero}</div>
 }

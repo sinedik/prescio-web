@@ -12,6 +12,7 @@ import { IconMoon, IconSun } from './icons'
 import { SearchOverlay } from './search/SearchOverlay'
 import { useLang } from '../contexts/LanguageContext'
 import { useT } from '../lib/i18n'
+import { BottomTabBar } from './BottomTabBar'
 
 interface Alert {
   id: string
@@ -161,8 +162,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <Logo size={32} textSize={15} />
           </div>
 
-          {/* Nav — flex-1 centred in flow so it never overlaps the right cluster */}
-          <nav className="flex-1 min-w-0 flex items-center justify-center gap-0.5">
+          {/* Nav — desktop only */}
+          <nav className="hidden md:flex flex-1 min-w-0 items-center justify-center gap-0.5">
             {NAV_BASES.map(({ to, key }) => {
               const path = pathname ?? ''
               const isActive = path === to || path.startsWith(`${to}/`)
@@ -173,7 +174,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   <button
                     key={to}
                     onClick={() => startNavTransition(() => router.push(href))}
-                    className={`px-3 py-1.5 text-[11px] font-mono tracking-widest rounded-md transition-colors text-text-muted font-medium hover:text-text-secondary`}
+                    className="px-3 py-1.5 text-[11px] font-mono tracking-widest rounded-md transition-colors text-text-muted font-medium hover:text-text-secondary"
                   >
                     {tr(key)}
                   </button>
@@ -196,18 +197,20 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               )
             })}
           </nav>
+          {/* Mobile — spacer so right cluster stays right */}
+          <div className="md:hidden flex-1" />
 
           {/* Right cluster */}
           <div className="flex items-center gap-3 shrink-0">
 
-            {/* Live status */}
-            <div className="hidden sm:flex items-center gap-1.5">
+            {/* Live status — desktop only */}
+            <div className="hidden lg:flex items-center gap-1.5">
               <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotClass}`} />
               <span className={`text-[10px] font-mono font-bold tracking-widest ${textClass}`}>{tr(labelKey)}</span>
             </div>
 
             {/* Divider */}
-            <div className="hidden sm:block w-px h-4" style={{ background: 'rgb(var(--bg-border))' }} />
+            <div className="hidden lg:block w-px h-4" style={{ background: 'rgb(var(--bg-border))' }} />
 
             {/* Theme toggle */}
             <div
@@ -230,7 +233,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               ))}
             </div>
 
-            {/* Language toggle */}
+            {/* Language toggle — desktop only */}
             <div
               className="hidden sm:flex items-center rounded-md p-0.5 gap-0.5"
               style={{
@@ -254,7 +257,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               ))}
             </div>
 
-            {/* Plan badge */}
+            {/* Plan badge — desktop only */}
             {plan === 'alpha' && (
               <span className="hidden sm:inline text-[9px] font-mono font-bold px-2 py-0.5 rounded"
                 style={{
@@ -276,7 +279,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               </span>
             )}
 
-            {/* AI Search — only for authed users */}
+            {/* AI Search — desktop only */}
             {user && (
               <button
                 onClick={() => setSearchOpen(true)}
@@ -370,12 +373,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </div>
             )}
 
-            {/* Avatar (authed) or Sign in (guest) */}
+            {/* Avatar (authed) — desktop only; mobile uses bottom tab */}
             {user ? (
               <button
                 onClick={() => router.push('/profile')}
                 title={email}
-                className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-mono font-bold transition-all duration-150"
+                className="hidden md:flex w-7 h-7 rounded-full items-center justify-center text-[10px] font-mono font-bold transition-all duration-150"
                 style={{
                   background: 'rgb(var(--accent) / 0.1)',
                   border: '1px solid rgb(var(--bg-border))',
@@ -389,7 +392,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             ) : (
               <button
                 onClick={() => router.push('/auth')}
-                className="px-3 py-1 rounded-md text-[11px] font-mono font-bold tracking-wider transition-all duration-150"
+                className="hidden md:block px-3 py-1 rounded-md text-[11px] font-mono font-bold tracking-wider transition-all duration-150"
                 style={{
                   background: 'rgb(var(--accent) / 0.1)',
                   border: '1px solid rgb(var(--accent) / 0.3)',
@@ -417,12 +420,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Main */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto md:pb-0 pb-14">
         {children}
         {!pathname.startsWith('/sport') && !pathname.startsWith('/cybersport') && (
           <AppFooter />
         )}
       </main>
+
+      {/* Bottom tab bar — mobile only */}
+      <BottomTabBar />
 
       <SearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} plan={planForSearch} />
     </div>

@@ -261,7 +261,7 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
 
   if (loading) {
     return (
-      <div className="max-w-5xl mx-auto px-6 py-6">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
         <div className="space-y-4 animate-pulse">
           <div className="h-3 w-20 bg-bg-elevated rounded" />
           <div className="h-48 w-full bg-bg-elevated rounded-xl" />
@@ -275,7 +275,7 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
 
   if (!event) {
     return (
-      <div className="max-w-5xl mx-auto px-6 py-6 text-center py-20">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6 text-center py-20">
         <p className="text-sm font-mono text-text-muted">EVENT NOT FOUND</p>
         <button onClick={() => router.push('/markets')} className="mt-4 text-xs font-mono text-accent hover:text-accent/80">
           Back to markets
@@ -299,7 +299,7 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
   const enrichPending = enrichStatus === 'pending'
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-6">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
       {/* Back */}
       <button
         onClick={() => router.push('/markets')}
@@ -449,7 +449,7 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
           <div>
             <p className="text-[10px] font-mono text-text-muted tracking-wider mb-3">SCENARIOS</p>
             {isAlpha && aiSummary.scenarios?.length ? (
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {aiSummary.scenarios.map((s, i) => {
                   const cfg = s.label === 'bull'
                     ? { border: 'border-accent/30 bg-accent/5', lbl: 'text-accent', prob: 'text-accent' }
@@ -483,7 +483,7 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
               </div>
             ) : (
               <div className="relative">
-                <div className="grid grid-cols-3 gap-2 blur-sm opacity-40 pointer-events-none select-none">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 blur-sm opacity-40 pointer-events-none select-none">
                   {['BULL', 'BASE', 'BEAR'].map((lbl) => (
                     <div key={lbl} className="rounded-lg border border-bg-border p-3">
                       <div className="flex items-center justify-between mb-1.5">

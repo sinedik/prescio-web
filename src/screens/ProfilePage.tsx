@@ -151,7 +151,7 @@ export default function ProfilePage() {
     <div className="max-w-2xl mx-auto">
 
       {/* ── TABS ── */}
-      <div className="flex gap-1 px-6 pt-6 pb-0 border-b" style={{ borderColor: 'rgb(var(--bg-border))' }}>
+      <div className="flex gap-1 px-4 sm:px-6 pt-4 sm:pt-6 pb-0 border-b" style={{ borderColor: 'rgb(var(--bg-border))' }}>
         {(['profile', 'research'] as const).map(tab => (
           <button
             key={tab}
@@ -173,7 +173,7 @@ export default function ProfilePage() {
 
       {/* ── PROFILE TAB ── */}
       {activeTab === 'profile' && (
-      <div className="px-6 py-10">
+      <div className="px-4 sm:px-6 py-6 sm:py-10">
 
       {/* ── BLOCK 1: HEADER ── */}
       <div className="flex items-start gap-4 mb-8">
@@ -359,7 +359,7 @@ export default function ProfilePage() {
       {/* ── BLOCK 4: INTERESTS ── */}
       <div>
         <SectionTitle>MARKET INTERESTS</SectionTitle>
-        <div className="grid grid-cols-3 gap-2 mb-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
           {INTERESTS.map((interest) => {
             const isActive = selectedInterests.includes(interest.id)
             return (

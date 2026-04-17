@@ -337,6 +337,76 @@
   animation: socialGlow 200ms ease-out forwards;
 }
 
+/* ── Live layout shell — accounts for header (52px) and mobile bottom tab (56px) ─ */
+.live-shell {
+  height: calc(100dvh - 52px - 56px);
+  overflow: hidden;
+}
+
+/* Sport/Cybersport sticky sub-header — offset matches live-hero-wrap height */
+.sport-sticky-header {
+  top: 120px;
+}
+@media (min-width: 640px) {
+  .sport-sticky-header {
+    top: 160px;
+  }
+}
+@media (min-width: 768px) {
+  .sport-sticky-header {
+    top: 200px;
+  }
+}
+
+/* Hero — responsive height clipping */
+.live-hero-wrap {
+  overflow: hidden;
+  height: 120px;
+}
+@media (min-width: 640px) {
+  .live-hero-wrap {
+    height: 160px;
+  }
+}
+@media (min-width: 768px) {
+  .live-hero-wrap {
+    height: 200px;
+  }
+}
+
+/* Hero content — responsive padding and visibility */
+.live-hero-content {
+  padding: 0 16px;
+  gap: 16px;
+}
+@media (min-width: 640px) {
+  .live-hero-content {
+    padding: 0 32px;
+    gap: 24px;
+  }
+}
+@media (min-width: 768px) {
+  .live-hero-content {
+    padding: 0 44px;
+    gap: 28px;
+  }
+}
+.live-hero-stats,
+.live-hero-badge {
+  display: none;
+}
+@media (min-width: 640px) {
+  .live-hero-stats,
+  .live-hero-badge {
+    display: flex;
+  }
+}
+@media (min-width: 768px) {
+  .live-shell {
+    height: calc(100dvh - 52px);
+  }
+}
+
 /* ── Live layout (sport / cybersport) backgrounds ─────────────────────────── */
 .live-content {
   background: rgba(var(--bg-base-rgb), 0.35);
@@ -344,24 +414,21 @@
   -webkit-backdrop-filter: blur(6px);
 }
 [data-theme="light"] .live-content {
-  background: rgba(var(--bg-base-rgb), 0.55);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(var(--bg-base-rgb), 0.88);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 /* WorldBackground SVG art is dark-tuned. On light theme, multiply blend-mode
    keeps the dark decorative strokes visible against the parchment-like base
-   (the white parts of the artwork drop out, the dark lines stay as sepia).
-   Applied to inner SVG/glow because the .live-world-bg wrapper has inline
-   opacity used for pending transitions. Walk descendants — WorldBackground
-   wraps everything in its own inner div. */
+   (the white parts of the artwork drop out, the dark lines stay as sepia). */
 [data-theme="light"] .live-world-bg svg,
 [data-theme="light"] .live-world-bg image {
-  opacity: 0.65;
+  opacity: 0.35;
   mix-blend-mode: multiply;
-  filter: saturate(0.85) hue-rotate(-8deg);
+  filter: saturate(0.8) hue-rotate(-8deg);
 }
 [data-theme="light"] .live-world-bg > div > div {
-  opacity: 0.4;
+  opacity: 0.25;
   mix-blend-mode: multiply;
 }
 
