@@ -87,31 +87,32 @@
 }
 
 [data-theme="light"] {
-  --bg-base:     236 236 230;
-  --bg-surface:  255 255 255;
-  --bg-elevated: 246 246 240;
-  --bg-border:   208 208 200;
+  /* ── Warm Paper (Concept A) ── */
+  --bg-base:     245 243 238;
+  --bg-surface:  255 254 251;
+  --bg-elevated: 237 235 229;
+  --bg-border:   218 215 207;
 
-  --text-primary:   18 18 18;
-  --text-secondary: 75 75 75;
-  --text-muted:     105 105 100;
+  --text-primary:   12 11 10;
+  --text-secondary: 62 60 56;
+  --text-muted:     128 124 116;
 
-  --accent:       0 130 60;
-  --accent-hover: 0 110 50;
-  --watch:        217 119 6;
-  --danger:       220 38 38;
-  --poly:         29 78 216;
-  --kalshi:       146 64 14;
+  --accent:       2 163 80;
+  --accent-hover: 0 145 68;
+  --watch:        202 105 8;
+  --danger:       210 35 35;
+  --poly:         37 99 235;
+  --kalshi:       154 72 10;
   --metaculus:    109 40 217;
 
   /* Алиасы для совместимости компонентов */
-  --border:       rgb(208 208 200);
-  --bg-card:      rgb(255 255 255);
-  --bg-base-rgb:  236, 236, 230;
-  --accent-rgb:   0, 130, 60;
+  --border:       rgb(218 215 207);
+  --bg-card:      rgb(255 254 251);
+  --bg-base-rgb:  245, 243, 238;
+  --accent-rgb:   2, 163, 80;
   --surface-tint-rgb: 0, 0, 0;
 
-  /* Sport accents — darker shades for AA contrast on light bg */
+  /* Sport accents — darker for AA contrast on warm-paper bg */
   --sport-football:   #8a6f10;
   --sport-basketball: #a0420c;
   --sport-tennis:     #5a7a18;
@@ -128,35 +129,35 @@
   --sport-dota2-rgb:      142 40 32;
   --sport-valorant-rgb:   200 50 61;
 
-  /* Football position accents (RGB) — darker for light theme contrast */
+  /* Football position accents (RGB) */
   --player-pos-gk:  37 112 184;
   --player-pos-def: 45 163 64;
   --player-pos-mid: 138 111 16;
   --player-pos-fwd: 177 58 55;
 
-  /* Hero palette — light theme overrides */
-  --hero-surface-a:    252 248 238;
-  --hero-surface-b:    244 236 218;
-  --hero-vignette:     252 248 238;
+  /* Hero palette — warm paper overrides */
+  --hero-surface-a:    248 245 238;
+  --hero-surface-b:    240 236 224;
+  --hero-vignette:     248 245 238;
   --hero-text-primary: #1a1408;
-  --hero-text-soft:    rgba(0,0,0,0.06);
-  --hero-grid-line:    rgba(0,0,0,0.06);
+  --hero-text-soft:    rgba(0,0,0,0.05);
+  --hero-grid-line:    rgba(0,0,0,0.05);
 
-  --hero-cs2-base:      #fbf3e2;
-  --hero-cs2-deep:      #f0e3c4;
-  --hero-cs2-mid:       #e8d8b0;
-  --hero-cs2-accent1:   rgba(230,100,20,0.16);
-  --hero-cs2-accent2:   rgba(230,100,20,0.08);
-  --hero-cs2-noise:     rgba(0,0,0,0.018);
+  --hero-cs2-base:      #faf2e2;
+  --hero-cs2-deep:      #eedfc0;
+  --hero-cs2-mid:       #e6d5ac;
+  --hero-cs2-accent1:   rgba(160,66,12,0.18);
+  --hero-cs2-accent2:   rgba(160,66,12,0.09);
+  --hero-cs2-noise:     rgba(0,0,0,0.016);
   --hero-cs2-base-text: #1a1408;
 
-  --hero-dota-base-grad: radial-gradient(ellipse 80% 120% at 70% 50%,#f8e8d8 0%,#f0d8c0 40%,#e8c8a8 100%);
-  --hero-dota-side-grad: linear-gradient(90deg,#fbeedd 0%,#f5e3cf 30%,transparent 65%);
+  --hero-dota-base-grad: radial-gradient(ellipse 80% 120% at 70% 50%,#f6e4d2 0%,#edd4b8 40%,#e4c49e 100%);
+  --hero-dota-side-grad: linear-gradient(90deg,#f9ead8 0%,#f2dfc8 30%,transparent 65%);
   --hero-dota-text:      #3a1a08;
-  --hero-dota-noise:     rgba(120,60,20,0.08);
-  --hero-dota-text-shadow: 0 0 30px rgba(192,57,43,0.2);
+  --hero-dota-noise:     rgba(120,60,20,0.07);
+  --hero-dota-text-shadow: 0 0 30px rgba(142,40,32,0.18);
 
-  --logo-symbol: rgb(var(--text-primary));
+  --logo-symbol: rgb(var(--accent));
 }
 
 /* Light-theme contrast bumps for Tailwind 400-shade text colors used in pills/badges.
@@ -172,11 +173,12 @@
 [data-theme="light"] .text-indigo-400 { color: rgb(67 56 202); }
 [data-theme="light"] .text-yellow-400 { color: rgb(161 98 7); }
 
-/* Light theme: opacity-modifier on muted text (e.g. text-text-muted/50) tanks
-   contrast against the pale bg below WCAG AA. Force solid colour and shift the
-   visual hierarchy down to text-secondary so muted/30-50 stay legible. */
-[data-theme="light"] [class*="text-text-muted/"] {
-  color: rgb(var(--text-secondary));
+/* Light theme: opacity-modifier on muted text (e.g. text-text-muted/30) can drop
+   below WCAG AA on warm-paper bg. Clamp to text-muted solid for /30 and below. */
+[data-theme="light"] [class*="text-text-muted/3"],
+[data-theme="light"] [class*="text-text-muted/4"],
+[data-theme="light"] [class*="text-text-muted/5"] {
+  color: rgb(var(--text-muted));
 }
 
 @layer base {

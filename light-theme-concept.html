@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prescio — Light Theme Concept</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── CURRENT LIGHT (for comparison) ── */
+  .current {
+    --bg-base:     236 236 230;
+    --bg-surface:  255 255 255;
+    --bg-elevated: 246 246 240;
+    --bg-border:   208 208 200;
+    --text-primary:   18 18 18;
+    --text-secondary: 75 75 75;
+    --text-muted:     105 105 100;
+    --accent:     0 130 60;
+    --watch:      217 119 6;
+    --danger:     220 38 38;
+    --poly:       29 78 216;
+  }
+
+  /* ── NEW CONCEPT A: Warm Paper ── */
+  .new-a {
+    --bg-base:     245 243 238;
+    --bg-surface:  255 254 251;
+    --bg-elevated: 237 235 229;
+    --bg-border:   218 215 207;
+    --text-primary:   12 11 10;
+    --text-secondary: 62 60 56;
+    --text-muted:     128 124 116;
+    --accent:     2 163 80;
+    --watch:      202 105 8;
+    --danger:     210 35 35;
+    --poly:       37 99 235;
+  }
+
+  /* ── NEW CONCEPT B: Cool Stone ── */
+  .new-b {
+    --bg-base:     242 243 246;
+    --bg-surface:  255 255 255;
+    --bg-elevated: 233 235 240;
+    --bg-border:   210 213 220;
+    --text-primary:   10 12 18;
+    --text-secondary: 58 62 75;
+    --text-muted:     120 125 140;
+    --accent:     0 180 95;
+    --watch:      202 105 8;
+    --danger:     210 35 35;
+    --poly:       37 99 235;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #1a1a1a;
+    padding: 24px;
+    min-height: 100vh;
+  }
+
+  h2 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #555;
+    margin-bottom: 12px;
+  }
+
+  .section {
+    margin-bottom: 32px;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+  }
+
+  /* ── Theme frame ── */
+  .frame {
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .frame-header {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    background: rgba(255,255,255,0.04);
+    color: #555;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .theme-preview {
+    background: rgb(var(--bg-base));
+    padding: 0;
+  }
+
+  /* ── Mock nav bar ── */
+  .mock-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 48px;
+    padding: 0 16px;
+    background: rgb(var(--bg-surface));
+    border-bottom: 1px solid rgb(var(--bg-border));
+  }
+  .mock-logo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .mock-logo-sym {
+    width: 22px; height: 22px;
+    background: rgb(var(--accent));
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    color: rgb(var(--bg-base));
+  }
+  .mock-logo-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: rgb(var(--text-primary));
+    letter-spacing: 0.05em;
+  }
+  .mock-nav-links {
+    display: flex;
+    gap: 2px;
+  }
+  .mock-nav-link {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    padding: 5px 10px;
+    border-radius: 6px;
+    color: rgb(var(--text-muted));
+  }
+  .mock-nav-link.active {
+    color: rgb(var(--accent));
+    font-weight: 700;
+  }
+  .mock-nav-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .mock-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: rgb(var(--accent));
+  }
+  .mock-status {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: rgb(var(--accent));
+  }
+  .mock-avatar {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: rgba(var(--accent) / 0.12);
+    border: 1px solid rgb(var(--bg-border));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    color: rgb(var(--accent));
+  }
+
+  /* ── Mock content ── */
+  .mock-content {
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: rgb(var(--bg-base));
+  }
+
+  .mock-card {
+    background: rgb(var(--bg-surface));
+    border: 1px solid rgb(var(--bg-border));
+    border-radius: 10px;
+    padding: 12px;
+  }
+
+  .mock-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .mock-card-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: rgb(var(--text-primary));
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: 8px;
+  }
+
+  .mock-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+
+  .badge-poly {
+    background: rgba(var(--poly) / 0.12);
+    border: 1px solid rgba(var(--poly) / 0.25);
+    color: rgb(var(--poly));
+  }
+
+  .badge-accent {
+    background: rgba(var(--accent) / 0.12);
+    border: 1px solid rgba(var(--accent) / 0.25);
+    color: rgb(var(--accent));
+  }
+
+  .mock-prob-bar {
+    height: 3px;
+    border-radius: 2px;
+    background: rgb(var(--bg-elevated));
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+  .mock-prob-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: rgb(var(--accent));
+  }
+
+  .mock-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .mock-meta-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: rgb(var(--text-muted));
+  }
+  .mock-prob-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: rgb(var(--text-primary));
+  }
+
+  /* ── Palette row ── */
+  .palette {
+    display: flex;
+    gap: 6px;
+    padding: 10px 14px;
+    background: rgb(var(--bg-base));
+    border-top: 1px solid rgb(var(--bg-border));
+  }
+  .swatch {
+    flex: 1;
+    height: 20px;
+    border-radius: 4px;
+    border: 1px solid rgba(0,0,0,0.08);
+  }
+
+  /* ── Mock stat card ── */
+  .mock-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .mock-stat {
+    background: rgb(var(--bg-elevated));
+    border: 1px solid rgb(var(--bg-border));
+    border-radius: 8px;
+    padding: 8px 10px;
+  }
+  .mock-stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgb(var(--text-muted));
+    margin-bottom: 3px;
+  }
+  .mock-stat-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    font-weight: 700;
+    color: rgb(var(--text-primary));
+  }
+
+  /* ── Button ── */
+  .mock-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    padding: 7px 14px;
+    border-radius: 7px;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    background: rgb(var(--accent));
+    color: rgb(var(--bg-base));
+  }
+
+  /* ── Annotation ── */
+  .note {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: #555;
+    padding: 8px 14px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    line-height: 1.6;
+  }
+
+  /* ── Color diff section ── */
+  .diff-row {
+    display: grid;
+    grid-template-columns: 120px 1fr 1fr;
+    gap: 12px;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .diff-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: #555;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+  }
+  .diff-swatch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .diff-dot {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.08);
+    flex-shrink: 0;
+  }
+  .diff-hex {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: #666;
+  }
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-bottom: 4px;
+  }
+  .tag-new  { background: rgba(0,200,100,0.15); color: #00c864; }
+  .tag-same { background: rgba(120,120,120,0.12); color: #777; }
+
+  .concept-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    color: #e8e8e8;
+    margin-bottom: 4px;
+  }
+  .concept-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: #555;
+    margin-bottom: 28px;
+    line-height: 1.7;
+  }
+
+  .divider {
+    height: 1px;
+    background: rgba(255,255,255,0.05);
+    margin: 32px 0;
+  }
+
+  .mock-tag-row {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+  }
+  .mock-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+  .mock-tag-watch {
+    background: rgba(var(--watch) / 0.12);
+    border: 1px solid rgba(var(--watch) / 0.25);
+    color: rgb(var(--watch));
+  }
+  .mock-tag-danger {
+    background: rgba(var(--danger) / 0.12);
+    border: 1px solid rgba(var(--danger) / 0.25);
+    color: rgb(var(--danger));
+  }
+</style>
+</head>
+<body>
+
+<div style="max-width:960px;margin:0 auto">
+
+  <div class="concept-title">Prescio — Light Theme Concepts</div>
+  <div class="concept-sub">
+    Два варианта. A — тёплая бумага (warm paper), B — холодный камень (cool stone).<br>
+    Текущая тема слева для сравнения.
+  </div>
+
+  <!-- PREVIEWS -->
+  <div class="row section">
+
+    <!-- CURRENT -->
+    <div class="frame current">
+      <div class="frame-header">CURRENT — Warm Beige</div>
+      <div class="theme-preview current">
+        <div class="mock-nav">
+          <div class="mock-logo">
+            <div class="mock-logo-sym">◈</div>
+            <span class="mock-logo-text">PRESCIO</span>
+          </div>
+          <div class="mock-nav-links">
+            <span class="mock-nav-link active">Markets</span>
+            <span class="mock-nav-link">Sport</span>
+            <span class="mock-nav-link">Esports</span>
+          </div>
+          <div class="mock-nav-right">
+            <div class="mock-dot" style="opacity:0.9"></div>
+            <span class="mock-status">LIVE</span>
+            <div class="mock-avatar">AC</div>
+          </div>
+        </div>
+        <div class="mock-content">
+          <div class="mock-card">
+            <div class="mock-card-header">
+              <span class="mock-card-title">Will Trump sign the bill by March?</span>
+              <span class="mock-badge badge-poly">POLY</span>
+            </div>
+            <div class="mock-prob-bar"><div class="mock-prob-fill" style="width:67%"></div></div>
+            <div class="mock-meta">
+              <span class="mock-meta-text">crypto · 2.4k vol</span>
+              <span class="mock-prob-num">67%</span>
+            </div>
+            <div class="mock-tag-row">
+              <span class="mock-tag mock-tag-watch">+8pp edge</span>
+            </div>
+          </div>
+          <div class="mock-stats">
+            <div class="mock-stat">
+              <div class="mock-stat-label">Total Analyses</div>
+              <div class="mock-stat-val">142</div>
+            </div>
+            <div class="mock-stat">
+              <div class="mock-stat-label">Streak</div>
+              <div class="mock-stat-val">7 🔥</div>
+            </div>
+          </div>
+          <div class="mock-btn">UPGRADE TO PRO — $14.99</div>
+        </div>
+        <div class="palette">
+          <div class="swatch" style="background:rgb(236 236 230)"></div>
+          <div class="swatch" style="background:rgb(255 255 255)"></div>
+          <div class="swatch" style="background:rgb(246 246 240)"></div>
+          <div class="swatch" style="background:rgb(208 208 200)"></div>
+          <div class="swatch" style="background:rgb(0 130 60)"></div>
+        </div>
+      </div>
+      <div class="note">bg тёплый серый / accent тёмно-зелёный #00823c / muted слабо читаем</div>
+    </div>
+
+    <!-- NEW A -->
+    <div class="frame new-a">
+      <div class="frame-header" style="color:#2a2a2a;background:rgba(0,0,0,0.04);border-color:rgba(0,0,0,0.08)">CONCEPT A — Warm Paper ✦</div>
+      <div class="theme-preview new-a">
+        <div class="mock-nav">
+          <div class="mock-logo">
+            <div class="mock-logo-sym">◈</div>
+            <span class="mock-logo-text">PRESCIO</span>
+          </div>
+          <div class="mock-nav-links">
+            <span class="mock-nav-link active">Markets</span>
+            <span class="mock-nav-link">Sport</span>
+            <span class="mock-nav-link">Esports</span>
+          </div>
+          <div class="mock-nav-right">
+            <div class="mock-dot"></div>
+            <span class="mock-status">LIVE</span>
+            <div class="mock-avatar">AC</div>
+          </div>
+        </div>
+        <div class="mock-content">
+          <div class="mock-card">
+            <div class="mock-card-header">
+              <span class="mock-card-title">Will Trump sign the bill by March?</span>
+              <span class="mock-badge badge-poly">POLY</span>
+            </div>
+            <div class="mock-prob-bar"><div class="mock-prob-fill" style="width:67%"></div></div>
+            <div class="mock-meta">
+              <span class="mock-meta-text">crypto · 2.4k vol</span>
+              <span class="mock-prob-num">67%</span>
+            </div>
+            <div class="mock-tag-row">
+              <span class="mock-tag mock-tag-watch">+8pp edge</span>
+            </div>
+          </div>
+          <div class="mock-stats">
+            <div class="mock-stat">
+              <div class="mock-stat-label">Total Analyses</div>
+              <div class="mock-stat-val">142</div>
+            </div>
+            <div class="mock-stat">
+              <div class="mock-stat-label">Streak</div>
+              <div class="mock-stat-val">7 🔥</div>
+            </div>
+          </div>
+          <div class="mock-btn">UPGRADE TO PRO — $14.99</div>
+        </div>
+        <div class="palette">
+          <div class="swatch" style="background:rgb(245 243 238)"></div>
+          <div class="swatch" style="background:rgb(255 254 251)"></div>
+          <div class="swatch" style="background:rgb(237 235 229)"></div>
+          <div class="swatch" style="background:rgb(218 215 207)"></div>
+          <div class="swatch" style="background:rgb(2 163 80)"></div>
+        </div>
+      </div>
+      <div class="note">bg чуть теплее #F5F3EE / accent сочный #02A350 / лучше контраст текста</div>
+    </div>
+
+    <!-- NEW B -->
+    <div class="frame new-b">
+      <div class="frame-header" style="color:#2a2a2a;background:rgba(0,0,0,0.04);border-color:rgba(0,0,0,0.08)">CONCEPT B — Cool Stone</div>
+      <div class="theme-preview new-b">
+        <div class="mock-nav">
+          <div class="mock-logo">
+            <div class="mock-logo-sym">◈</div>
+            <span class="mock-logo-text">PRESCIO</span>
+          </div>
+          <div class="mock-nav-links">
+            <span class="mock-nav-link active">Markets</span>
+            <span class="mock-nav-link">Sport</span>
+            <span class="mock-nav-link">Esports</span>
+          </div>
+          <div class="mock-nav-right">
+            <div class="mock-dot"></div>
+            <span class="mock-status">LIVE</span>
+            <div class="mock-avatar">AC</div>
+          </div>
+        </div>
+        <div class="mock-content">
+          <div class="mock-card">
+            <div class="mock-card-header">
+              <span class="mock-card-title">Will Trump sign the bill by March?</span>
+              <span class="mock-badge badge-poly">POLY</span>
+            </div>
+            <div class="mock-prob-bar"><div class="mock-prob-fill" style="width:67%"></div></div>
+            <div class="mock-meta">
+              <span class="mock-meta-text">crypto · 2.4k vol</span>
+              <span class="mock-prob-num">67%</span>
+            </div>
+            <div class="mock-tag-row">
+              <span class="mock-tag mock-tag-watch">+8pp edge</span>
+            </div>
+          </div>
+          <div class="mock-stats">
+            <div class="mock-stat">
+              <div class="mock-stat-label">Total Analyses</div>
+              <div class="mock-stat-val">142</div>
+            </div>
+            <div class="mock-stat">
+              <div class="mock-stat-label">Streak</div>
+              <div class="mock-stat-val">7 🔥</div>
+            </div>
+          </div>
+          <div class="mock-btn">UPGRADE TO PRO — $14.99</div>
+        </div>
+        <div class="palette">
+          <div class="swatch" style="background:rgb(242 243 246)"></div>
+          <div class="swatch" style="background:rgb(255 255 255)"></div>
+          <div class="swatch" style="background:rgb(233 235 240)"></div>
+          <div class="swatch" style="background:rgb(210 213 220)"></div>
+          <div class="swatch" style="background:rgb(0 180 95)"></div>
+        </div>
+      </div>
+      <div class="note">bg холодный сине-серый #F2F3F6 / accent #00B45F / нейтральнее, деловой</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- COLOR DIFF TABLE -->
+  <div class="section">
+    <h2>Детальный разбор — что меняется</h2>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:12px">
+
+      <!-- A diff -->
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:#e8e8e8;margin-bottom:12px">CONCEPT A — Warm Paper</div>
+
+        <div class="diff-row">
+          <span class="diff-label">bg-base</span>
+          <div class="diff-swatch">
+            <div class="diff-dot" style="background:rgb(236 236 230)"></div>
+            <div>
+              <div class="diff-hex">current: #ECECE6</div>
+              <div class="diff-hex" style="color:#888">холодный серый</div>
+            </div>
+          </div>
+          <div class="diff-swatch">
+            <div class="diff-dot" style="background:rgb(245 243 238)"></div>
+            <div>
+              <div class="diff-hex" style="color:#0c0">#F5F3EE → теплее</div>
+              <div class="diff-hex" style="color:#888">меньше серости</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="diff-row">
+          <span class="diff-label">bg-surface</span>
+          <div class="diff-swatch">
+            <div class="diff-dot" style="background:rgb(255 255 255)"></div>
+            <div><div class="diff-hex">same: #FFFFFF</div></div>
+          </div>
+          <div class="diff-swatch">
+            <div class="diff-dot" style="background:rgb(255 254 251)"></div>
+            <div>
+              <div class="diff-hex" style="color:#0c0">#FFFEFB → warm white</div>
+              <div class="diff-hex" style="color:#888">не холодно-синий</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="diff-row">
+          <span class="diff-label">bg-elevated</span>
+          <div class="diff-swatch">
+            <div class="diff-dot" style="background:rgb(246 246 240)"></div>
+            <div><div class="diff-hex">#F6F6F0</div></div>
+          </div>
+          <div class="diff-swatch">
+            <div class="diff-dot" style="background:rgb(237 235 229)"></div>
+            <div>
+              <div class="diff-hex" style="color:#0c0">#EDEBE5 → темнее base</div>
+              <div class="diff-hex" style="color:#888">лучше иерархия</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="diff-row">
+          <span class="diff-label">accent</span>
+          <div class="diff-swatch">
+            <div class="diff-dot" style="background:rgb(0 130 60)"></div>
+            <div>
+              <div class="diff-hex">#00823C тёмный</div>
+              <div class="diff-hex" style="color:#888">слабоват на btn</div>
+            </div>
+          </div>
+          <div class="diff-swatch">
+            <div class="diff-dot" style="background:rgb(2 163 80)"></div>
+            <div>
+              <div class="diff-hex" style="color:#0c0">#02A350 → сочнее</div>
+              <div class="diff-hex" style="color:#888">брендовый emerald</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="diff-row">
+          <span class="diff-label">text-secondary</span>
+          <div class="diff-swatch">
+            <div class="diff-dot" style="background:rgb(75 75 75)"></div>
+            <div><div class="diff-hex">#4B4B4B</div></div>
+          </div>
+          <div class="diff-swatch">
+            <div class="diff-dot" style="background:rgb(62 60 56)"></div>
+            <div>
+              <div class="diff-hex" style="color:#0c0">#3E3C38 → темнее</div>
+              <div class="diff-hex" style="color:#888">чётче на фоне</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="diff-row">
+          <span class="diff-label">text-muted</span>
+          <div class="diff-swatch">
+            <div class="diff-dot" style="background:rgb(105 105 100)"></div>
+            <div>
+              <div class="diff-hex">#696964</div>
+              <div class="diff-hex" style="color:#888">с /50 плохо читается</div>
+            </div>
+          </div>
+          <div class="diff-swatch">
+            <div class="diff-dot" style="background:rgb(128 124 116)"></div>
+            <div>
+              <div class="diff-hex" style="color:#0c0">#807C74 → теплее</div>
+              <div class="diff-hex" style="color:#888">c /50 ещё виден</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- B diff -->
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:#e8e8e8;margin-bottom:12px">CONCEPT B — Cool Stone</div>
+
+        <div class="diff-row">
+          <span class="diff-label">bg-base</span>
+          <div class="diff-swatch">
+            <div class="diff-dot" style="background:rgb(236 236 230)"></div>
+            <div><div class="diff-hex">current beige</div></div>
+          </div>
+          <div class="diff-swatch">
+            <div class="diff-dot" style="background:rgb(242 243 246)"></div>
+            <div>
+              <div class="diff-hex" style="color:#6cf">#F2F3F6 → сине-серый</div>
+              <div class="diff-hex" style="color:#888">финансовый стиль</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="diff-row">
+          <span class="diff-label">bg-surface</span>
+          <div class="diff-swatch">
+            <div class="diff-dot" style="background:rgb(255 255 255)"></div>
+            <div><div class="diff-hex">same: #FFFFFF</div></div>
+          </div>
+          <div class="diff-swatch">
+            <div class="diff-dot" style="background:rgb(255 255 255)"></div>
+            <div><div class="diff-hex" style="color:#888">same: pure white</div></div>
+          </div>
+        </div>
+
+        <div class="diff-row">
+          <span class="diff-label">bg-elevated</span>
+          <div class="diff-swatch">
+            <div class="diff-dot" style="background:rgb(246 246 240)"></div>
+            <div><div class="diff-hex">#F6F6F0</div></div>
+          </div>
+          <div class="diff-swatch">
+            <div class="diff-dot" style="background:rgb(233 235 240)"></div>
+            <div>
+              <div class="diff-hex" style="color:#6cf">#E9EBF0 → холоднее</div>
+              <div class="diff-hex" style="color:#888">синеватый</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="diff-row">
+          <span class="diff-label">accent</span>
+          <div class="diff-swatch">
+            <div class="diff-dot" style="background:rgb(0 130 60)"></div>
+            <div><div class="diff-hex">#00823C</div></div>
+          </div>
+          <div class="diff-swatch">
+            <div class="diff-dot" style="background:rgb(0 180 95)"></div>
+            <div>
+              <div class="diff-hex" style="color:#6cf">#00B45F → ярче</div>
+              <div class="diff-hex" style="color:#888">контраст 4.8:1</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="diff-row">
+          <span class="diff-label">text-primary</span>
+          <div class="diff-swatch">
+            <div class="diff-dot" style="background:rgb(18 18 18)"></div>
+            <div><div class="diff-hex">#121212</div></div>
+          </div>
+          <div class="diff-swatch">
+            <div class="diff-dot" style="background:rgb(10 12 18)"></div>
+            <div>
+              <div class="diff-hex" style="color:#6cf">#0A0C12 → синеватый</div>
+              <div class="diff-hex" style="color:#888">гармония с фоном</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="diff-row">
+          <span class="diff-label">text-muted</span>
+          <div class="diff-swatch">
+            <div class="diff-dot" style="background:rgb(105 105 100)"></div>
+            <div><div class="diff-hex">#696964</div></div>
+          </div>
+          <div class="diff-swatch">
+            <div class="diff-dot" style="background:rgb(120 125 140)"></div>
+            <div>
+              <div class="diff-hex" style="color:#6cf">#787D8C → холоднее</div>
+              <div class="diff-hex" style="color:#888">синий оттенок</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- VERDICT -->
+  <div class="section">
+    <h2>Вывод</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:12px">
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:#e8e8e8;margin-bottom:8px">CURRENT</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#555;line-height:1.7">
+          Пересушенный серый.<br>Accent слишком тёмный.<br>text-muted/50 нечитаем.
+        </div>
+      </div>
+      <div style="background:rgba(0,200,100,0.04);border:1px solid rgba(0,200,100,0.15);border-radius:10px;padding:14px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:#00c864;margin-bottom:8px">CONCEPT A ← рекомендую</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#666;line-height:1.7">
+          Тёплая бумага — органично.<br>Сочный emerald accent.<br>Иерархия bg чище.
+        </div>
+      </div>
+      <div style="background:rgba(100,160,255,0.04);border:1px solid rgba(100,160,255,0.1);border-radius:10px;padding:14px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:#6ab0ff;margin-bottom:8px">CONCEPT B — альтернатива</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#555;line-height:1.7">
+          Нейтральнее / деловой.<br>Меньше "самобытности".<br>Похоже на Bloomberg.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

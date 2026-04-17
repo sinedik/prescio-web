@@ -5,10 +5,18 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useAuthContext } from '@/contexts/AuthContext'
 import Layout from '@/components/Layout'
 
-function Loader() {
+function ContentLoader() {
   return (
-    <div className="min-h-screen bg-bg-base flex items-center justify-center">
-      <span className="text-text-muted font-mono text-sm animate-pulse">LOADING...</span>
+    <div className="flex items-center justify-center py-24">
+      <div className="flex gap-1.5">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="w-1.5 h-1.5 rounded-full bg-accent"
+            style={{ animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite` }}
+          />
+        ))}
+      </div>
     </div>
   )
 }
@@ -40,16 +48,25 @@ export default function ProtectedAppLayout({ children }: { children: React.React
     }
   }, [user, profile, loading, router, isPublic])
 
+  // Public paths always render immediately
+  if (isPublic && !user) {
+    return <Layout>{children}</Layout>
+  }
+
+  // During loading — show shell with spinner in content area
   if (loading) {
-    if (!user && isPublic) return <Layout>{children}</Layout>
-    return <Loader />
+    return <Layout><ContentLoader /></Layout>
   }
 
+  // Unauthenticated on protected path — redirect in progress, show nothing
   if (!user) {
-    if (isPublic) return <Layout>{children}</Layout>
-    return <Loader />
+    return <Layout><ContentLoader /></Layout>
   }
 
-  if (profile && !profile.onboarding_done) return <Loader />
+  // Onboarding not done — redirect in progress
+  if (profile && !profile.onboarding_done) {
+    return <Layout><ContentLoader /></Layout>
+  }
+
   return <Layout>{children}</Layout>
 }
