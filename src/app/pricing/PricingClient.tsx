@@ -7,77 +7,15 @@ import Logo from '@/components/Logo'
 import { usePaddle } from '@/hooks/usePaddle'
 import { useAuthContext } from '@/contexts/AuthContext'
 import { activateProAction } from '@/actions/paddle'
+import { useLang } from '@/contexts/LanguageContext'
+import { useT } from '@/lib/i18n'
 
-// ── Plan definitions ──────────────────────────────────────────────────────────
-
-const FREE_FEATURES = [
-  'Prediction markets feed (Polymarket, Kalshi, Metaculus)',
-  'Sports odds tracking — 15+ football leagues',
-  'Esports live match tracking (Dota 2)',
-  '3 AI analyses per day',
-  'Watchlist tracking',
-]
-
-const PRO_FEATURES = [
-  'Everything in Free',
-  'Unlimited AI analysis on any market',
-  'Full thesis & crowd bias breakdown',
-  'AI Search across all markets',
-  'Event context & timeline',
-  'Sports & esports AI signals',
-]
-
-const COMING_SOON_FEATURES = new Set([
-  'Instant alerts when edge is found',
-  'Entry / exit timing signals',
-  'Edge score on every market',
-  'Kelly-optimal position sizing',
+const COMING_SOON_KEYS = new Set([
+  'pricing.alpha.f4',
+  'pricing.alpha.f5',
+  'pricing.alpha.f2',
+  'pricing.alpha.f3',
 ])
-
-const ALPHA_FEATURES = [
-  'Everything in Pro',
-  'Edge score on every market',
-  'Kelly-optimal position sizing',
-  'Entry / exit timing signals',
-  'Instant alerts when edge is found',
-  'AI accuracy track record',
-]
-
-const PLANS = [
-  {
-    id: 'free' as const,
-    name: 'Free',
-    price: '$0',
-    period: 'forever',
-    tagline: 'Track everything. No credit card.',
-    features: FREE_FEATURES,
-    cta: 'Get started',
-    accent: false,
-    featured: false,
-  },
-  {
-    id: 'pro' as const,
-    name: 'Pro',
-    price: '$14.99',
-    period: '/month',
-    tagline: 'AI analysis across all four markets.',
-    features: PRO_FEATURES,
-    cta: 'Upgrade to Pro',
-    accent: true,
-    featured: true,
-  },
-  {
-    id: 'alpha' as const,
-    name: 'Alpha',
-    price: '$39.99',
-    period: '/month',
-    tagline: 'Full edge suite for serious traders.',
-    features: ALPHA_FEATURES,
-    cta: 'Upgrade to Alpha',
-    accent: false,
-    featured: false,
-  },
-]
 
 const CHECK_ICON = (
   <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
@@ -86,10 +24,10 @@ const CHECK_ICON = (
   </svg>
 )
 
-// ── Component ─────────────────────────────────────────────────────────────────
-
 export default function PricingClient() {
   const router = useRouter()
+  const { lang } = useLang()
+  const tr = useT(lang)
   const { user, profile, refreshProfile } = useAuthContext()
   const [loadingPlan, setLoadingPlan] = useState<'pro' | 'alpha' | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -98,6 +36,50 @@ export default function PricingClient() {
     try { await activateProAction(transactionId) } catch { /* webhook may have already handled */ }
     await refreshProfile()
   })
+
+  const PLANS = [
+    {
+      id: 'free' as const,
+      name: 'Free',
+      price: '$0',
+      period: tr('pricing.forever'),
+      tagline: tr('pricing.free.tagline'),
+      features: ['pricing.free.f1', 'pricing.free.f2', 'pricing.free.f3', 'pricing.free.f4', 'pricing.free.f5'] as const,
+      cta: tr('pricing.free.cta'),
+      accent: false,
+      featured: false,
+    },
+    {
+      id: 'pro' as const,
+      name: 'Pro',
+      price: '$14.99',
+      period: '/month',
+      tagline: tr('pricing.pro.tagline'),
+      features: ['pricing.pro.f1', 'pricing.pro.f2', 'pricing.pro.f3', 'pricing.pro.f4', 'pricing.pro.f5', 'pricing.pro.f6'] as const,
+      cta: tr('pricing.pro.cta'),
+      accent: true,
+      featured: true,
+    },
+    {
+      id: 'alpha' as const,
+      name: 'Alpha',
+      price: '$39.99',
+      period: '/month',
+      tagline: tr('pricing.alpha.tagline'),
+      features: ['pricing.alpha.f1', 'pricing.alpha.f2', 'pricing.alpha.f3', 'pricing.alpha.f4', 'pricing.alpha.f5', 'pricing.alpha.f6'] as const,
+      cta: tr('pricing.alpha.cta'),
+      accent: false,
+      featured: false,
+    },
+  ]
+
+  const FAQ = [
+    { q: tr('pricing.faq.q1'), a: tr('pricing.faq.a1') },
+    { q: tr('pricing.faq.q2'), a: tr('pricing.faq.a2') },
+    { q: tr('pricing.faq.q3'), a: tr('pricing.faq.a3') },
+    { q: tr('pricing.faq.q4'), a: tr('pricing.faq.a4') },
+    { q: tr('pricing.faq.q5'), a: tr('pricing.faq.a5') },
+  ]
 
   async function handlePlanClick(planId: 'free' | 'pro' | 'alpha') {
     if (planId === 'free') {
@@ -113,7 +95,7 @@ export default function PricingClient() {
     try {
       await openCheckout(user.email ?? undefined, planId)
     } catch {
-      setError('Failed to start checkout. Please try again.')
+      setError(tr('pricing.error'))
     } finally {
       setLoadingPlan(null)
     }
@@ -140,7 +122,7 @@ export default function PricingClient() {
                 className="text-xs font-mono px-3 py-1.5 rounded border transition-colors"
                 style={{ color: 'rgb(var(--text-secondary))', borderColor: 'rgb(var(--bg-border))' }}
               >
-                Go to app →
+                {tr('pricing.go_to_app')}
               </Link>
             ) : (
               <>
@@ -149,14 +131,14 @@ export default function PricingClient() {
                   className="text-xs font-mono transition-colors"
                   style={{ color: 'rgb(var(--text-muted))' }}
                 >
-                  Sign in
+                  {tr('pricing.sign_in')}
                 </Link>
                 <Link
                   href="/auth?mode=signup"
                   className="text-xs font-mono px-3 py-1.5 rounded"
                   style={{ background: 'rgb(var(--accent))', color: 'rgb(var(--bg-base))' }}
                 >
-                  Start for free →
+                  {tr('pricing.start_free')}
                 </Link>
               </>
             )}
@@ -174,19 +156,18 @@ export default function PricingClient() {
           >
             <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'rgb(var(--accent))' }} />
             <span className="text-[10px] font-bold tracking-wider" style={{ color: 'rgb(var(--accent))' }}>
-              SIMPLE PRICING
+              {tr('pricing.badge')}
             </span>
           </div>
           <h1
-            className="font-bold text-text-primary mb-4"
+            className="font-bold text-text-primary mb-4 whitespace-pre-line"
             style={{ fontSize: 'clamp(28px, 4vw, 44px)', lineHeight: 1.1, letterSpacing: '-0.02em' }}
           >
-            Track free.<br />
-            <span style={{ color: 'rgb(var(--accent))' }}>Analyse with Pro.</span>
+            {tr('pricing.headline').split('\n')[0]}<br />
+            <span style={{ color: 'rgb(var(--accent))' }}>{tr('pricing.headline').split('\n')[1]}</span>
           </h1>
           <p className="text-sm max-w-lg mx-auto" style={{ color: 'rgb(var(--text-secondary))', lineHeight: 1.7 }}>
-            Start for free — prediction markets, sports, esports and crypto.
-            Upgrade for AI edge analysis when you're ready.
+            {tr('pricing.subtext')}
           </p>
         </div>
 
@@ -209,7 +190,7 @@ export default function PricingClient() {
               <div
                 key={plan.id}
                 style={{
-                  background: plan.featured ? 'rgb(var(--bg-surface))' : 'rgb(var(--bg-surface))',
+                  background: 'rgb(var(--bg-surface))',
                   border: plan.featured
                     ? '1px solid rgb(var(--accent) / 0.4)'
                     : '1px solid rgb(var(--bg-border))',
@@ -226,7 +207,7 @@ export default function PricingClient() {
                     className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider"
                     style={{ background: 'rgb(var(--accent))', color: 'rgb(var(--bg-base))' }}
                   >
-                    MOST POPULAR
+                    {tr('pricing.most_popular')}
                   </div>
                 )}
 
@@ -247,7 +228,7 @@ export default function PricingClient() {
                         className="text-[9px] font-bold px-2 py-0.5 rounded"
                         style={{ color: 'rgb(var(--text-muted))', background: 'rgb(var(--bg-elevated))' }}
                       >
-                        CURRENT
+                        {tr('pricing.current')}
                       </span>
                     )}
                   </div>
@@ -284,7 +265,7 @@ export default function PricingClient() {
                         }
                   }
                 >
-                  {isLoading ? 'LOADING...' : isCurrentPlan ? 'Current plan' : plan.cta}
+                  {isLoading ? tr('pricing.loading') : isCurrentPlan ? tr('pricing.current_plan') : plan.cta}
                 </button>
 
                 {/* Divider */}
@@ -292,8 +273,8 @@ export default function PricingClient() {
 
                 {/* Features */}
                 <div className="flex flex-col gap-3 flex-1">
-                  {plan.features.map((feature) => (
-                    <div key={feature} className="flex items-start gap-2.5">
+                  {plan.features.map((key) => (
+                    <div key={key} className="flex items-start gap-2.5">
                       <span
                         className="shrink-0 mt-0.5"
                         style={{ color: plan.featured ? 'rgb(var(--accent))' : 'rgb(var(--text-secondary))' }}
@@ -301,13 +282,13 @@ export default function PricingClient() {
                         {CHECK_ICON}
                       </span>
                       <span className="text-xs leading-relaxed" style={{ color: 'rgb(var(--text-secondary))' }}>
-                        {feature}
-                        {COMING_SOON_FEATURES.has(feature) && (
+                        {tr(key)}
+                        {COMING_SOON_KEYS.has(key) && (
                           <span
                             className="ml-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded"
                             style={{ color: 'rgb(var(--text-muted))', background: 'rgb(var(--bg-elevated))' }}
                           >
-                            COMING SOON
+                            {tr('pricing.coming_soon')}
                           </span>
                         )}
                       </span>
@@ -318,7 +299,7 @@ export default function PricingClient() {
                 {/* Cancel anytime note */}
                 {plan.id !== 'free' && (
                   <p className="text-[10px] text-center mt-6" style={{ color: 'rgb(var(--text-muted))' }}>
-                    Cancel anytime · Billed via Paddle
+                    {tr('pricing.cancel_billing')}
                   </p>
                 )}
               </div>
@@ -332,31 +313,10 @@ export default function PricingClient() {
             className="font-bold text-center mb-10"
             style={{ fontSize: '20px', color: 'rgb(var(--text-primary))' }}
           >
-            Common questions
+            {tr('pricing.faq_title')}
           </h2>
           <div className="flex flex-col gap-6">
-            {[
-              {
-                q: 'What counts as an "analysis"?',
-                a: 'An analysis is when you ask Prescio AI to evaluate a specific market, match, or coin. Free users get 3 AI analyses per day. Pro and Alpha users have unlimited analyses.',
-              },
-              {
-                q: 'Can I cancel anytime?',
-                a: 'Yes. Cancel from your account settings at any time. You keep access until the end of the billing period — no partial refunds.',
-              },
-              {
-                q: 'What is the difference between Pro and Alpha?',
-                a: 'Pro gives you unlimited AI analysis and full market intelligence. Alpha adds the full edge suite: Kelly sizing, edge scores, timing signals, and instant alerts — for users who act on the analysis.',
-              },
-              {
-                q: 'Which sports and esports are covered?',
-                a: 'Football (soccer) across 15+ top leagues including Premier League, La Liga, Champions League, and more. Esports coverage is currently focused on Dota 2.',
-              },
-              {
-                q: 'Is payment secure?',
-                a: 'All payments are processed by Paddle, our Merchant of Record. Paddle handles billing, receipts, VAT/taxes, and refund requests. We never see your card details.',
-              },
-            ].map(({ q, a }) => (
+            {FAQ.map(({ q, a }) => (
               <div key={q} style={{ borderBottom: '1px solid rgb(var(--bg-border))', paddingBottom: '24px' }}>
                 <p className="text-sm font-bold mb-2" style={{ color: 'rgb(var(--text-primary))' }}>{q}</p>
                 <p className="text-sm" style={{ color: 'rgb(var(--text-secondary))', lineHeight: 1.7 }}>{a}</p>
@@ -368,7 +328,7 @@ export default function PricingClient() {
         {/* Bottom CTA */}
         <div className="text-center mt-20">
           <p className="text-sm mb-4" style={{ color: 'rgb(var(--text-muted))' }}>
-            Questions? Contact us at{' '}
+            {tr('pricing.contact')}{' '}
             <a href="mailto:support@prescio.io" className="underline" style={{ color: 'rgb(var(--text-secondary))' }}>
               support@prescio.io
             </a>

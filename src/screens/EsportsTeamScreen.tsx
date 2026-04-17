@@ -6,6 +6,8 @@ import { usePolling } from '../hooks/usePolling'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { api } from '../lib/api'
 import type { EsportsTeamPageData } from '../types'
+import { useLang } from '../contexts/LanguageContext'
+import { useT } from '../lib/i18n'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -109,6 +111,8 @@ interface Props {
 
 export default function EsportsTeamScreen({ teamId, game, initialData }: Props) {
   const router = useRouter()
+  const { lang } = useLang()
+  const tr = useT(lang)
 
   const fetcher = useCallback(
     () => api.getEsportsTeam(teamId),
@@ -134,7 +138,7 @@ export default function EsportsTeamScreen({ teamId, game, initialData }: Props) 
   if (loading && !data) {
     return (
       <div className="px-4 py-8 flex justify-center">
-        <span className="text-[11px] font-mono text-text-muted animate-pulse">Loading team…</span>
+        <span className="text-[11px] font-mono text-text-muted animate-pulse">{tr('team.loading')}</span>
       </div>
     )
   }
@@ -172,7 +176,7 @@ export default function EsportsTeamScreen({ teamId, game, initialData }: Props) 
           <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <path d="M19 12H5M12 19l-7-7 7-7"/>
           </svg>
-          back
+          {tr('team.back')}
         </button>
       </div>
 
@@ -199,7 +203,7 @@ export default function EsportsTeamScreen({ teamId, game, initialData }: Props) 
           {/* Winrate card */}
           {stats && (stats.wins + stats.losses) > 0 && (
             <div className="bg-bg-surface border border-bg-border rounded-lg p-4">
-              <p className="text-[9px] font-mono text-text-muted/50 uppercase tracking-wider mb-2">Winrate (30d)</p>
+              <p className="text-[9px] font-mono text-text-muted/50 uppercase tracking-wider mb-2">{tr('team.winrate')}</p>
               <div className="flex items-baseline gap-2">
                 <span className="text-[28px] font-bold leading-none" style={{ color: accent }}>
                   {stats.winrate != null ? Math.round(stats.winrate * 100) : '—'}
@@ -219,7 +223,7 @@ export default function EsportsTeamScreen({ teamId, game, initialData }: Props) 
           {/* Form chart */}
           {form.length > 0 && (
             <div className="bg-bg-surface border border-bg-border rounded-lg p-4">
-              <p className="text-[9px] font-mono text-text-muted/50 uppercase tracking-wider mb-2">Recent form</p>
+              <p className="text-[9px] font-mono text-text-muted/50 uppercase tracking-wider mb-2">{tr('team.form')}</p>
               <div className="flex gap-1 flex-wrap">
                 {form.slice(-10).map((f, i) => (
                   <div key={i} title={`${f.outcome} vs ${f.opponent?.name ?? '?'} — ${fmtDate(f.startsAt)}`}
@@ -242,7 +246,7 @@ export default function EsportsTeamScreen({ teamId, game, initialData }: Props) 
           {/* Map stats */}
           {mapEntries.length > 0 && (
             <div className="bg-bg-surface border border-bg-border rounded-lg p-4">
-              <p className="text-[9px] font-mono text-text-muted/50 uppercase tracking-wider mb-2">Maps</p>
+              <p className="text-[9px] font-mono text-text-muted/50 uppercase tracking-wider mb-2">{tr('team.maps')}</p>
               <div className="flex flex-col gap-1.5">
                 {mapEntries.slice(0, 5).map(m => (
                   <div key={m.map} className="flex items-center gap-2 text-[10px] font-mono">
@@ -267,7 +271,7 @@ export default function EsportsTeamScreen({ teamId, game, initialData }: Props) 
           {/* Upcoming / live */}
           {upcoming.length > 0 && (
             <section className="mb-5">
-              <p className="text-[9px] font-bold tracking-[0.16em] text-text-muted/50 uppercase mb-2">Upcoming &amp; live</p>
+              <p className="text-[9px] font-bold tracking-[0.16em] text-text-muted/50 uppercase mb-2">{tr('team.upcoming')}</p>
               <div className="flex flex-col gap-2">
                 {upcoming.map(m => {
                   const isThisTeamA = m.teamA?.id === teamId || String(m.teamA?.id) === teamId
@@ -318,7 +322,7 @@ export default function EsportsTeamScreen({ teamId, game, initialData }: Props) 
           {/* Past matches */}
           {past.length > 0 && (
             <section>
-              <p className="text-[9px] font-bold tracking-[0.16em] text-text-muted/50 uppercase mb-2">Recent results</p>
+              <p className="text-[9px] font-bold tracking-[0.16em] text-text-muted/50 uppercase mb-2">{tr('team.results')}</p>
               <div className="flex flex-col gap-2">
                 {past.map(m => {
                   const isThisTeamA = m.teamA?.id === teamId || String(m.teamA?.id) === teamId
@@ -368,14 +372,14 @@ export default function EsportsTeamScreen({ teamId, game, initialData }: Props) 
           )}
 
           {upcoming.length === 0 && past.length === 0 && (
-            <p className="text-[12px] font-mono text-text-muted/50 text-center py-8">No matches found</p>
+            <p className="text-[12px] font-mono text-text-muted/50 text-center py-8">{tr('team.no_matches')}</p>
           )}
         </div>
 
         {/* Roster column */}
         {roster.length > 0 && (
           <aside>
-            <p className="text-[9px] font-bold tracking-[0.16em] text-text-muted/50 uppercase mb-2">Roster</p>
+            <p className="text-[9px] font-bold tracking-[0.16em] text-text-muted/50 uppercase mb-2">{tr('team.roster')}</p>
             <div className="bg-bg-surface border border-bg-border rounded-lg overflow-hidden">
               {roster.map((p, i) => (
                 <div
