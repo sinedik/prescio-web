@@ -8,9 +8,7 @@ import {
   edgeColor, platformColor, actionColor,
 } from '../utils'
 import dynamic from 'next/dynamic'
-const AddPositionModal = dynamic(() => import('../components/AddPositionModal'), { ssr: false })
 const PaywallModal = dynamic(() => import('../components/PaywallModal'), { ssr: false })
-import { usePortfolio } from '../hooks/usePortfolio'
 import { api } from '../lib/api'
 import { analyzeEventAction, analyzeMarketAction } from '../actions/analyze'
 import { useAuthContext } from '../contexts/AuthContext'
@@ -287,7 +285,7 @@ export default function MarketDetailPage() {
   const params = useParams<{ slug?: string; id?: string }>()
   const slug = (params?.slug ?? params?.id) as string | undefined
   const { profile } = useAuthContext()
-  const { addPosition } = usePortfolio()
+
 
   const [market, setMarket] = useState<Market | undefined>(undefined)
 
@@ -308,7 +306,7 @@ export default function MarketDetailPage() {
   const [history, setHistory] = useState<HistoryPoint[]>([])
   const [historyReal, setHistoryReal] = useState(false)
   const [siblings, setSiblings] = useState<{ id: string; question: string; price: number; no_price?: number; volume?: number; resolution_date?: string; slug?: string }[]>([])
-  const [showAddPosition, setShowAddPosition] = useState(false)
+
   const [showPaywall, setShowPaywall] = useState(false)
   const [paywallVariant, setPaywallVariant] = useState<'pro' | 'alpha'>('pro')
   const { isPro, isAlpha } = useAuthContext()
@@ -1213,17 +1211,6 @@ export default function MarketDetailPage() {
               </div>
             )}
 
-            {/* Add to Portfolio */}
-            {isAlpha && (
-              <button onClick={() => setShowAddPosition(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 mt-4 bg-accent/10 border border-accent/30
-                  text-accent text-xs font-mono font-bold rounded hover:bg-accent/20 transition-colors">
-                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M12 5v14M5 12h14" />
-                </svg>
-                ADD TO PORTFOLIO
-              </button>
-            )}
           </div>
 
         </>
@@ -1334,23 +1321,6 @@ export default function MarketDetailPage() {
         </div>
       )}
 
-      {/* ── Add Position Modal ── */}
-      {showAddPosition && analysis && (
-        <AddPositionModal
-          onAdd={addPosition}
-          onClose={() => setShowAddPosition(false)}
-          prefill={{
-            question: market.question,
-            platform: market.platform,
-            entryPrice: Math.round(analysis.marketProb),
-            myFairProb: Math.round(analysis.fairProb),
-            direction: analysis.edgeDirection === 'YES' ? 'YES' : 'NO',
-            url: market.url,
-            resolutionDate: market.resolutionDate,
-            thesis: analysis.thesis,
-          }}
-        />
-      )}
     </div>
   )
 }

@@ -17,7 +17,6 @@ function buildFooterLinks(isAuthed: boolean): Record<string, FooterLink[]> {
       ...(isAuthed
         ? [
             { label: 'Watchlist', to: '/watchlist' },
-            { label: 'Portfolio', to: '/portfolio' },
           ]
         : []),
       { label: 'Pricing',   to: '/pricing' },

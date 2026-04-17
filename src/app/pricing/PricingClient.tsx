@@ -15,7 +15,7 @@ const FREE_FEATURES = [
   'Sports odds tracking — 15+ football leagues',
   'Esports live match tracking (Dota 2)',
   '3 AI analyses per day',
-  'Watchlist & portfolio tracking',
+  'Watchlist tracking',
 ]
 
 const PRO_FEATURES = [

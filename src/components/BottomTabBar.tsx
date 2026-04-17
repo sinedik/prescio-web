@@ -122,7 +122,7 @@ export function BottomTabBar() {
     return false
   }
 
-  const profileActive = pathname?.startsWith('/profile') || pathname?.startsWith('/portfolio') || pathname?.startsWith('/watchlist')
+  const profileActive = pathname?.startsWith('/profile') || pathname?.startsWith('/watchlist')
 
   return (
     <nav

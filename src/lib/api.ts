@@ -138,15 +138,6 @@ export const api = {
   getWatchlist: () =>
     apiFetch('/watchlist'),
 
-  // Portfolio
-  getPortfolio: () =>
-    apiFetch('/portfolio'),
-
-  // Polymarket
-  getPolymarketPortfolio: () =>
-    apiFetch('/polymarket/portfolio'),
-  getPolymarketActivity: (limit = 50) =>
-    apiFetch(`/polymarket/activity?limit=${limit}`),
 
   // Alerts
   getAlerts: () =>

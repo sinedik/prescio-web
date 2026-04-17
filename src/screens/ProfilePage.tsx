@@ -296,7 +296,7 @@ export default function ProfilePage() {
                   { ok: true,  text: 'Sports & esports markets' },
                   { ok: true,  text: 'Live match tracking' },
                   { ok: false, text: 'Unlimited analyses' },
-                  { ok: false, text: 'Portfolio tracking' },
+
                   { ok: false, text: 'Priority AI queue' },
                 ].map(({ ok, text }) => (
                   <div key={text} className="flex items-center gap-2">

@@ -27,7 +27,7 @@ export default function robots(): MetadataRoute.Robots {
           '/forgot-password',
           '/onboarding',
           '/pro-success',
-          '/portfolio',
+
           '/profile',
           '/watchlist',
         ],

@@ -7,7 +7,7 @@ const UNLOCKED = [
   'Unlimited analyses per day',
   'Kelly sizing on every market',
   'Email alerts when edge ≥ 15%',
-  'Unlimited portfolio positions',
+
   'Weekly digest reports',
 ]
 
