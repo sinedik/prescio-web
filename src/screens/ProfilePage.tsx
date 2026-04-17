@@ -227,7 +227,7 @@ export default function ProfilePage() {
               ? '3px solid rgb(34 197 94)'
               : isPro
                 ? '3px solid rgb(var(--accent))'
-                : undefined,
+                : '3px solid rgb(var(--bg-border))',
           }}
         >
           {isAlpha ? (
@@ -286,15 +286,36 @@ export default function ProfilePage() {
           ) : (
             /* ─ FREE ─ */
             <div>
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2 mb-3">
                 <span className="text-sm font-mono font-bold text-text-primary">FREE PLAN</span>
-                <span className="text-[11px] font-mono text-text-muted">{analysesToday} / 3 analyses today</span>
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-bg-elevated border border-bg-border text-text-muted">CURRENT</span>
               </div>
-              <div className="h-1.5 rounded-full mb-4 overflow-hidden bg-bg-border">
-                <div
-                  className="h-full bg-accent rounded-full transition-all"
-                  style={{ width: `${Math.min(100, (analysesToday / 3) * 100)}%` }}
-                />
+              <div className="flex flex-col gap-1 mb-4">
+                {[
+                  { ok: true,  text: '3 AI analyses per day' },
+                  { ok: true,  text: 'Sports & esports markets' },
+                  { ok: true,  text: 'Live match tracking' },
+                  { ok: false, text: 'Unlimited analyses' },
+                  { ok: false, text: 'Portfolio tracking' },
+                  { ok: false, text: 'Priority AI queue' },
+                ].map(({ ok, text }) => (
+                  <div key={text} className="flex items-center gap-2">
+                    <span className={`text-[11px] font-bold ${ok ? 'text-accent' : 'text-text-muted/40'}`}>{ok ? '✓' : '✗'}</span>
+                    <span className={`text-[11px] font-mono ${ok ? 'text-text-secondary' : 'text-text-muted/50'}`}>{text}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="mb-3">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] font-mono text-text-muted">Today&apos;s analyses</span>
+                  <span className="text-[10px] font-mono text-text-muted">{analysesToday} / 3</span>
+                </div>
+                <div className="h-1.5 rounded-full overflow-hidden bg-bg-border">
+                  <div
+                    className="h-full bg-accent rounded-full transition-all"
+                    style={{ width: `${Math.min(100, (analysesToday / 3) * 100)}%` }}
+                  />
+                </div>
               </div>
               <div className="flex flex-col gap-2">
                 <button
@@ -359,14 +380,14 @@ export default function ProfilePage() {
       {/* ── BLOCK 4: INTERESTS ── */}
       <div>
         <SectionTitle>MARKET INTERESTS</SectionTitle>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
+        <div className="flex flex-wrap gap-2 mb-3">
           {INTERESTS.map((interest) => {
             const isActive = selectedInterests.includes(interest.id)
             return (
               <button
                 key={interest.id}
                 onClick={() => toggleInterest(interest.id)}
-                className={`py-2 px-3 rounded-lg border text-xs font-mono font-medium transition-all ${
+                className={`py-1.5 px-3 rounded-full border text-xs font-mono font-medium transition-all ${
                   isActive
                     ? 'bg-accent/10 border-accent text-accent'
                     : 'bg-bg-surface border-bg-border text-text-secondary hover:border-text-muted'

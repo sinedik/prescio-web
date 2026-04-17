@@ -470,11 +470,14 @@ function GamesTabs({ games, teamA, teamB, isDota, isCs2, accent }: {
   )
 }
 
+const ROUNDS_DEFAULT = 15
+
 function RoundTimeline({ rounds, teamAName, teamBName }: {
   rounds: EsportsRound[]
   teamAName?: string
   teamBName?: string
 }) {
+  const [expanded, setExpanded] = useState(false)
   const winIcon = (winType?: string | null): string => {
     const t = (winType ?? '').toLowerCase()
     if (t.includes('defus')) return '✂'
@@ -487,17 +490,28 @@ function RoundTimeline({ rounds, teamAName, teamBName }: {
     const t = winner === 'A' ? r.teamA : r.teamB
     return (t?.side ?? '').toLowerCase() || null
   }
+  const visible = expanded || rounds.length <= ROUNDS_DEFAULT ? rounds : rounds.slice(-ROUNDS_DEFAULT)
   let aCount = 0, bCount = 0
   return (
     <div className="flex flex-col gap-1 py-2">
       <div className="flex items-center justify-between px-1">
         <span className="text-[9px] font-mono text-text-muted/50 uppercase tracking-wider">Round timeline</span>
-        <span className="text-[9px] font-mono text-text-muted/40 tabular-nums">
-          {rounds.filter(r => r.teamA?.won).length} : {rounds.filter(r => r.teamB?.won).length}
-        </span>
+        <div className="flex items-center gap-2">
+          {rounds.length > ROUNDS_DEFAULT && (
+            <button
+              onClick={() => setExpanded(v => !v)}
+              className="text-[9px] font-mono text-text-muted/60 hover:text-text-muted transition-colors"
+            >
+              {expanded ? 'show less' : `all ${rounds.length}`}
+            </button>
+          )}
+          <span className="text-[9px] font-mono text-text-muted/40 tabular-nums">
+            {rounds.filter(r => r.teamA?.won).length} : {rounds.filter(r => r.teamB?.won).length}
+          </span>
+        </div>
       </div>
       <div className="flex gap-0.5 overflow-x-auto scrollbar-thin pb-1">
-        {rounds.map(r => {
+        {visible.map(r => {
           const aWon = !!r.teamA?.won
           const bWon = !!r.teamB?.won
           const winner: 'A' | 'B' | null = aWon ? 'A' : bWon ? 'B' : null

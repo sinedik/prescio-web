@@ -98,8 +98,8 @@ export default function OnboardingPage() {
         {[0, 1, 2].map((i) => (
           <div
             key={i}
-            className={`h-1.5 rounded-full transition-all duration-300 ${
-              i === step ? 'w-6 bg-accent' : i < step ? 'w-3 bg-accent/40' : 'w-3 bg-bg-elevated'
+            className={`h-2 rounded-full transition-all duration-300 ${
+              i === step ? 'w-8 bg-accent' : i < step ? 'w-4 bg-accent/40' : 'w-4 bg-bg-elevated'
             }`}
           />
         ))}

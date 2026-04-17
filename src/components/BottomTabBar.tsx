@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -61,6 +62,40 @@ const TABS = [
   { key: 'cybersport', href: '/cybersport', label: 'Cyber',      icon: IconCybersport },
 ] as const
 
+function TabItem({ href, label, icon: Icon, active }: {
+  href: string
+  label: string
+  icon: () => React.ReactElement
+  active: boolean
+}) {
+  return (
+    <Link
+      href={href}
+      className="flex-1 flex flex-col items-center justify-center gap-0.5 relative"
+      style={{ color: active ? 'rgb(var(--accent))' : 'rgb(var(--text-muted))' }}
+    >
+      {active && (
+        <span
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full"
+          style={{ background: 'rgb(var(--accent))' }}
+        />
+      )}
+      <span
+        className="transition-transform duration-200"
+        style={{ transform: active ? 'scale(1.15)' : 'scale(1)' }}
+      >
+        <Icon />
+      </span>
+      <span
+        className="text-[9px] font-mono font-bold tracking-wider transition-opacity duration-200"
+        style={{ opacity: active ? 1 : 0.6 }}
+      >
+        {label.toUpperCase()}
+      </span>
+    </Link>
+  )
+}
+
 export function BottomTabBar() {
   const pathname = usePathname()
   const { user } = useAuthContext()
@@ -95,44 +130,24 @@ export function BottomTabBar() {
       style={{
         background: 'rgb(var(--bg-surface))',
         borderColor: 'rgb(var(--bg-border))',
-        height: '56px',
+        height: 'calc(56px + env(safe-area-inset-bottom))',
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
-      {TABS.map(({ key, label, icon: Icon }) => {
-        const active = isActive(key)
-        return (
-          <Link
-            key={key}
-            href={resolveHref(key)}
-            className="flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors"
-            style={{ color: active ? 'rgb(var(--accent))' : 'rgb(var(--text-muted))' }}
-          >
-            <Icon />
-            <span className="text-[9px] font-mono font-bold tracking-wider">{label.toUpperCase()}</span>
-          </Link>
-        )
-      })}
+      {TABS.map(({ key, label, icon }) => (
+        <TabItem
+          key={key}
+          href={resolveHref(key)}
+          label={label}
+          icon={icon}
+          active={isActive(key)}
+        />
+      ))}
 
-      {/* Profile / Sign in tab */}
       {user ? (
-        <Link
-          href="/profile"
-          className="flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors"
-          style={{ color: profileActive ? 'rgb(var(--accent))' : 'rgb(var(--text-muted))' }}
-        >
-          <IconProfile />
-          <span className="text-[9px] font-mono font-bold tracking-wider">PROFILE</span>
-        </Link>
+        <TabItem href="/profile" label="Profile" icon={IconProfile} active={!!profileActive} />
       ) : (
-        <Link
-          href="/auth"
-          className="flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors"
-          style={{ color: 'rgb(var(--text-muted))' }}
-        >
-          <IconSignIn />
-          <span className="text-[9px] font-mono font-bold tracking-wider">SIGN IN</span>
-        </Link>
+        <TabItem href="/auth" label="Sign in" icon={IconSignIn} active={false} />
       )}
     </nav>
   )
