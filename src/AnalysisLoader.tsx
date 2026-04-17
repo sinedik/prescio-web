@@ -378,7 +378,7 @@ export default function AnalysisLoader({
   const step2State = phase===2?'active':'pending'
 
   return(
-    <div style={{fontFamily:'"JetBrains Mono","Fira Code","Cascadia Code",monospace'}}>
+    <div style={{fontFamily:'var(--font-jetbrains-mono),monospace'}}>
       {/* Vertical stepper */}
       <div style={{display:'flex',gap:12,marginBottom:12}}>
         {/* Steps column */}

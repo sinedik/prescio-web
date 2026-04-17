@@ -285,7 +285,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 onClick={() => setSearchOpen(true)}
                 title="AI Search"
                 className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-opacity hover:opacity-80"
-                style={{ background: 'rgb(var(--bg-elevated))', border: '1px solid rgb(var(--bg-border))', fontSize: '11px', color: 'rgb(var(--text-muted))', fontFamily: 'JetBrains Mono, monospace' }}
+                style={{ background: 'rgb(var(--bg-elevated))', border: '1px solid rgb(var(--bg-border))', fontSize: '11px', color: 'rgb(var(--text-muted))', fontFamily: 'var(--font-jetbrains-mono), monospace' }}
               >
                 <span>⌕</span>
                 <span>Search</span>

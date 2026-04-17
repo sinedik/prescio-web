@@ -54,27 +54,27 @@ function FootballHero({ liveCount, totalCount, today }: { liveCount: number; tot
           <LogoFootball size={32} />
         </div>
         <div style={{ flex:1 }}>
-          <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:accent, marginBottom:7 }}>Football · Prediction Markets</div>
-          <div style={{ fontFamily:'"Oswald",sans-serif', fontSize:50, fontWeight:700, lineHeight:0.9, textTransform:'uppercase', letterSpacing:'0.04em', color:TEXT_PRIMARY, whiteSpace:'nowrap' }}>
+          <div style={{ fontFamily:'var(--font-jetbrains-mono),monospace', fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:accent, marginBottom:7 }}>Football · Prediction Markets</div>
+          <div style={{ fontFamily:'"Inter",sans-serif', fontSize:50, fontWeight:700, lineHeight:0.9, textTransform:'uppercase', letterSpacing:'0.04em', color:TEXT_PRIMARY, whiteSpace:'nowrap' }}>
             FOOT<span style={{ color:accent }}>BALL</span>
           </div>
           <div style={{ marginTop:10, display:'flex', alignItems:'center', gap:8 }}>
             <div style={{ height:1, width:24, background:a(0.35) }} />
-            <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, color:accent, letterSpacing:'0.12em', textTransform:'uppercase' }}>EPL · La Liga · Bundesliga · Serie A</div>
+            <div style={{ fontFamily:'var(--font-jetbrains-mono),monospace', fontSize:9, color:accent, letterSpacing:'0.12em', textTransform:'uppercase' }}>EPL · La Liga · Bundesliga · Serie A</div>
           </div>
         </div>
         <div className="live-hero-stats" style={{ gap:20, alignItems:'center', flexShrink:0 }}>
           <div style={{ textAlign:'center' }}>
-            <div style={{ fontFamily:'"Oswald",sans-serif', fontSize:22, fontWeight:700, color:accent, lineHeight:1 }}>{liveCount}</div>
-            <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'"JetBrains Mono",monospace' }}>Live</div>
+            <div style={{ fontFamily:'"Inter",sans-serif', fontSize:22, fontWeight:700, color:accent, lineHeight:1 }}>{liveCount}</div>
+            <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'var(--font-jetbrains-mono),monospace' }}>Live</div>
           </div>
           <div style={{ width:1, height:32, background:a(0.18) }} />
           <div style={{ textAlign:'center' }}>
-            <div style={{ fontFamily:'"Oswald",sans-serif', fontSize:22, fontWeight:700, color:TEXT_PRIMARY, lineHeight:1 }}>{totalCount}</div>
-            <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'"JetBrains Mono",monospace' }}>{today}</div>
+            <div style={{ fontFamily:'"Inter",sans-serif', fontSize:22, fontWeight:700, color:TEXT_PRIMARY, lineHeight:1 }}>{totalCount}</div>
+            <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'var(--font-jetbrains-mono),monospace' }}>{today}</div>
           </div>
         </div>
-        <div style={{ alignItems:'center', gap:6, background:a(0.08), border:`1px solid ${a(0.28)}`, borderRadius:6, padding:'5px 12px', fontSize:10, fontWeight:700, letterSpacing:'0.12em', color:accent, textTransform:'uppercase', flexShrink:0, fontFamily:'"JetBrains Mono",monospace' }} className="live-hero-badge">
+        <div style={{ alignItems:'center', gap:6, background:a(0.08), border:`1px solid ${a(0.28)}`, borderRadius:6, padding:'5px 12px', fontSize:10, fontWeight:700, letterSpacing:'0.12em', color:accent, textTransform:'uppercase', flexShrink:0, fontFamily:'var(--font-jetbrains-mono),monospace' }} className="live-hero-badge">
           <span className="animate-pulse" style={{ width:5, height:5, borderRadius:'50%', background:accent, display:'inline-block', boxShadow:`0 0 6px ${a(0.85)}` }} />
           Live
         </div>
@@ -95,27 +95,27 @@ function BasketballHero({ liveCount, totalCount, today }: { liveCount: number; t
           <LogoBasketball size={32} />
         </div>
         <div style={{ flex:1 }}>
-          <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:accent, marginBottom:7 }}>Basketball · Prediction Markets</div>
-          <div style={{ fontFamily:'"Bebas Neue",sans-serif', fontSize:56, fontWeight:700, lineHeight:0.9, textTransform:'uppercase', letterSpacing:'0.06em', color:TEXT_PRIMARY, whiteSpace:'nowrap' }}>
+          <div style={{ fontFamily:'var(--font-jetbrains-mono),monospace', fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:accent, marginBottom:7 }}>Basketball · Prediction Markets</div>
+          <div style={{ fontFamily:'"Inter",sans-serif', fontSize:56, fontWeight:700, lineHeight:0.9, textTransform:'uppercase', letterSpacing:'0.06em', color:TEXT_PRIMARY, whiteSpace:'nowrap' }}>
             BASKET<span style={{ color:accent }}>BALL</span>
           </div>
           <div style={{ marginTop:10, display:'flex', alignItems:'center', gap:8 }}>
             <div style={{ height:1, width:24, background:a(0.3) }} />
-            <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, color:accent, letterSpacing:'0.12em', textTransform:'uppercase' }}>NBA · EuroLeague · FIBA</div>
+            <div style={{ fontFamily:'var(--font-jetbrains-mono),monospace', fontSize:9, color:accent, letterSpacing:'0.12em', textTransform:'uppercase' }}>NBA · EuroLeague · FIBA</div>
           </div>
         </div>
         <div className="live-hero-stats" style={{ gap:20, alignItems:'center', flexShrink:0 }}>
           <div style={{ textAlign:'center' }}>
-            <div style={{ fontFamily:'"Bebas Neue",sans-serif', fontSize:22, fontWeight:700, color:accent, lineHeight:1 }}>{liveCount}</div>
-            <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'"JetBrains Mono",monospace' }}>Live</div>
+            <div style={{ fontFamily:'"Inter",sans-serif', fontSize:22, fontWeight:700, color:accent, lineHeight:1 }}>{liveCount}</div>
+            <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'var(--font-jetbrains-mono),monospace' }}>Live</div>
           </div>
           <div style={{ width:1, height:32, background:a(0.18) }} />
           <div style={{ textAlign:'center' }}>
-            <div style={{ fontFamily:'"Bebas Neue",sans-serif', fontSize:22, fontWeight:700, color:TEXT_PRIMARY, lineHeight:1 }}>{totalCount}</div>
-            <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'"JetBrains Mono",monospace' }}>{today}</div>
+            <div style={{ fontFamily:'"Inter",sans-serif', fontSize:22, fontWeight:700, color:TEXT_PRIMARY, lineHeight:1 }}>{totalCount}</div>
+            <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'var(--font-jetbrains-mono),monospace' }}>{today}</div>
           </div>
         </div>
-        <div style={{ alignItems:'center', gap:6, background:a(0.08), border:`1px solid ${a(0.28)}`, borderRadius:6, padding:'5px 12px', fontSize:10, fontWeight:700, letterSpacing:'0.12em', color:accent, textTransform:'uppercase', flexShrink:0, fontFamily:'"JetBrains Mono",monospace' }} className="live-hero-badge">
+        <div style={{ alignItems:'center', gap:6, background:a(0.08), border:`1px solid ${a(0.28)}`, borderRadius:6, padding:'5px 12px', fontSize:10, fontWeight:700, letterSpacing:'0.12em', color:accent, textTransform:'uppercase', flexShrink:0, fontFamily:'var(--font-jetbrains-mono),monospace' }} className="live-hero-badge">
           <span className="animate-pulse" style={{ width:5, height:5, borderRadius:'50%', background:accent, display:'inline-block', boxShadow:`0 0 6px ${a(0.8)}` }} />
           Live
         </div>
@@ -151,27 +151,27 @@ function TennisHero({ liveCount, totalCount, today }: { liveCount: number; total
           <LogoTennis size={32} />
         </div>
         <div style={{ flex:1 }}>
-          <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:accent, marginBottom:7 }}>Tennis · Prediction Markets</div>
-          <div style={{ fontFamily:'"Barlow Condensed",sans-serif', fontSize:54, fontWeight:800, lineHeight:0.9, textTransform:'uppercase', letterSpacing:'0.05em', color:TEXT_PRIMARY, whiteSpace:'nowrap' }}>
+          <div style={{ fontFamily:'var(--font-jetbrains-mono),monospace', fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:accent, marginBottom:7 }}>Tennis · Prediction Markets</div>
+          <div style={{ fontFamily:'"Inter",sans-serif', fontSize:54, fontWeight:800, lineHeight:0.9, textTransform:'uppercase', letterSpacing:'0.05em', color:TEXT_PRIMARY, whiteSpace:'nowrap' }}>
             TEN<span style={{ color:accent }}>NIS</span>
           </div>
           <div style={{ marginTop:10, display:'flex', alignItems:'center', gap:8 }}>
             <div style={{ height:1, width:24, background:a(0.3) }} />
-            <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase' }}>ATP · WTA · Grand Slams</div>
+            <div style={{ fontFamily:'var(--font-jetbrains-mono),monospace', fontSize:9, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase' }}>ATP · WTA · Grand Slams</div>
           </div>
         </div>
         <div className="live-hero-stats" style={{ gap:20, alignItems:'center', flexShrink:0 }}>
           <div style={{ textAlign:'center' }}>
-            <div style={{ fontFamily:'"Barlow Condensed",sans-serif', fontSize:22, fontWeight:700, color:accent, lineHeight:1 }}>{liveCount}</div>
-            <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'"JetBrains Mono",monospace' }}>Live</div>
+            <div style={{ fontFamily:'"Inter",sans-serif', fontSize:22, fontWeight:700, color:accent, lineHeight:1 }}>{liveCount}</div>
+            <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'var(--font-jetbrains-mono),monospace' }}>Live</div>
           </div>
           <div style={{ width:1, height:32, background:a(0.18) }} />
           <div style={{ textAlign:'center' }}>
-            <div style={{ fontFamily:'"Barlow Condensed",sans-serif', fontSize:22, fontWeight:700, color:TEXT_PRIMARY, lineHeight:1 }}>{totalCount}</div>
-            <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'"JetBrains Mono",monospace' }}>{today}</div>
+            <div style={{ fontFamily:'"Inter",sans-serif', fontSize:22, fontWeight:700, color:TEXT_PRIMARY, lineHeight:1 }}>{totalCount}</div>
+            <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'var(--font-jetbrains-mono),monospace' }}>{today}</div>
           </div>
         </div>
-        <div style={{ alignItems:'center', gap:6, background:a(0.08), border:`1px solid ${a(0.28)}`, borderRadius:6, padding:'5px 12px', fontSize:10, fontWeight:700, letterSpacing:'0.12em', color:accent, textTransform:'uppercase', flexShrink:0, fontFamily:'"JetBrains Mono",monospace' }} className="live-hero-badge">
+        <div style={{ alignItems:'center', gap:6, background:a(0.08), border:`1px solid ${a(0.28)}`, borderRadius:6, padding:'5px 12px', fontSize:10, fontWeight:700, letterSpacing:'0.12em', color:accent, textTransform:'uppercase', flexShrink:0, fontFamily:'var(--font-jetbrains-mono),monospace' }} className="live-hero-badge">
           <span className="animate-pulse" style={{ width:5, height:5, borderRadius:'50%', background:accent, display:'inline-block', boxShadow:`0 0 6px ${a(0.8)}` }} />
           Live
         </div>
@@ -207,27 +207,27 @@ function MMAHero({ liveCount, totalCount, today }: { liveCount: number; totalCou
           <LogoMMA size={32} />
         </div>
         <div style={{ flex:1 }}>
-          <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:accent, marginBottom:7 }}>Mixed Martial Arts · Prediction Markets</div>
-          <div style={{ fontFamily:'"Barlow Condensed",sans-serif', fontSize:54, fontWeight:800, lineHeight:0.9, textTransform:'uppercase', letterSpacing:'0.06em', color:TEXT_PRIMARY, whiteSpace:'nowrap' }}>
+          <div style={{ fontFamily:'var(--font-jetbrains-mono),monospace', fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:accent, marginBottom:7 }}>Mixed Martial Arts · Prediction Markets</div>
+          <div style={{ fontFamily:'"Inter",sans-serif', fontSize:54, fontWeight:800, lineHeight:0.9, textTransform:'uppercase', letterSpacing:'0.06em', color:TEXT_PRIMARY, whiteSpace:'nowrap' }}>
             MMA <span style={{ color:accent }}>FIGHTS</span>
           </div>
           <div style={{ marginTop:10, display:'flex', alignItems:'center', gap:8 }}>
             <div style={{ height:1, width:24, background:a(0.35) }} />
-            <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, color:accent, letterSpacing:'0.12em', textTransform:'uppercase' }}>UFC · Bellator · ONE Championship</div>
+            <div style={{ fontFamily:'var(--font-jetbrains-mono),monospace', fontSize:9, color:accent, letterSpacing:'0.12em', textTransform:'uppercase' }}>UFC · Bellator · ONE Championship</div>
           </div>
         </div>
         <div className="live-hero-stats" style={{ gap:20, alignItems:'center', flexShrink:0 }}>
           <div style={{ textAlign:'center' }}>
-            <div style={{ fontFamily:'"Barlow Condensed",sans-serif', fontSize:22, fontWeight:700, color:accent, lineHeight:1 }}>{liveCount}</div>
-            <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'"JetBrains Mono",monospace' }}>Live</div>
+            <div style={{ fontFamily:'"Inter",sans-serif', fontSize:22, fontWeight:700, color:accent, lineHeight:1 }}>{liveCount}</div>
+            <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'var(--font-jetbrains-mono),monospace' }}>Live</div>
           </div>
           <div style={{ width:1, height:32, background:a(0.18) }} />
           <div style={{ textAlign:'center' }}>
-            <div style={{ fontFamily:'"Barlow Condensed",sans-serif', fontSize:22, fontWeight:700, color:TEXT_PRIMARY, lineHeight:1 }}>{totalCount}</div>
-            <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'"JetBrains Mono",monospace' }}>{today}</div>
+            <div style={{ fontFamily:'"Inter",sans-serif', fontSize:22, fontWeight:700, color:TEXT_PRIMARY, lineHeight:1 }}>{totalCount}</div>
+            <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'var(--font-jetbrains-mono),monospace' }}>{today}</div>
           </div>
         </div>
-        <div style={{ alignItems:'center', gap:6, background:a(0.08), border:`1px solid ${a(0.3)}`, borderRadius:6, padding:'5px 12px', fontSize:10, fontWeight:700, letterSpacing:'0.12em', color:accent, textTransform:'uppercase', flexShrink:0, fontFamily:'"JetBrains Mono",monospace' }} className="live-hero-badge">
+        <div style={{ alignItems:'center', gap:6, background:a(0.08), border:`1px solid ${a(0.3)}`, borderRadius:6, padding:'5px 12px', fontSize:10, fontWeight:700, letterSpacing:'0.12em', color:accent, textTransform:'uppercase', flexShrink:0, fontFamily:'var(--font-jetbrains-mono),monospace' }} className="live-hero-badge">
           <span className="animate-pulse" style={{ width:5, height:5, borderRadius:'50%', background:accent, display:'inline-block', boxShadow:`0 0 6px ${a(0.8)}` }} />
           Live
         </div>
@@ -266,28 +266,28 @@ function CS2Hero({ liveCount, totalCount }: { liveCount: number; totalCount: num
       <div className="live-hero-content" style={{ position:'absolute', inset:0, zIndex:10, display:'flex', alignItems:'center' }}>
         <ShimmerGameLogo game="cs2" size={72} />
         <div style={{ flex:1 }}>
-          <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:accent, marginBottom:7 }}>Esports · Prediction Markets</div>
-          <div style={{ fontFamily:'"Rajdhani",sans-serif', fontSize:52, fontWeight:700, lineHeight:0.9, textTransform:'uppercase', letterSpacing:'0.04em', color:text, whiteSpace:'nowrap' }}>
+          <div style={{ fontFamily:'var(--font-jetbrains-mono),monospace', fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:accent, marginBottom:7 }}>Esports · Prediction Markets</div>
+          <div style={{ fontFamily:'"Inter",sans-serif', fontSize:52, fontWeight:700, lineHeight:0.9, textTransform:'uppercase', letterSpacing:'0.04em', color:text, whiteSpace:'nowrap' }}>
             COUNTER<br />STRIKE <span style={{ color:accent }}>2</span>
           </div>
           <div style={{ marginTop:10, display:'flex', alignItems:'center', gap:8 }}>
             <div style={{ height:1, width:24, background:a(0.3) }} />
-            <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, color:accent, letterSpacing:'0.12em', textTransform:'uppercase' }}>BLAST · ESL · PGL · IEM</div>
+            <div style={{ fontFamily:'var(--font-jetbrains-mono),monospace', fontSize:9, color:accent, letterSpacing:'0.12em', textTransform:'uppercase' }}>BLAST · ESL · PGL · IEM</div>
           </div>
         </div>
         <div className="live-hero-stats" style={{ gap:20, alignItems:'center', flexShrink:0 }}>
           <div style={{ textAlign:'center' }}>
-            <div style={{ fontFamily:'"Rajdhani",sans-serif', fontSize:22, fontWeight:700, color:accent, lineHeight:1 }}>{liveCount}</div>
-            <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'"JetBrains Mono",monospace' }}>Live</div>
+            <div style={{ fontFamily:'"Inter",sans-serif', fontSize:22, fontWeight:700, color:accent, lineHeight:1 }}>{liveCount}</div>
+            <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'var(--font-jetbrains-mono),monospace' }}>Live</div>
           </div>
           <div style={{ width:1, height:32, background:a(0.18) }} />
           <div style={{ textAlign:'center' }}>
-            <div style={{ fontFamily:'"Rajdhani",sans-serif', fontSize:22, fontWeight:700, color:text, lineHeight:1 }}>{totalCount}</div>
-            <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'"JetBrains Mono",monospace' }}>Total</div>
+            <div style={{ fontFamily:'"Inter",sans-serif', fontSize:22, fontWeight:700, color:text, lineHeight:1 }}>{totalCount}</div>
+            <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'var(--font-jetbrains-mono),monospace' }}>Total</div>
           </div>
         </div>
         {liveCount > 0 && (
-          <div style={{ alignItems:'center', gap:6, background:a(0.08), border:`1px solid ${a(0.28)}`, borderRadius:6, padding:'5px 12px', fontSize:10, fontWeight:700, letterSpacing:'0.12em', color:accent, textTransform:'uppercase', flexShrink:0, fontFamily:'"JetBrains Mono",monospace' }} className="live-hero-badge">
+          <div style={{ alignItems:'center', gap:6, background:a(0.08), border:`1px solid ${a(0.28)}`, borderRadius:6, padding:'5px 12px', fontSize:10, fontWeight:700, letterSpacing:'0.12em', color:accent, textTransform:'uppercase', flexShrink:0, fontFamily:'var(--font-jetbrains-mono),monospace' }} className="live-hero-badge">
             <span className="animate-pulse" style={{ width:5, height:5, borderRadius:'50%', background:accent, display:'inline-block', boxShadow:`0 0 6px ${a(0.8)}` }} />
             Live
           </div>
@@ -331,8 +331,8 @@ function Dota2Hero({ liveCount, totalCount }: { liveCount: number; totalCount: n
       <div className="live-hero-content" style={{ position:'absolute', inset:0, zIndex:10, display:'flex', alignItems:'center' }}>
         <ShimmerGameLogo game="dota2" size={72} />
         <div style={{ flex:1 }}>
-          <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:9, letterSpacing:'0.22em', textTransform:'uppercase', color:accent, marginBottom:8 }}>Defense of the Ancients · Prediction Markets</div>
-          <div style={{ fontFamily:'"Cinzel",serif', fontSize:44, fontWeight:900, lineHeight:0.88, textTransform:'uppercase', letterSpacing:'0.06em', color:textColor, textShadow:titleShadow, whiteSpace:'nowrap' }}>
+          <div style={{ fontFamily:'var(--font-jetbrains-mono),monospace', fontSize:9, letterSpacing:'0.22em', textTransform:'uppercase', color:accent, marginBottom:8 }}>Defense of the Ancients · Prediction Markets</div>
+          <div style={{ fontFamily:'"Inter",sans-serif', fontSize:44, fontWeight:900, lineHeight:0.88, textTransform:'uppercase', letterSpacing:'0.06em', color:textColor, textShadow:titleShadow, whiteSpace:'nowrap' }}>
             DOTA <span style={{ color:accent, textShadow:`0 0 20px ${a(0.8)},0 0 60px ${a(0.3)}` }}>2</span>
           </div>
           <div style={{ marginTop:10, display:'flex', alignItems:'center', gap:6 }}>
@@ -343,17 +343,17 @@ function Dota2Hero({ liveCount, totalCount }: { liveCount: number; totalCount: n
         </div>
         <div className="live-hero-stats" style={{ gap:20, alignItems:'center', flexShrink:0 }}>
           <div style={{ textAlign:'center' }}>
-            <div style={{ fontFamily:'"Cinzel",serif', fontSize:20, fontWeight:700, color:accent, lineHeight:1 }}>{liveCount}</div>
-            <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'"JetBrains Mono",monospace' }}>Live</div>
+            <div style={{ fontFamily:'"Inter",sans-serif', fontSize:20, fontWeight:700, color:accent, lineHeight:1 }}>{liveCount}</div>
+            <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'var(--font-jetbrains-mono),monospace' }}>Live</div>
           </div>
           <div style={{ width:1, height:32, background:a(0.22) }} />
           <div style={{ textAlign:'center' }}>
-            <div style={{ fontFamily:'"Cinzel",serif', fontSize:20, fontWeight:700, color:textColor, lineHeight:1 }}>{totalCount}</div>
-            <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'"JetBrains Mono",monospace' }}>Total</div>
+            <div style={{ fontFamily:'"Inter",sans-serif', fontSize:20, fontWeight:700, color:textColor, lineHeight:1 }}>{totalCount}</div>
+            <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'var(--font-jetbrains-mono),monospace' }}>Total</div>
           </div>
         </div>
         {liveCount > 0 && (
-          <div style={{ alignItems:'center', gap:6, background:a(0.1), border:`1px solid ${a(0.3)}`, borderRadius:6, padding:'5px 12px', fontSize:10, fontWeight:700, letterSpacing:'0.12em', color:accent, textTransform:'uppercase', flexShrink:0, fontFamily:'"JetBrains Mono",monospace' }} className="live-hero-badge">
+          <div style={{ alignItems:'center', gap:6, background:a(0.1), border:`1px solid ${a(0.3)}`, borderRadius:6, padding:'5px 12px', fontSize:10, fontWeight:700, letterSpacing:'0.12em', color:accent, textTransform:'uppercase', flexShrink:0, fontFamily:'var(--font-jetbrains-mono),monospace' }} className="live-hero-badge">
             <span className="animate-pulse" style={{ width:5, height:5, borderRadius:'50%', background:accent, display:'inline-block', boxShadow:`0 0 6px ${a(0.8)}` }} />
             Live
           </div>

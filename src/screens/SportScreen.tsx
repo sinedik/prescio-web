@@ -656,7 +656,7 @@ export function SportScreen({ initialSport, eventId, initialEvents, initialEvent
   useEffect(() => {
     const key = `sport_events:${sport}`
     const cached = getCached<SportEvent[]>(key)
-    if (!cached) { setEvents([]); setLoading(true) }
+    if (!cached && !(initialEvents && initialEvents.length)) { setEvents([]); setLoading(true) }
 
     sportApi.getEvents(fetchParams)
       .then(res => {

@@ -83,7 +83,7 @@ export function SourceBadge({ source, size = 'sm' }: Props) {
   const cfg = SOURCE_CONFIG[source]
   if (!cfg) {
     return (
-      <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'JetBrains Mono, monospace', textTransform: 'uppercase' }}>
+      <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-jetbrains-mono), monospace', textTransform: 'uppercase' }}>
         {source}
       </span>
     )
