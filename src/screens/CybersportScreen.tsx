@@ -10,6 +10,8 @@ import { api } from '../lib/api'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import type { EsportsMatch } from '../types'
 import { useLiveLayout } from '../contexts/LiveLayoutContext'
+import { useLang } from '../contexts/LanguageContext'
+import { useT } from '../lib/i18n'
 
 const CS2MatchScreen  = dynamic(() => import('./CS2MatchScreen'),  { loading: () => <MatchSkeleton /> })
 const DotaMatchScreen = dynamic(() => import('./DotaMatchScreen'), { loading: () => <MatchSkeleton /> })
@@ -29,8 +31,8 @@ type TimeWin = 'live' | '1h' | '3h' | '12h' | 'all'
 
 
 const ACCENT: Record<Game, string> = {
-  cs2:      '#e66414',
-  dota2:    '#c0392b',
+  cs2:   'rgb(var(--sport-cs2-rgb))',
+  dota2: 'rgb(var(--sport-dota2-rgb))',
 }
 
 const TIME_LABELS: Record<TimeWin, string> = {
@@ -124,6 +126,7 @@ function Pagination({ current, total, totalEvents, pageStart, pageEnd, onChange,
   current: number; total: number; totalEvents: number; pageStart: number; pageEnd: number
   onChange: (p: number) => void; accent: string
 }) {
+  const { lang } = useLang()
   if (total <= 1) return null
   const pages: (number | '...')[] = []
   if (total <= 7) {
@@ -137,8 +140,8 @@ function Pagination({ current, total, totalEvents, pageStart, pageEnd, onChange,
   }
   return (
     <div className="flex flex-col items-center gap-2 pt-4 pb-2">
-      <span className="text-[10px] font-mono text-[#888]">
-        Матчи {pageStart}–{pageEnd} из {totalEvents}
+      <span className="text-[10px] font-mono text-text-muted">
+        {lang === 'ru' ? `Матчи ${pageStart}–${pageEnd} из ${totalEvents}` : `Matches ${pageStart}–${pageEnd} of ${totalEvents}`}
       </span>
       <div className="flex items-center gap-1">
         <button onClick={() => onChange(current - 1)} disabled={current === 1}
@@ -152,7 +155,7 @@ function Pagination({ current, total, totalEvents, pageStart, pageEnd, onChange,
             <button key={p} onClick={() => onChange(p as number)}
               className="w-8 h-8 flex items-center justify-center rounded text-[11px] font-mono transition-all"
               style={p === current
-                ? { background: `${accent}18`, color: accent, border: `1px solid ${accent}44` }
+                ? { background: `color-mix(in srgb, ${accent} 10%, transparent)`, color: accent, border: `1px solid color-mix(in srgb, ${accent} 27%, transparent)` }
                 : { color: 'rgb(var(--text-muted))', border: '1px solid transparent' }
               }>{p}</button>
           )
@@ -172,8 +175,8 @@ function TournamentDivider({ name, count, liveCount, first }: {
 }) {
   return (
     <div className={`flex items-center gap-2.5 px-3.5 rounded-lg overflow-hidden ${first ? 'mt-0' : 'mt-5'} mb-1.5`}
-      style={{ minHeight: 40, background: 'rgba(255,255,255,0.05)', borderLeft: '3px solid rgba(255,255,255,0.08)' }}>
-      <span className="text-[13px] font-semibold text-[#e0e0e0] truncate flex-1">{name}</span>
+      style={{ minHeight: 40, background: 'rgba(var(--surface-tint-rgb), 0.05)', borderLeft: '3px solid rgba(var(--surface-tint-rgb), 0.08)' }}>
+      <span className="text-[13px] font-semibold text-text-primary truncate flex-1">{name}</span>
       {liveCount > 0 && (
         <span className="flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0"
           style={{ background: 'rgba(255,50,50,0.12)', color: '#ff5252', border: '1px solid rgba(255,50,50,0.25)' }}>
@@ -181,7 +184,7 @@ function TournamentDivider({ name, count, liveCount, first }: {
           {liveCount}
         </span>
       )}
-      <span className="text-[10px] font-mono text-[#888] shrink-0 min-w-[18px] text-right">{count}</span>
+      <span className="text-[10px] font-mono text-text-muted shrink-0 min-w-[18px] text-right">{count}</span>
     </div>
   )
 }
@@ -210,9 +213,9 @@ const EsportsRow = memo(function EsportsRow({ match, accent, href }: {
       onMouseEnter={() => router.prefetch(href)}
       className="rounded-lg px-3.5 py-2 flex items-center gap-3 cursor-pointer transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
       style={{
-        background: 'rgba(8,8,8,0.55)',
+        background: 'rgba(var(--bg-base-rgb), 0.55)',
         backdropFilter: 'blur(2px)',
-        border: `1px solid ${isLive ? `${accent}28` : 'rgba(255,255,255,0.06)'}`,
+        border: `1px solid ${isLive ? `color-mix(in srgb, ${accent} 16%, transparent)` : 'rgba(var(--surface-tint-rgb),0.06)'}`,
         borderLeft: isLive ? `3px solid ${accent}` : undefined,
       }}
     >
@@ -221,7 +224,7 @@ const EsportsRow = memo(function EsportsRow({ match, accent, href }: {
         {isLive ? (
           <div className="flex flex-col items-center gap-0.5">
             <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
-              style={{ background: `${accent}22`, color: accent }}>LIVE</span>
+              style={{ background: `color-mix(in srgb, ${accent} 13%, transparent)`, color: accent }}>LIVE</span>
             {scoreA != null && scoreB != null && (
               <span className="text-[11px] font-mono font-bold text-text-primary">
                 {scoreA}:{scoreB}
@@ -274,6 +277,8 @@ const EsportsRow = memo(function EsportsRow({ match, accent, href }: {
 // ─── Main screen ──────────────────────────────────────────────────────────────
 export default function CybersportScreen({ initialGame = 'cs2', matchId, initialMatches, initialMatchData }: { initialGame?: Game; matchId?: string; initialMatches?: EsportsMatch[]; initialMatchData?: unknown }) {
   usePageTitle('Esports')
+  const { lang } = useLang()
+  const t = useT(lang)
 
   const game   = initialGame
   const accent = ACCENT[game]
@@ -368,7 +373,7 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId, initial
         {/* Time filter bar */}
         {!matchId && (
           <div className="flex items-center gap-1.5 mb-4 pt-3"
-            style={{ position: 'sticky', top: 200, zIndex: 15, background: 'rgba(8,8,8,0.75)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', marginLeft: -24, marginRight: -24, paddingLeft: 24, paddingRight: 24 }}
+            style={{ position: 'sticky', top: 200, zIndex: 15, background: 'rgba(var(--bg-base-rgb), 0.75)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', marginLeft: -24, marginRight: -24, paddingLeft: 24, paddingRight: 24 }}
           >
             {(['live', '1h', '3h', '12h', 'all'] as TimeWin[]).map(tw => (
               <button
@@ -376,8 +381,8 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId, initial
                 onClick={() => { setTimeWin(tw); setCurrentPage(1) }}
                 className="px-2.5 py-1 rounded text-[9px] font-mono font-bold tracking-wider uppercase transition-all"
                 style={timeWin === tw
-                  ? { background: `${accent}18`, border: `1px solid ${accent}55`, color: accent }
-                  : { background: 'transparent', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.3)' }
+                  ? { background: `color-mix(in srgb, ${accent} 10%, transparent)`, border: `1px solid color-mix(in srgb, ${accent} 33%, transparent)`, color: accent }
+                  : { background: 'transparent', border: '1px solid rgba(var(--surface-tint-rgb),0.08)', color: 'rgb(var(--text-secondary))' }
                 }
               >
                 {TIME_LABELS[tw]}
@@ -413,7 +418,7 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId, initial
                   onClick={() => setActiveTournament(null)}
                   className="shrink-0 text-[9px] font-mono text-text-muted/50 hover:text-text-muted transition-colors px-1.5 py-0.5 rounded border border-bg-border"
                 >
-                  Сбросить
+                  {t('common.reset')}
                 </button>
               </div>
             )}

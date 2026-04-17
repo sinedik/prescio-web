@@ -209,7 +209,7 @@ export default function EsportsTeamScreen({ teamId, game, initialData }: Props) 
               <p className="text-[10px] font-mono text-text-muted/70 mt-1">
                 {stats.wins}W · {stats.losses}L · {stats.wins + stats.losses} total
               </p>
-              <div className="mt-2 flex h-1 rounded-full overflow-hidden bg-white/[0.05]">
+              <div className="mt-2 flex h-1 rounded-full overflow-hidden bg-text-primary/[0.05]">
                 <div style={{ width: `${(stats.wins / Math.max(1, stats.wins + stats.losses)) * 100}%`, background: '#4caf50' }} />
                 <div style={{ width: `${(stats.losses / Math.max(1, stats.wins + stats.losses)) * 100}%`, background: '#f4433688' }} />
               </div>
@@ -303,7 +303,7 @@ export default function EsportsTeamScreen({ teamId, game, initialData }: Props) 
                         </div>
                       </div>
                       <div className="mt-2.5 flex items-center gap-2">
-                        <div className="flex-1 h-1 rounded-full bg-white/[0.06] overflow-hidden">
+                        <div className="flex-1 h-1 rounded-full bg-text-primary/[0.06] overflow-hidden">
                           <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
                         </div>
                         <span className="text-[10px] font-mono shrink-0" style={{ color }}>{pct}%</span>

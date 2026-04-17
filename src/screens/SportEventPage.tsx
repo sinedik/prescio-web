@@ -7,23 +7,29 @@ import { getCached, setCached } from '../lib/clientCache'
 import { useAuthContext } from '../contexts/AuthContext'
 import { useSportWs } from '../hooks/useSportWs'
 import type { SportEvent, SportOdds, SportPrediction, SportStanding, SportInjury, SubscriptionPlan, SportLineup, SportFixtureStat, SportMatchEvent, SportTopScorer } from '../types/index'
+import { useLang } from '../contexts/LanguageContext'
+import { useT } from '../lib/i18n'
+import { mix } from '../components/disciplines'
 
 export type EventFastCache = { event: SportEvent; form: { home_form: FormEntry[] | null; away_form: FormEntry[] | null } | null; prediction: SportPrediction | null | undefined }
 type EventDetailsCache = { standings: SportStanding[]; topScorers: SportTopScorer[]; homeInj: SportInjury[]; awayInj: SportInjury[]; lineups: SportLineup[]; matchStats: SportFixtureStat[]; matchEvents: SportMatchEvent[] }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SPORT_ACCENT: Record<string, string> = {
-  football: '#D4A017', basketball: '#e66414', tennis: '#C8E63C', mma: '#e02020',
+  football:   'var(--sport-football)',
+  basketball: 'var(--sport-basketball)',
+  tennis:     'var(--sport-tennis)',
+  mma:        'var(--sport-mma)',
 }
-const MARKET_TAB_LABELS: Record<string, string> = {
-  h2h: 'Основные', totals: 'Тоталы', spreads: 'Форы', btts: 'Обе забьют',
+const MARKET_TAB_KEYS: Record<string, 'sport.market.h2h' | 'sport.market.totals' | 'sport.market.spreads' | 'sport.market.btts'> = {
+  h2h: 'sport.market.h2h', totals: 'sport.market.totals', spreads: 'sport.market.spreads', btts: 'sport.market.btts',
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type FormResult = 'W' | 'D' | 'L'
 type FormEntry = { result: FormResult; home: string; away: string; score: string; date: string }
 const FORM_COLOR: Record<FormResult, string> = { W: '#61DF6E', D: '#596470', L: '#E55E5B' }
-const AWAY_BAR = 'rgba(255,255,255,0.28)'
+const AWAY_BAR = 'rgba(var(--surface-tint-rgb),0.28)'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function abbr(name: string) {
@@ -58,14 +64,14 @@ function TeamAvatar({ name, logo, accent, size = 68 }: { name: string; logo?: st
   const [err, setErr] = useState(false)
   if (logo && !err) return (
     <div className="rounded-2xl flex items-center justify-center border-2 overflow-hidden shrink-0"
-      style={{ width: size, height: size, background: `${accent}08`, borderColor: `${accent}25` }}>
+      style={{ width: size, height: size, background: mix(accent, 3), borderColor: mix(accent, 15) }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={logo} alt={name} loading="lazy" onError={() => setErr(true)} style={{ width: size * 0.72, height: size * 0.72, objectFit: 'contain' }} />
     </div>
   )
   return (
     <div className="rounded-2xl flex items-center justify-center border-2 font-bold shrink-0"
-      style={{ width: size, height: size, background: `${accent}12`, borderColor: `${accent}30`, color: accent, fontSize: size * 0.22 }}>
+      style={{ width: size, height: size, background: mix(accent, 7), borderColor: mix(accent, 19), color: accent, fontSize: size * 0.22 }}>
       {abbr(name)}
     </div>
   )
@@ -112,22 +118,24 @@ function FormDots({ form, align = 'left' }: { form: FormEntry[] | null; align?: 
 function ProbBar({ home, draw, away, homeName, awayName, accent }: {
   home: number; draw: number | null; away: number; homeName: string; awayName: string; accent: string
 }) {
+  const { lang } = useLang()
+  const t = useT(lang)
   return (
     <div className="flex flex-col gap-2 w-full">
-      <p className="text-[10px] font-mono uppercase tracking-widest text-[#888] text-center mb-0.5">Вероятность победы</p>
+      <p className="text-[10px] font-mono uppercase tracking-widest text-text-muted text-center mb-0.5">{t('sport.win_probability')}</p>
       <div className="flex justify-between px-0.5 text-[15px] font-mono font-bold">
         <span style={{ color: accent }}>{home}%</span>
-        {draw != null && <span className="text-[#aaa]">{draw}%</span>}
-        <span className="text-white">{away}%</span>
+        {draw != null && <span className="text-text-secondary">{draw}%</span>}
+        <span className="text-text-primary">{away}%</span>
       </div>
       <div className="flex h-[6px] rounded-full overflow-hidden w-full">
         <div className="h-full" style={{ width: `${home}%`, background: accent, borderRadius: '99px 0 0 99px' }} />
         {draw != null && draw > 0 && <div className="h-full" style={{ width: `${draw}%`, background: 'rgba(89,100,112,0.7)' }} />}
         <div className="h-full flex-1" style={{ background: AWAY_BAR, borderRadius: '0 99px 99px 0' }} />
       </div>
-      <div className="flex justify-between px-0.5 text-[11px] font-mono text-[#888]">
+      <div className="flex justify-between px-0.5 text-[11px] font-mono text-text-muted">
         <span>{homeName.split(' ').slice(0, 2).join(' ')}</span>
-        {draw != null && <span>Ничья</span>}
+        {draw != null && <span>{t('sport.draw')}</span>}
         <span>{awayName.split(' ').slice(0, 2).join(' ')}</span>
       </div>
     </div>
@@ -143,17 +151,17 @@ function CompareBar({ label, homeVal, awayVal, accent }: {
   const awayPct = 100 - homePct
   return (
     <div className="flex items-center gap-3 min-h-[44px]">
-      <span className="text-[13px] font-mono font-bold w-10 text-right text-white tabular-nums">{homePct}%</span>
+      <span className="text-[13px] font-mono font-bold w-10 text-right text-text-primary tabular-nums">{homePct}%</span>
       <div className="flex flex-1 h-[5px] rounded-full overflow-hidden">
         <div style={{ width: `${homePct}%`, background: accent, borderRadius: '99px 0 0 99px' }} />
         <div style={{ flex: 1, background: AWAY_BAR, borderRadius: '0 99px 99px 0' }} />
       </div>
-      <span className="text-[10px] font-mono text-[#888] uppercase tracking-wider w-24 text-center shrink-0">{label}</span>
+      <span className="text-[10px] font-mono text-text-muted uppercase tracking-wider w-24 text-center shrink-0">{label}</span>
       <div className="flex flex-1 h-[5px] rounded-full overflow-hidden flex-row-reverse">
         <div style={{ width: `${awayPct}%`, background: AWAY_BAR, borderRadius: '99px 0 0 99px' }} />
         <div style={{ flex: 1, background: accent, opacity: 0.25, borderRadius: '0 99px 99px 0' }} />
       </div>
-      <span className="text-[13px] font-mono font-bold w-10 text-white tabular-nums">{awayPct}%</span>
+      <span className="text-[13px] font-mono font-bold w-10 text-text-primary tabular-nums">{awayPct}%</span>
     </div>
   )
 }
@@ -163,7 +171,7 @@ function Section({ id, title, children, action }: { id?: string; title: string; 
   return (
     <div id={id} className="rounded-xl border border-bg-border bg-bg-surface overflow-hidden scroll-mt-16">
       <div className="flex items-center justify-between px-4 py-3 border-b border-bg-border">
-        <span className="text-[11px] font-mono font-bold tracking-[0.12em] uppercase text-[#aaa]">{title}</span>
+        <span className="text-[11px] font-mono font-bold tracking-[0.12em] uppercase text-text-secondary">{title}</span>
         {action}
       </div>
       {children}
@@ -193,14 +201,14 @@ function SectionNav({ items }: { items: { id: string; label: string }[] }) {
 
   return (
     <div className="sticky top-0 z-20 -mx-4 border-b border-bg-border relative"
-      style={{ background: 'rgba(10,10,15,0.92)', backdropFilter: 'blur(12px)' }}>
+      style={{ background: 'rgba(var(--bg-base-rgb), 0.92)', backdropFilter: 'blur(12px)' }}>
       <div className="px-4 py-2 flex gap-1.5 overflow-x-auto">
         {items.map(({ id, label }) => (
           <button key={id} onClick={() => scroll(id)}
             className="px-3 py-1.5 rounded-full text-[11px] font-mono whitespace-nowrap transition-all shrink-0"
             style={active === id
-              ? { background: 'rgba(255,255,255,0.14)', color: '#fff', fontWeight: 700 }
-              : { background: 'rgba(255,255,255,0.04)', color: '#888' }
+              ? { background: 'rgba(var(--surface-tint-rgb), 0.14)', color: 'rgb(var(--text-primary))', fontWeight: 700 }
+              : { background: 'rgba(var(--surface-tint-rgb), 0.04)', color: 'rgb(var(--text-muted))' }
             }>
             {label}
           </button>
@@ -218,6 +226,8 @@ function SectionNav({ items }: { items: { id: string; label: string }[] }) {
 function AiInsightCard({ pred, odds, accent }: {
   pred: SportPrediction | null | undefined; odds: SportOdds[]; accent: string
 }) {
+  const { lang } = useLang()
+  const t = useT(lang)
   if (pred === undefined) return (
     <div id="insight" className="rounded-xl border border-bg-border overflow-hidden scroll-mt-16"
       style={{ borderLeft: '3px solid #22c55e', background: 'rgba(34,197,94,0.03)' }}>
@@ -225,7 +235,7 @@ function AiInsightCard({ pred, odds, accent }: {
         <div className="w-6 h-6 rounded flex items-center justify-center shrink-0" style={{ background: '#22c55e20' }}>
           <span style={{ color: '#22c55e' }}>⚡</span>
         </div>
-        <span className="text-[11px] font-mono font-bold tracking-[0.12em] uppercase" style={{ color: '#22c55e90' }}>Прогноз · API-Sports</span>
+        <span className="text-[11px] font-mono font-bold tracking-[0.12em] uppercase" style={{ color: '#22c55e90' }}>{t('sport.insight_source')}</span>
       </div>
       <div className="px-4 py-5 flex flex-col gap-2.5">
         {[100, 80, 55].map((w, i) => <div key={i} className="h-2.5 rounded animate-pulse bg-bg-elevated" style={{ width: `${w}%` }} />)}
@@ -237,8 +247,8 @@ function AiInsightCard({ pred, odds, accent }: {
   const bkCount = new Set(odds.map(o => o.bookmaker)).size
   const bestAiVal = odds.map(o => o.ai_value).filter(Boolean).sort((a, b) => (b?.confidence ?? 0) - (a?.confidence ?? 0))[0]
   const maxPct = Math.max(pred.home_pct, pred.away_pct)
-  const confidence = maxPct >= 60 ? 'Высокая уверенность' : maxPct >= 50 ? 'Средняя уверенность' : 'Низкая уверенность'
-  const advice = pred.advice ?? (pred.winner_name ? `Фаворит: ${pred.winner_name}. ${pred.winner_comment ?? ''}`.trim() : null)
+  const confidence = maxPct >= 60 ? t('sport.high_confidence') : maxPct >= 50 ? t('sport.medium_confidence') : t('sport.low_confidence')
+  const advice = pred.advice ?? (pred.winner_name ? `${pred.winner_name}. ${pred.winner_comment ?? ''}`.trim() : null)
 
   return (
     <div id="insight" className="rounded-xl border border-bg-border overflow-hidden scroll-mt-16"
@@ -247,7 +257,7 @@ function AiInsightCard({ pred, odds, accent }: {
         <div className="w-6 h-6 rounded flex items-center justify-center shrink-0" style={{ background: '#22c55e20' }}>
           <span style={{ color: '#22c55e' }}>⚡</span>
         </div>
-        <span className="text-[11px] font-mono font-bold tracking-[0.12em] uppercase" style={{ color: '#22c55e90' }}>Прогноз · API-Sports</span>
+        <span className="text-[11px] font-mono font-bold tracking-[0.12em] uppercase" style={{ color: '#22c55e90' }}>{t('sport.insight_source')}</span>
         <div className="ml-auto px-2.5 py-1 rounded text-[10px] font-mono font-semibold shrink-0" style={{ background: '#22c55e18', color: '#22c55e' }}>
           {confidence}
         </div>
@@ -258,36 +268,36 @@ function AiInsightCard({ pred, odds, accent }: {
         )}
         {/* Prediction pcts as badges */}
         <div className="flex items-center gap-3">
-          <div className="flex-1 flex flex-col items-center py-2.5 rounded-lg" style={{ background: `${accent}12`, border: `1px solid ${accent}30` }}>
+          <div className="flex-1 flex flex-col items-center py-2.5 rounded-lg" style={{ background: mix(accent, 7), border: `1px solid ${mix(accent, 19)}` }}>
             <span className="text-[18px] font-mono font-black" style={{ color: accent }}>{pred.home_pct}%</span>
-            <span className="text-[9px] font-mono text-text-muted/50 uppercase tracking-wider mt-0.5">Хозяева</span>
+            <span className="text-[9px] font-mono text-text-muted/50 uppercase tracking-wider mt-0.5">{t('sport.home')}</span>
           </div>
           {pred.draw_pct != null && (
             <div className="flex-1 flex flex-col items-center py-2.5 rounded-lg border border-bg-border bg-bg-elevated">
               <span className="text-[18px] font-mono font-black text-text-muted/60">{pred.draw_pct}%</span>
-              <span className="text-[9px] font-mono text-text-muted/40 uppercase tracking-wider mt-0.5">Ничья</span>
+              <span className="text-[9px] font-mono text-text-muted/40 uppercase tracking-wider mt-0.5">{t('sport.draw')}</span>
             </div>
           )}
           <div className="flex-1 flex flex-col items-center py-2.5 rounded-lg border border-bg-border bg-bg-elevated">
             <span className="text-[18px] font-mono font-black text-text-muted/70">{pred.away_pct}%</span>
-            <span className="text-[9px] font-mono text-text-muted/40 uppercase tracking-wider mt-0.5">Гости</span>
+            <span className="text-[9px] font-mono text-text-muted/40 uppercase tracking-wider mt-0.5">{t('sport.away')}</span>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
           {bestAiVal?.value_rating != null && (
             <div className="px-3 py-1.5 rounded text-[10px] font-mono font-bold"
-              style={{ background: `${accent}15`, color: accent, border: `1px solid ${accent}35` }}>
+              style={{ background: mix(accent, 8), color: accent, border: `1px solid ${mix(accent, 21)}` }}>
               Edge +{bestAiVal.value_rating}% · {bestAiVal.suggested_side ?? pred.winner_name}
             </div>
           )}
           {bestAiVal?.confidence != null && (
             <div className="px-3 py-1.5 rounded text-[10px] font-mono border border-bg-border text-text-muted/60">
-              Kelly: {(bestAiVal.confidence * 4.2).toFixed(1)}% банка
+              Kelly: {(bestAiVal.confidence * 4.2).toFixed(1)}{t('sport.kelly_bank')}
             </div>
           )}
           {bkCount > 0 && (
             <div className="px-3 py-1.5 rounded text-[10px] font-mono border border-bg-border text-text-muted/40">
-              {bkCount} источников данных
+              {bkCount} {t('sport.data_sources')}
             </div>
           )}
         </div>
@@ -302,6 +312,8 @@ function H2HSection({ h2h, homeId, awayId, homeName, awayName, accent }: {
   homeId: number | null; awayId: number | null
   homeName: string; awayName: string; accent: string
 }) {
+  const { lang } = useLang()
+  const t = useT(lang)
   if (!h2h?.length) return null
 
   const homeWins = h2h.filter(m => {
@@ -319,17 +331,17 @@ function H2HSection({ h2h, homeId, awayId, homeName, awayName, accent }: {
   const awayWinPct = 100 - homeWinPct - drawPct
 
   return (
-    <Section id="h2h" title={`Head-to-Head · ${h2h.length} встреч`}>
+    <Section id="h2h" title={lang === 'ru' ? `Head-to-Head · ${h2h.length} встреч` : `Head-to-Head · ${h2h.length} matches`}>
       {/* Summary numbers */}
       <div className="flex items-stretch border-b border-bg-border">
         {[
-          { label: 'Побед хозяев', sub: homeName, val: homeWins, color: accent },
-          { label: 'Ничьих', sub: '', val: draws, color: '#596470' },
-          { label: 'Побед гостей', sub: awayName, val: awayWins, color: 'rgba(255,255,255,0.85)' },
+          { label: t('sport.home_wins'), sub: homeName, val: homeWins, color: accent },
+          { label: t('sport.draws_count'), sub: '', val: draws, color: '#596470' },
+          { label: t('sport.away_wins'), sub: awayName, val: awayWins, color: 'rgba(var(--surface-tint-rgb),0.85)' },
         ].map(({ label, sub, val, color }) => (
           <div key={label} className="flex-1 flex flex-col items-center py-5 gap-1 border-r border-bg-border last:border-r-0">
             <span className="text-4xl font-mono font-black leading-none" style={{ color }}>{val}</span>
-            <span className="text-[10px] font-mono text-[#888] uppercase tracking-wider text-center">{label}</span>
+            <span className="text-[10px] font-mono text-text-muted uppercase tracking-wider text-center">{label}</span>
             {sub && <span className="text-[9px] font-mono text-[#666] truncate max-w-[80px] text-center">{sub}</span>}
           </div>
         ))}
@@ -353,17 +365,17 @@ function H2HSection({ h2h, homeId, awayId, homeName, awayName, accent }: {
           const awayWon = aG > hG
           return (
             <div key={m.fixture.id} className="flex items-center gap-3 px-4 py-3 min-h-[44px]">
-              <span className="text-[11px] font-mono text-[#888] w-[80px] shrink-0">
-                {new Date(m.fixture.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: '2-digit' })}
+              <span className="text-[11px] font-mono text-text-muted w-[80px] shrink-0">
+                {new Date(m.fixture.date).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'short', year: '2-digit' })}
               </span>
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                <span className={`text-[13px] truncate text-right flex-1 ${homeWon ? 'text-white font-semibold' : 'text-[#888]'}`}>
+                <span className={`text-[13px] truncate text-right flex-1 ${homeWon ? 'text-text-primary font-semibold' : 'text-text-muted'}`}>
                   {m.teams.home.name}
                 </span>
-                <span className="text-[14px] font-mono font-bold text-white shrink-0 tabular-nums px-1">
+                <span className="text-[14px] font-mono font-bold text-text-primary shrink-0 tabular-nums px-1">
                   {m.goals.home ?? '?'}:{m.goals.away ?? '?'}
                 </span>
-                <span className={`text-[13px] truncate flex-1 ${awayWon ? 'text-white font-semibold' : 'text-[#888]'}`}>
+                <span className={`text-[13px] truncate flex-1 ${awayWon ? 'text-text-primary font-semibold' : 'text-text-muted'}`}>
                   {m.teams.away.name}
                 </span>
               </div>
@@ -384,6 +396,8 @@ function StandingsSection({ standings, homeId, awayId, leagueName, accent }: {
   standings: SportStanding[]; homeId: number | null; awayId: number | null
   leagueName: string; accent: string
 }) {
+  const { lang } = useLang()
+  const t = useT(lang)
   const [expanded, setExpanded] = useState(false)
   if (!standings.length) return null
 
@@ -404,21 +418,21 @@ function StandingsSection({ standings, homeId, awayId, leagueName, accent }: {
   return (
     <Section
       id="standings"
-      title={`Турнирная таблица · ${leagueName} · ${seasonLabel}`}
+      title={lang === 'ru' ? `Турнирная таблица · ${leagueName} · ${seasonLabel}` : `Standings · ${leagueName} · ${seasonLabel}`}
       action={
         <button onClick={() => setExpanded(e => !e)}
           className="text-[10px] font-mono text-text-muted/50 hover:text-text-muted/80 transition-colors">
-          {expanded ? 'Свернуть ↑' : 'Развернуть →'}
+          {expanded ? t('sport.standings.collapse') : t('sport.standings.expand')}
         </button>
       }
     >
       <div className="flex flex-col">
         <div className="grid px-4 py-2 text-[10px] font-mono uppercase tracking-wide text-[#666]"
           style={{ gridTemplateColumns: '28px 1fr 44px 52px 52px' }}>
-          <span>#</span><span>Команда</span>
-          <span className="text-right">И</span>
-          <span className="text-right">О</span>
-          <span className="text-right">+/-</span>
+          <span>#</span><span>{t('sport.standings.team_col')}</span>
+          <span className="text-right">{t('sport.standings.played_col')}</span>
+          <span className="text-right">{t('sport.standings.points_col')}</span>
+          <span className="text-right">{t('sport.standings.goal_diff_col')}</span>
         </div>
         <div className="flex flex-col divide-y divide-bg-border/20">
           {visible.map(s => {
@@ -428,7 +442,7 @@ function StandingsSection({ standings, homeId, awayId, leagueName, accent }: {
                 className="grid items-center px-4 py-2.5"
                 style={{
                   gridTemplateColumns: '28px 1fr 44px 52px 52px',
-                  background: isHL ? `${accent}08` : undefined,
+                  background: isHL ? mix(accent, 3) : undefined,
                   borderLeft: isHL ? `2px solid ${accent}` : '2px solid transparent',
                 }}>
                 <span className="text-[11px] font-mono text-text-muted/50">{s.rank}</span>
@@ -438,20 +452,20 @@ function StandingsSection({ standings, homeId, awayId, leagueName, accent }: {
                     <img src={s.team_logo} alt="" loading="lazy" className="w-5 h-5 object-contain shrink-0" />
                   ) : (
                     <div className="w-5 h-5 rounded-full shrink-0 border"
-                      style={{ background: isHL ? `${accent}50` : 'transparent', borderColor: isHL ? accent : 'rgba(255,255,255,0.15)' }} />
+                      style={{ background: isHL ? mix(accent, 31) : 'transparent', borderColor: isHL ? accent : 'rgba(var(--surface-tint-rgb),0.15)' }} />
                   )}
-                  <span className={`text-[13px] truncate ${isHL ? 'font-bold' : 'text-[#ccc]'}`}
+                  <span className={`text-[13px] truncate ${isHL ? 'font-bold' : 'text-text-secondary'}`}
                     style={isHL ? { color: accent } : {}}>
                     {s.team_name}
                   </span>
                 </div>
-                <span className="text-[12px] font-mono text-right text-[#888]">{s.played}</span>
+                <span className="text-[12px] font-mono text-right text-text-muted">{s.played}</span>
                 <span className="text-[13px] font-mono font-bold text-right"
-                  style={isHL ? { color: accent } : { color: '#fff' }}>
+                  style={isHL ? { color: accent } : { color: 'rgb(var(--text-primary))' }}>
                   {s.points}
                 </span>
                 <span className="text-[12px] font-mono text-right"
-                  style={{ color: s.goal_diff > 0 ? '#61DF6E' : s.goal_diff < 0 ? '#E55E5B' : '#888' }}>
+                  style={{ color: s.goal_diff > 0 ? '#61DF6E' : s.goal_diff < 0 ? '#E55E5B' : 'rgb(var(--text-muted))' }}>
                   {s.goal_diff > 0 ? '+' : ''}{s.goal_diff}
                 </span>
               </div>
@@ -461,7 +475,7 @@ function StandingsSection({ standings, homeId, awayId, leagueName, accent }: {
         {!expanded && standings.length > SHOW && (
           <button onClick={() => setExpanded(true)}
             className="py-3 text-[12px] font-mono text-text-muted/45 hover:text-text-muted/80 border-t border-bg-border/50 transition-colors">
-            Показать всю таблицу ({standings.length} команд)
+            {lang === 'ru' ? `Показать всю таблицу (${standings.length} команд)` : `Show all teams (${standings.length})`}
           </button>
         )}
       </div>
@@ -474,9 +488,11 @@ function InjuriesSection({ homeInjuries, awayInjuries, homeTeam, awayTeam }: {
   homeInjuries: SportInjury[]; awayInjuries: SportInjury[]
   homeTeam: string; awayTeam: string
 }) {
+  const { lang } = useLang()
+  const t = useT(lang)
   if (!homeInjuries.length && !awayInjuries.length) return null
   return (
-    <Section id="injuries" title="Травмы и дисквалификации">
+    <Section id="injuries" title={t('sport.title.injuries')}>
       <div className="grid grid-cols-2 divide-x divide-bg-border">
         {[
           { team: homeTeam, injuries: homeInjuries },
@@ -487,7 +503,7 @@ function InjuriesSection({ homeInjuries, awayInjuries, homeTeam, awayTeam }: {
               <span className="text-[10px] font-mono font-bold uppercase tracking-wide text-text-muted/55">{team}</span>
             </div>
             {!injuries.length ? (
-              <p className="px-3 py-4 text-[12px] font-mono text-text-muted/35">Нет данных</p>
+              <p className="px-3 py-4 text-[12px] font-mono text-text-muted/35">{t('common.no_data')}</p>
             ) : (
               <div className="flex flex-col divide-y divide-bg-border/30">
                 {injuries.slice(0, 6).map(inj => (
@@ -496,7 +512,7 @@ function InjuriesSection({ homeInjuries, awayInjuries, homeTeam, awayTeam }: {
                     <div className="flex flex-col min-w-0">
                       <span className="text-[13px] font-semibold text-text-primary truncate">{inj.player_name}</span>
                       <span className="text-[10px] font-mono text-text-muted/45 truncate">
-                        {inj.type ?? 'Травма'}{inj.reason ? ` · ${inj.reason}` : ''}
+                        {inj.type ?? t('team.injury_default')}{inj.reason ? ` · ${inj.reason}` : ''}
                       </span>
                     </div>
                   </div>
@@ -512,11 +528,13 @@ function InjuriesSection({ homeInjuries, awayInjuries, homeTeam, awayTeam }: {
 
 // ─── Market table ─────────────────────────────────────────────────────────────
 function MarketTable({ odds, tab, accent }: { odds: SportOdds[]; tab: string; accent: string }) {
+  const { lang } = useLang()
+  const t = useT(lang)
   const rows = aggregateMarket(odds, tab)
   const bkCount = new Set(odds.filter(o => o.market_type === tab).map(o => o.bookmaker)).size
 
   if (!rows.length) return (
-    <div className="flex justify-center py-8 text-[13px] font-mono text-text-muted/40">Нет данных</div>
+    <div className="flex justify-center py-8 text-[13px] font-mono text-text-muted/40">{t('common.no_data')}</div>
   )
 
   const isDC = (name: string) => name.includes('/') || /draw no bet/i.test(name)
@@ -525,7 +543,7 @@ function MarketTable({ odds, tab, accent }: { odds: SportOdds[]; tab: string; ac
   const dc   = isH2H ? rows.filter(r => isDC(r.name))  : []
 
   const renderRow = (row: AggOutcome) => (
-    <div key={row.name} className="grid items-center px-4 py-3 hover:bg-white/[0.02] transition-colors"
+    <div key={row.name} className="grid items-center px-4 py-3 hover:bg-text-primary/[0.02] transition-colors"
       style={{ gridTemplateColumns: '1fr 88px 80px 68px' }}>
       <span className="text-[14px] font-semibold text-text-primary truncate pr-2">{row.name}</span>
       <span className="text-[15px] font-mono font-bold text-right text-green-400">{row.best.toFixed(2)}</span>
@@ -538,10 +556,10 @@ function MarketTable({ odds, tab, accent }: { odds: SportOdds[]; tab: string; ac
     <div>
       <div className="grid px-4 py-2 text-[10px] font-mono uppercase tracking-[0.1em] text-text-muted/40 border-b border-bg-border/40"
         style={{ gridTemplateColumns: '1fr 88px 80px 68px' }}>
-        <span>Исход</span>
-        <span className="text-right">Лучшее</span>
+        <span>{t('sport.market.outcome')}</span>
+        <span className="text-right">{t('sport.market.best')}</span>
         <span className="text-right">Avg·{bkCount}</span>
-        <span className="text-right" style={{ color: accent }} title="Implied probability — вероятность победы по мнению рынка">Рынок%</span>
+        <span className="text-right" style={{ color: accent }}>%</span>
       </div>
       {main.length > 0 && (
         <>
@@ -551,7 +569,7 @@ function MarketTable({ odds, tab, accent }: { odds: SportOdds[]; tab: string; ac
       )}
       {dc.length > 0 && (
         <>
-          <div className="px-4 pt-3 pb-1 text-[10px] font-mono font-bold uppercase tracking-widest text-text-muted/35">Победитель · Double Chance</div>
+          <div className="px-4 pt-3 pb-1 text-[10px] font-mono font-bold uppercase tracking-widest text-text-muted/35">{t('sport.market.double_chance')}</div>
           <div className="flex flex-col divide-y divide-bg-border/20">{dc.map(renderRow)}</div>
         </>
       )}
@@ -564,25 +582,27 @@ function HomeAwaySplit({ standings, homeId, awayId, homeName, awayName, accent }
   standings: SportStanding[]; homeId: number | null | undefined; awayId: number | null | undefined
   homeName: string; awayName: string; accent: string
 }) {
+  const { lang } = useLang()
+  const t = useT(lang)
   const home = standings.find(s => s.team_external_id === homeId)
   const away = standings.find(s => s.team_external_id === awayId)
   if (!home && !away) return null
 
   const rows = [
-    { label: 'Дома В/Н/П', homeVal: home ? `${home.home_wins}/${home.home_draws}/${home.home_losses}` : '—', awayVal: away ? `${away.home_wins}/${away.home_draws}/${away.home_losses}` : '—' },
-    { label: 'В гостях В/Н/П', homeVal: home ? `${home.away_wins}/${home.away_draws}/${home.away_losses}` : '—', awayVal: away ? `${away.away_wins}/${away.away_draws}/${away.away_losses}` : '—' },
-    { label: 'Голов забито', homeVal: home?.goals_for ?? '—', awayVal: away?.goals_for ?? '—' },
-    { label: 'Голов пропущено', homeVal: home?.goals_against ?? '—', awayVal: away?.goals_against ?? '—' },
-    { label: 'Разница', homeVal: home ? (home.goal_diff > 0 ? `+${home.goal_diff}` : home.goal_diff) : '—', awayVal: away ? (away.goal_diff > 0 ? `+${away.goal_diff}` : away.goal_diff) : '—' },
-    { label: 'Форма', homeVal: home?.form ?? '—', awayVal: away?.form ?? '—' },
+    { label: t('sport.ha.home_wdl'), homeVal: home ? `${home.home_wins}/${home.home_draws}/${home.home_losses}` : '—', awayVal: away ? `${away.home_wins}/${away.home_draws}/${away.home_losses}` : '—' },
+    { label: t('sport.ha.away_wdl'), homeVal: home ? `${home.away_wins}/${home.away_draws}/${home.away_losses}` : '—', awayVal: away ? `${away.away_wins}/${away.away_draws}/${away.away_losses}` : '—' },
+    { label: t('sport.ha.goals_scored'), homeVal: home?.goals_for ?? '—', awayVal: away?.goals_for ?? '—' },
+    { label: t('sport.ha.goals_conceded'), homeVal: home?.goals_against ?? '—', awayVal: away?.goals_against ?? '—' },
+    { label: t('sport.ha.goal_diff'), homeVal: home ? (home.goal_diff > 0 ? `+${home.goal_diff}` : home.goal_diff) : '—', awayVal: away ? (away.goal_diff > 0 ? `+${away.goal_diff}` : away.goal_diff) : '—' },
+    { label: t('sport.ha.form'), homeVal: home?.form ?? '—', awayVal: away?.form ?? '—' },
   ]
 
   return (
-    <Section id="home-away" title="Дома и в гостях · сезон">
+    <Section id="home-away" title={t('sport.title.home_away')}>
       <div className="px-4 py-2">
         <div className="flex justify-between text-[11px] font-mono font-bold mb-3">
           <span style={{ color: accent }}>{homeName}</span>
-          <span className="text-text-muted/30 text-[10px]">Показатель</span>
+          <span className="text-text-muted/45 text-[10px]">{t('sport.compare.indicator')}</span>
           <span className="text-text-muted/65">{awayName}</span>
         </div>
         {rows.map(r => (
@@ -605,11 +625,13 @@ function HomeAwaySplit({ standings, homeId, awayId, homeName, awayName, accent }
 
 // ─── Lineups ──────────────────────────────────────────────────────────────────
 function LineupsSection({ lineups, accent, status, sub }: { lineups: SportLineup[]; accent: string; status?: string; sub: string }) {
+  const { lang } = useLang()
+  const t = useT(lang)
   if (!lineups.length) {
     if (status === 'scheduled') {
       return (
-        <Section id="lineups" title="Составы">
-          <p className="px-4 py-5 text-[12px] font-mono text-text-muted/35">Составы появятся примерно за 1 час до матча</p>
+        <Section id="lineups" title={t('sport.title.lineups')}>
+          <p className="px-4 py-5 text-[12px] font-mono text-text-muted/35">{t('sport.lineup_pending')}</p>
         </Section>
       )
     }
@@ -624,7 +646,7 @@ function LineupsSection({ lineups, accent, status, sub }: { lineups: SportLineup
 
   const PlayerRow = ({ p, align }: { p: SportLineup['start_xi'][0]; align: 'left' | 'right' }) => (
     <Link href={`/sport/${sub}/player/${p.id}`}
-      className={`flex items-center gap-2 py-1.5 hover:bg-white/[0.02] rounded transition-colors cursor-pointer ${align === 'right' ? 'flex-row-reverse' : ''}`}>
+      className={`flex items-center gap-2 py-1.5 hover:bg-text-primary/[0.02] rounded transition-colors cursor-pointer ${align === 'right' ? 'flex-row-reverse' : ''}`}>
       <div className="flex items-center justify-center w-5 h-5 rounded text-[10px] font-mono font-bold shrink-0 border border-bg-border text-text-muted/50">
         {p.number ?? '—'}
       </div>
@@ -653,7 +675,7 @@ function LineupsSection({ lineups, accent, status, sub }: { lineups: SportLineup
       </div>
       {team.substitutes.length > 0 && (
         <>
-          <p className="text-[9px] font-mono uppercase tracking-widest text-text-muted/30 mt-3 mb-1">Замены</p>
+          <p className="text-[9px] font-mono uppercase tracking-widest text-text-muted/45 mt-3 mb-1">{t('sport.substitutes')}</p>
           {team.substitutes.map(p => (
             <Link key={p.id} href={`/sport/${sub}/player/${p.id}`}
               className={`flex items-center gap-2 py-1 opacity-50 hover:opacity-75 transition-opacity ${align === 'right' ? 'flex-row-reverse' : ''}`}>
@@ -669,7 +691,7 @@ function LineupsSection({ lineups, accent, status, sub }: { lineups: SportLineup
   )
 
   return (
-    <Section id="lineups" title="Составы">
+    <Section id="lineups" title={t('sport.title.lineups')}>
       <div className="grid grid-cols-2 divide-x divide-bg-border px-4 py-4 gap-4">
         {home && <TeamColumn team={home} align="left" />}
         {away && <TeamColumn team={away} align="right" />}
@@ -682,11 +704,13 @@ function LineupsSection({ lineups, accent, status, sub }: { lineups: SportLineup
 function MatchEventsSection({ events, homeTeamId, accent, status }: {
   events: SportMatchEvent[]; homeTeamId: number | null | undefined; accent: string; status?: string
 }) {
+  const { lang } = useLang()
+  const t = useT(lang)
   if (!events.length) {
     if (status === 'live' || status === 'finished') {
       return (
-        <Section id="match-events" title="События матча">
-          <p className="px-4 py-5 text-[12px] font-mono text-text-muted/35">Нет данных о событиях</p>
+        <Section id="match-events" title={t('sport.title.match_events')}>
+          <p className="px-4 py-5 text-[12px] font-mono text-text-muted/35">{t('sport.no_match_events')}</p>
         </Section>
       )
     }
@@ -714,7 +738,7 @@ function MatchEventsSection({ events, homeTeamId, accent, status }: {
   }
 
   return (
-    <Section id="match-events" title="События матча">
+    <Section id="match-events" title={t('sport.title.match_events')}>
       <div className="flex flex-col divide-y divide-bg-border/20 max-h-[400px] overflow-y-auto">
         {events.map((e, i) => {
           const home = isHome(e)
@@ -723,23 +747,23 @@ function MatchEventsSection({ events, homeTeamId, accent, status }: {
             <div key={i}
               className={`flex items-center gap-3 px-4 py-3 ${home ? '' : 'flex-row-reverse text-right'}`}
               style={isGoal ? { background: 'rgba(97,223,110,0.06)', borderLeft: home ? '2px solid #61DF6E' : undefined, borderRight: !home ? '2px solid #61DF6E' : undefined } : {}}>
-              <span className="text-[11px] font-mono text-[#888] w-8 shrink-0 tabular-nums">
+              <span className="text-[11px] font-mono text-text-muted w-8 shrink-0 tabular-nums">
                 {e.minute != null ? `${e.minute}${e.extra ? `+${e.extra}` : ''}'` : '—'}
               </span>
               <EventIcon type={e.type} detail={e.detail} />
               <div className="flex flex-col min-w-0 flex-1">
-                <span className={`text-[13px] font-semibold truncate ${isGoal ? 'text-white' : 'text-text-primary'}`}>{e.player ?? '—'}</span>
+                <span className={`text-[13px] font-semibold truncate ${isGoal ? 'text-text-primary' : 'text-text-secondary'}`}>{e.player ?? '—'}</span>
                 {e.assist && (
-                  <span className="text-[11px] font-mono text-[#888] truncate">↗ {e.assist}</span>
+                  <span className="text-[11px] font-mono text-text-muted truncate">↗ {e.assist}</span>
                 )}
                 {!isGoal && <span className="text-[10px] font-mono text-[#666] truncate">{e.detail}</span>}
               </div>
               <span className="text-[9px] font-mono px-1.5 py-0.5 rounded border shrink-0"
                 style={home
-                  ? { borderColor: `${accent}30`, color: accent, background: `${accent}10` }
-                  : { borderColor: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }
+                  ? { borderColor: mix(accent, 19), color: accent, background: mix(accent, 6) }
+                  : { borderColor: 'rgba(var(--surface-tint-rgb),0.1)', color: 'rgba(var(--surface-tint-rgb),0.5)' }
                 }>
-                {home ? 'Х' : 'Г'}
+                {home ? t('sport.home_label') : t('sport.away_label')}
               </span>
             </div>
           )
@@ -751,11 +775,13 @@ function MatchEventsSection({ events, homeTeamId, accent, status }: {
 
 // ─── Match Statistics ──────────────────────────────────────────────────────────
 function MatchStatsSection({ stats, accent, status }: { stats: SportFixtureStat[]; accent: string; status?: string }) {
+  const { lang } = useLang()
+  const t = useT(lang)
   if (stats.length < 2) {
     if (status === 'live' || status === 'finished') {
       return (
-        <Section id="match-stats" title="Статистика матча">
-          <p className="px-4 py-5 text-[12px] font-mono text-text-muted/35">Статистика недоступна</p>
+        <Section id="match-stats" title={t('sport.title.match_stats')}>
+          <p className="px-4 py-5 text-[12px] font-mono text-text-muted/35">{t('sport.stats_unavailable')}</p>
         </Section>
       )
     }
@@ -765,22 +791,22 @@ function MatchStatsSection({ stats, accent, status }: { stats: SportFixtureStat[
   const away = stats[1]
 
   const STAT_LABELS: Record<string, string> = {
-    ball_possession:       'Владение',
-    shots_on_goal:         'Удары в цель',
-    total_shots:           'Всего ударов',
-    blocked_shots:         'Заблокировано',
-    shots_insidebox:       'Удары из штрафной',
-    shots_outsidebox:      'Удары вне штрафной',
-    corner_kicks:          'Угловые',
-    offsides:              'Офсайды',
-    fouls:                 'Фолы',
-    yellow_cards:          'Жёлтые карточки',
-    red_cards:             'Красные карточки',
-    goalkeeper_saves:      'Сейвы',
-    total_passes:          'Пасов',
-    passes_accurate:       'Точных пасов',
-    passes:                'Точность пасов',
-    expected_goals:        'xG',
+    ball_possession:       t('stat.ball_possession'),
+    shots_on_goal:         t('stat.shots_on_goal'),
+    total_shots:           t('stat.total_shots'),
+    blocked_shots:         t('stat.blocked_shots'),
+    shots_insidebox:       t('stat.shots_insidebox'),
+    shots_outsidebox:      t('stat.shots_outsidebox'),
+    corner_kicks:          t('stat.corner_kicks'),
+    offsides:              t('stat.offsides'),
+    fouls:                 t('stat.fouls'),
+    yellow_cards:          t('stat.yellow_cards'),
+    red_cards:             t('stat.red_cards'),
+    goalkeeper_saves:      t('stat.goalkeeper_saves'),
+    total_passes:          t('stat.total_passes'),
+    passes_accurate:       t('stat.passes_accurate'),
+    passes:                t('stat.passes'),
+    expected_goals:        t('stat.expected_goals'),
   }
 
   const parseVal = (v: string | number | null | undefined): number => {
@@ -800,7 +826,7 @@ function MatchStatsSection({ stats, accent, status }: { stats: SportFixtureStat[
   if (!rows.length) return null
 
   return (
-    <Section id="match-stats" title="Статистика матча">
+    <Section id="match-stats" title={t('sport.title.match_stats')}>
       <div className="px-5 py-3 flex flex-col gap-0">
         {rows.map(r => {
           const total = r.hVal + r.aVal || 1
@@ -808,19 +834,19 @@ function MatchStatsSection({ stats, accent, status }: { stats: SportFixtureStat[
           const aPct  = 100 - hPct
           return (
             <div key={r.key} className="flex items-center gap-3 min-h-[44px]">
-              <span className="text-[13px] font-mono font-bold w-10 text-right text-white tabular-nums shrink-0">
+              <span className="text-[13px] font-mono font-bold w-10 text-right text-text-primary tabular-nums shrink-0">
                 {String(r.hRaw ?? 0)}
               </span>
               <div className="flex flex-1 h-[5px] rounded-full overflow-hidden">
                 <div style={{ width: `${hPct}%`, background: accent, borderRadius: '99px 0 0 99px' }} />
                 <div style={{ flex: 1, background: AWAY_BAR, borderRadius: '0 99px 99px 0' }} />
               </div>
-              <span className="text-[10px] text-[#888] uppercase tracking-wide w-32 text-center shrink-0">{r.label}</span>
+              <span className="text-[10px] text-text-muted uppercase tracking-wide w-32 text-center shrink-0">{r.label}</span>
               <div className="flex flex-1 h-[5px] rounded-full overflow-hidden flex-row-reverse">
                 <div style={{ width: `${aPct}%`, background: AWAY_BAR, borderRadius: '99px 0 0 99px' }} />
                 <div style={{ flex: 1, background: accent, opacity: 0.25, borderRadius: '0 99px 99px 0' }} />
               </div>
-              <span className="text-[13px] font-mono font-bold w-10 text-white tabular-nums shrink-0">
+              <span className="text-[13px] font-mono font-bold w-10 text-text-primary tabular-nums shrink-0">
                 {String(r.aRaw ?? 0)}
               </span>
             </div>
@@ -833,15 +859,17 @@ function MatchStatsSection({ stats, accent, status }: { stats: SportFixtureStat[
 
 // ─── Top Scorers ──────────────────────────────────────────────────────────────
 function TopScorersSection({ scorers, accent, sub }: { scorers: SportTopScorer[]; accent: string; sub: string }) {
+  const { lang } = useLang()
+  const t = useT(lang)
   if (!scorers.length) return null
   return (
-    <Section id="topscorers" title="Бомбардиры лиги">
+    <Section id="topscorers" title={t('sport.title.scorers')}>
       <div className="flex flex-col">
         {scorers.slice(0, 10).map((s, i) => (
           <Link key={s.player_id} href={`/sport/${sub}/player/${s.player_id}`}
-            className="flex items-center gap-3 px-4 py-2.5 border-b border-bg-border/20 last:border-0 hover:bg-white/[0.02] transition-colors">
+            className="flex items-center gap-3 px-4 py-2.5 border-b border-bg-border/20 last:border-0 hover:bg-text-primary/[0.02] transition-colors">
             <span className="text-[13px] font-mono font-bold w-5 text-right shrink-0"
-              style={{ color: i < 3 ? accent : 'rgba(255,255,255,0.3)' }}>
+              style={{ color: i < 3 ? accent : 'rgba(var(--surface-tint-rgb),0.3)' }}>
               {i + 1}
             </span>
             {s.player_photo ? (
@@ -861,12 +889,12 @@ function TopScorersSection({ scorers, accent, sub }: { scorers: SportTopScorer[]
             <div className="flex items-center gap-3 shrink-0">
               <div className="flex flex-col items-center">
                 <span className="text-[15px] font-mono font-black leading-none" style={{ color: accent }}>{s.goals}</span>
-                <span className="text-[8px] font-mono uppercase text-text-muted/35 mt-0.5">гол</span>
+                <span className="text-[8px] font-mono uppercase text-text-muted/35 mt-0.5">{t('team.goal_abbr')}</span>
               </div>
               {s.assists > 0 && (
                 <div className="flex flex-col items-center">
                   <span className="text-[13px] font-mono font-bold leading-none text-text-muted/55">{s.assists}</span>
-                  <span className="text-[8px] font-mono uppercase text-text-muted/35 mt-0.5">пас</span>
+                  <span className="text-[8px] font-mono uppercase text-text-muted/35 mt-0.5">{t('team.assist_abbr')}</span>
                 </div>
               )}
             </div>
@@ -887,6 +915,8 @@ export default function SportEventPage({ id: idProp, onBack, onLeagueLoad, initi
   const { profile } = useAuthContext()
   const _plan: SubscriptionPlan = profile?.plan ?? (profile?.is_pro ? 'pro' : 'free')
   const pageRef = useRef<HTMLDivElement>(null)
+  const { lang } = useLang()
+  const t = useT(lang)
 
   // SSR seed: prime cache so initial render shows data without loading flash.
   if (initialFast && id && !getCached<EventFastCache>(`event_fast:${id}`)) {
@@ -1005,30 +1035,30 @@ export default function SportEventPage({ id: idProp, onBack, onLeagueLoad, initi
 
   const cmp = prediction?.comparison
   const compareRows = cmp ? [
-    { label: 'ФОРМА',       home: pct(cmp.form?.home),  away: pct(cmp.form?.away) },
-    { label: 'АТАКА',       home: pct(cmp.att?.home),   away: pct(cmp.att?.away) },
-    { label: 'ЗАЩИТА',      home: pct(cmp.def?.home),   away: pct(cmp.def?.away) },
-    { label: 'H2H',         home: pct(cmp.h2h?.home),   away: pct(cmp.h2h?.away) },
-    { label: 'ГОЛЫ / ИГРА', home: pct(cmp.goals?.home), away: pct(cmp.goals?.away) },
-    { label: 'ПРОПУЩЕНО',   home: 100 - pct(cmp.def?.home), away: 100 - pct(cmp.def?.away) },
+    { label: t('sport.compare.form'),    home: pct(cmp.form?.home),  away: pct(cmp.form?.away) },
+    { label: t('sport.compare.attack'),  home: pct(cmp.att?.home),   away: pct(cmp.att?.away) },
+    { label: t('sport.compare.defense'), home: pct(cmp.def?.home),   away: pct(cmp.def?.away) },
+    { label: 'H2H',                      home: pct(cmp.h2h?.home),   away: pct(cmp.h2h?.away) },
+    { label: t('sport.compare.goals'),   home: pct(cmp.goals?.home), away: pct(cmp.goals?.away) },
+    { label: t('sport.compare.conceded'),home: 100 - pct(cmp.def?.home), away: 100 - pct(cmp.def?.away) },
   ].filter(r => r.home + r.away > 0) : []
 
-  const leagueName = event?.league ?? 'Лига'
+  const leagueName = event?.league ?? t('sport.league_default')
   const bkCount    = new Set((event?.sport_odds ?? []).map(o => o.bookmaker)).size
 
   // Build nav items only for sections that have data
   const navItems = [
-    { id: 'insight',      label: 'Инсайт',    show: prediction !== null },
-    { id: 'lineups',      label: 'Составы',   show: lineups.length > 0 || event?.status === 'scheduled' },
-    { id: 'match-events', label: 'События',   show: matchEvents.length > 0 || isLive || isFinished },
-    { id: 'match-stats',  label: 'Статистика',show: matchStats.length >= 2 || isLive || isFinished },
-    { id: 'home-away',    label: 'Дом/Выезд', show: standings.length > 0 },
-    { id: 'compare',      label: 'Сравнение', show: compareRows.length > 0 },
-    { id: 'h2h',          label: 'H2H',       show: (prediction?.h2h?.length ?? 0) > 0 },
-    { id: 'markets',      label: 'Рынки',     show: (event?.sport_odds?.length ?? 0) > 0 },
-    { id: 'standings',    label: 'Таблица',   show: standings.length > 0 },
-    { id: 'topscorers',   label: 'Бомбардиры',show: topScorers.length > 0 },
-    { id: 'injuries',     label: 'Травмы',    show: homeInj.length > 0 || awayInj.length > 0 },
+    { id: 'insight',      label: t('sport.section.insight'),   show: prediction !== null },
+    { id: 'lineups',      label: t('sport.section.lineups'),   show: lineups.length > 0 || event?.status === 'scheduled' },
+    { id: 'match-events', label: t('sport.section.events'),    show: matchEvents.length > 0 || isLive || isFinished },
+    { id: 'match-stats',  label: t('sport.section.stats'),     show: matchStats.length >= 2 || isLive || isFinished },
+    { id: 'home-away',    label: t('sport.section.home_away'), show: standings.length > 0 },
+    { id: 'compare',      label: t('sport.section.compare'),   show: compareRows.length > 0 },
+    { id: 'h2h',          label: 'H2H',                        show: (prediction?.h2h?.length ?? 0) > 0 },
+    { id: 'markets',      label: t('sport.section.markets'),   show: (event?.sport_odds?.length ?? 0) > 0 },
+    { id: 'standings',    label: t('sport.section.standings'), show: standings.length > 0 },
+    { id: 'topscorers',   label: t('sport.section.scorers'),   show: topScorers.length > 0 },
+    { id: 'injuries',     label: t('sport.section.injuries'),  show: homeInj.length > 0 || awayInj.length > 0 },
   ].filter(n => n.show)
 
   if (loading && !event) return (
@@ -1041,8 +1071,8 @@ export default function SportEventPage({ id: idProp, onBack, onLeagueLoad, initi
 
   if (!event) return (
     <div className="flex flex-col items-center py-24 text-center">
-      <p className="text-base font-mono text-text-muted mb-4">Матч не найден</p>
-      <button onClick={() => onBack ? onBack() : router.back()} className="text-sm font-mono" style={{ color: accent }}>← Назад</button>
+      <p className="text-base font-mono text-text-muted mb-4">{t('sport.not_found')}</p>
+      <button onClick={() => onBack ? onBack() : router.back()} className="text-sm font-mono" style={{ color: accent }}>← {t('sport.back')}</button>
     </div>
   )
 
@@ -1054,13 +1084,13 @@ export default function SportEventPage({ id: idProp, onBack, onLeagueLoad, initi
       <button onClick={() => { if (leagueId) router.push(`/sport/${sub}/league/${leagueId}`); else router.push(`/sport/${sub}`) }}
         className="flex items-center gap-1.5 text-[13px] font-mono text-text-muted/60 hover:text-text-secondary transition-colors self-start">
         <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-        {leagueName} · все матчи
+        {leagueName} · {t('sport.all_matches')}
       </button>
       )}
 
       {/* ── HERO ────────────────────────────────────────────────────────────── */}
       <div className="rounded-xl border bg-bg-surface overflow-hidden"
-        style={{ borderColor: isLive ? 'rgba(255,50,50,0.35)' : `${accent}22` }}>
+        style={{ borderColor: isLive ? 'rgba(255,50,50,0.35)' : mix(accent, 13) }}>
 
         {/* Meta */}
         <div className="flex items-center gap-2 px-4 py-3 border-b border-bg-border"
@@ -1070,10 +1100,10 @@ export default function SportEventPage({ id: idProp, onBack, onLeagueLoad, initi
               // eslint-disable-next-line @next/next/no-img-element
               <img src={leagueLogo} alt="" loading="lazy" className="w-5 h-5 object-contain shrink-0" />
             )}
-            <span className="text-[12px] font-mono text-[#ccc] truncate font-medium">
+            <span className="text-[12px] font-mono text-text-secondary truncate font-medium">
               {leagueName}
-              {raw?.round != null && <span className="text-[#888]"> · {String(raw.round)}</span>}
-              {raw?.season != null && <span className="text-[#888]"> · {String(raw.season)}</span>}
+              {raw?.round != null && <span className="text-text-muted"> · {String(raw.round)}</span>}
+              {raw?.season != null && <span className="text-text-muted"> · {String(raw.season)}</span>}
             </span>
           </div>
           {isLive ? (
@@ -1084,10 +1114,10 @@ export default function SportEventPage({ id: idProp, onBack, onLeagueLoad, initi
               </span>
             </div>
           ) : isFinished ? (
-            <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-1 rounded border border-bg-border text-text-muted/45 shrink-0">Завершён</span>
+            <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-1 rounded border border-bg-border text-text-muted/45 shrink-0">{t('sport.finished_label')}</span>
           ) : (
             <span className="text-[11px] font-mono text-text-muted/55 shrink-0">
-              {new Date(event.starts_at).toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+              {new Date(event.starts_at).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
             </span>
           )}
         </div>
@@ -1102,7 +1132,7 @@ export default function SportEventPage({ id: idProp, onBack, onLeagueLoad, initi
                 <Link href={`/sport/${sub}/team/${homeTeamId}`}
                   className="group flex flex-col items-center gap-0.5 text-[14px] font-bold text-text-primary text-center leading-snug max-w-[140px] hover:text-text-secondary transition-colors">
                   <span className="group-hover:underline decoration-dotted underline-offset-2">{event.home_team}</span>
-                  <svg className="w-3 h-3 text-text-muted/25 group-hover:text-text-muted/55 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+                  <svg className="w-3 h-3 text-text-muted/40 group-hover:text-text-muted/55 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
                 </Link>
               ) : (
                 <p className="text-[14px] font-bold text-text-primary text-center leading-snug max-w-[140px]">{event.home_team}</p>
@@ -1119,24 +1149,24 @@ export default function SportEventPage({ id: idProp, onBack, onLeagueLoad, initi
                       const hs = event.home_score ?? 0, as_ = event.away_score ?? 0
                       const homeLeads = hs > as_, awayLeads = as_ > hs
                       const liveColor = '#ff5252'
-                      const homeColor = isLive ? liveColor : homeLeads ? accent : awayLeads ? 'rgba(255,255,255,0.3)' : accent
-                      const awayColor = isLive ? liveColor : awayLeads ? 'rgba(255,255,255,0.9)' : homeLeads ? 'rgba(255,255,255,0.3)' : accent
+                      const homeColor = isLive ? liveColor : homeLeads ? accent : awayLeads ? 'rgba(var(--surface-tint-rgb),0.3)' : accent
+                      const awayColor = isLive ? liveColor : awayLeads ? 'rgba(var(--surface-tint-rgb),0.9)' : homeLeads ? 'rgba(var(--surface-tint-rgb),0.3)' : accent
                       return (<>
                         <span className="text-5xl font-mono font-black leading-none" style={{ color: homeColor }}>{event.home_score}</span>
-                        <span className="text-3xl font-mono text-text-muted/20 leading-none">:</span>
+                        <span className="text-3xl font-mono text-text-muted/35 leading-none">:</span>
                         <span className="text-5xl font-mono font-black leading-none" style={{ color: awayColor }}>{event.away_score}</span>
                       </>)
                     })()}
                   </div>
                   {isLive && elapsed != null && (
-                    <span className="text-[11px] font-mono text-red-400">{elapsed}' · LIVE</span>
+                    <span className="text-[11px] font-mono text-red-400">{elapsed}' · {t('common.live')}</span>
                   )}
                 </>
               ) : (
                 <div className="flex flex-col items-center gap-1 pt-6">
-                  <span className="text-lg font-mono font-bold text-text-muted/20 tracking-[0.25em]">VS</span>
+                  <span className="text-lg font-mono font-bold text-text-muted/35 tracking-[0.25em]">VS</span>
                   <span className="text-[11px] font-mono text-text-muted/35">
-                    {new Date(event.starts_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                    {new Date(event.starts_at).toLocaleTimeString(lang === 'ru' ? 'ru-RU' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
               )}
@@ -1149,7 +1179,7 @@ export default function SportEventPage({ id: idProp, onBack, onLeagueLoad, initi
                 <Link href={`/sport/${sub}/team/${awayTeamId}`}
                   className="group flex flex-col items-center gap-0.5 text-[14px] font-bold text-text-primary text-center leading-snug max-w-[140px] hover:text-text-secondary transition-colors">
                   <span className="group-hover:underline decoration-dotted underline-offset-2">{event.away_team}</span>
-                  <svg className="w-3 h-3 text-text-muted/25 group-hover:text-text-muted/55 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+                  <svg className="w-3 h-3 text-text-muted/40 group-hover:text-text-muted/55 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
                 </Link>
               ) : (
                 <p className="text-[14px] font-bold text-text-primary text-center leading-snug max-w-[140px]">{event.away_team}</p>
@@ -1174,9 +1204,9 @@ export default function SportEventPage({ id: idProp, onBack, onLeagueLoad, initi
           {(venue || referee) && (
             <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mt-3">
               {venue && (
-                <div className="flex items-center gap-1.5 text-[11px] font-mono text-[#888]">
+                <div className="flex items-center gap-1.5 text-[11px] font-mono text-text-muted">
                   <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                  <span>{venue}{venueCity ? `, ${venueCity}` : ''}{venueCapacity ? ` · ${venueCapacity.toLocaleString()} мест` : ''}</span>
+                  <span>{venue}{venueCity ? `, ${venueCity}` : ''}{venueCapacity ? ` · ${venueCapacity.toLocaleString()} ${t('sport.capacity')}` : ''}</span>
                 </div>
               )}
               {referee && (
@@ -1197,7 +1227,7 @@ export default function SportEventPage({ id: idProp, onBack, onLeagueLoad, initi
             <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
           </svg>
           <p className="text-[12px] font-mono text-text-muted/50 leading-relaxed">
-            Базовая карточка — детальная статистика, форма и AI-аналитика появятся автоматически ближе к дате матча.
+            {t('sport.basic_card')}
           </p>
         </div>
       )}
@@ -1210,7 +1240,7 @@ export default function SportEventPage({ id: idProp, onBack, onLeagueLoad, initi
       {prediction === null && fixtureId && (
         <div className="flex items-center gap-2 px-4 py-3 rounded-xl border border-bg-border bg-bg-surface text-[11px] font-mono text-text-muted/45">
           <svg className="w-3 h-3 animate-spin shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>
-          Прогноз обновляется в фоне — появится при следующем открытии
+          {t('sport.forecast_updating')}
         </div>
       )}
 
@@ -1248,12 +1278,12 @@ export default function SportEventPage({ id: idProp, onBack, onLeagueLoad, initi
       {compareRows.length > 0 && (
         <div id="compare" className="rounded-xl border border-bg-border bg-bg-surface overflow-hidden scroll-mt-16">
           <div className="px-4 py-3 border-b border-bg-border">
-            <span className="text-[11px] font-mono font-bold tracking-[0.12em] uppercase text-[#aaa]">Сравнение команд</span>
+            <span className="text-[11px] font-mono font-bold tracking-[0.12em] uppercase text-text-secondary">{t('sport.title.compare')}</span>
           </div>
           <div className="px-5 py-4">
             <div className="flex justify-between text-[12px] font-mono font-bold mb-1">
               <span style={{ color: accent }}>{event.home_team}</span>
-              <span className="text-white">{event.away_team}</span>
+              <span className="text-text-primary">{event.away_team}</span>
             </div>
             {compareRows.map(r => (
               <CompareBar
@@ -1288,24 +1318,24 @@ export default function SportEventPage({ id: idProp, onBack, onLeagueLoad, initi
             return (
               <button key={tab} onClick={() => setActiveTab(tab)}
                 className="px-3 py-2 text-[11px] font-mono font-bold tracking-wide transition-all relative shrink-0"
-                style={activeTab === tab ? { color: accent } : { color: 'rgba(255,255,255,0.35)' }}>
-                {MARKET_TAB_LABELS[tab] ?? tab}{outCount > 0 ? ` ${outCount}` : ''}
+                style={activeTab === tab ? { color: accent } : { color: 'rgba(var(--surface-tint-rgb),0.35)' }}>
+                {MARKET_TAB_KEYS[tab] ? t(MARKET_TAB_KEYS[tab]) : tab}{outCount > 0 ? ` ${outCount}` : ''}
                 {activeTab === tab && (
                   <div className="absolute bottom-0 left-0 right-0 h-[2px] rounded-t-full" style={{ background: accent }} />
                 )}
               </button>
             )
           }) : (
-            <span className="text-[12px] font-mono text-text-muted/40 py-2 pb-3">Коэффициенты подгружаются...</span>
+            <span className="text-[12px] font-mono text-text-muted/40 py-2 pb-3">{t('sport.market.loading')}</span>
           )}
           {bkCount > 0 && (
-            <span className="ml-auto text-[10px] font-mono text-text-muted/35 pb-2 shrink-0 pl-2">{bkCount} источников</span>
+            <span className="ml-auto text-[10px] font-mono text-text-muted/35 pb-2 shrink-0 pl-2">{bkCount} {t('sport.market.sources')}</span>
           )}
         </div>
         <div className="py-1">
           {(event.sport_odds?.length ?? 0) > 0
             ? <MarketTable odds={event.sport_odds!} tab={activeTab} accent={accent} />
-            : <div className="px-4 py-5 text-[13px] font-mono text-text-muted/40">Коэффициенты не загружены — обновятся автоматически</div>
+            : <div className="px-4 py-5 text-[13px] font-mono text-text-muted/40">{t('sport.market.no_odds')}</div>
           }
         </div>
       </div>
@@ -1338,13 +1368,13 @@ export default function SportEventPage({ id: idProp, onBack, onLeagueLoad, initi
       {dataError && (
         <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-red-500/20 bg-red-500/5 text-[12px] font-mono text-red-400/70">
           <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          Не удалось загрузить часть данных — попробуйте обновить страницу
+          {t('sport.data_error')}
         </div>
       )}
 
       {/* ── LINKED MARKETS ──────────────────────────────────────────────────── */}
       {(event.linked_prediction_markets?.length ?? 0) > 0 && (
-        <Section title="Рынки предсказаний">
+        <Section title={t('sport.prediction_markets')}>
           <div className="flex flex-col divide-y divide-bg-border/40">
             {event.linked_prediction_markets!.map(m => (
               <div key={m.id} className="flex items-center gap-3 px-4 py-3">

@@ -20,7 +20,6 @@ function ensurePaddle(): Promise<Paddle | null> {
       if (event.name === 'checkout.completed') {
         const data = event.data as CheckoutEventsData | undefined
         const txId = data?.transaction_id
-        console.log('[Paddle] checkout.completed, txId:', txId)
         if (txId) globalOnComplete?.(txId)
       }
     },

@@ -2,11 +2,15 @@
 import { useState, useEffect, useRef } from 'react'
 import { performSearchAction, triggerSearchAnalysisAction } from '../../actions/search'
 import type { SubscriptionPlan } from '../../types/index'
+import { useLang } from '../../contexts/LanguageContext'
+import { useT } from '../../lib/i18n'
 
 interface Props { isOpen: boolean; onClose: () => void; plan: SubscriptionPlan }
 type State = 'idle' | 'searching' | 'done' | 'error'
 
 export function SearchOverlay({ isOpen, onClose, plan }: Props) {
+  const { lang } = useLang()
+  const t = useT(lang)
   const [query, setQuery] = useState('')
   const [state, setState] = useState<State>('idle')
   const [result, setResult] = useState<{ searchId: string; summary: string; category?: string } | null>(null)
@@ -64,7 +68,7 @@ export function SearchOverlay({ isOpen, onClose, plan }: Props) {
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleSearch()}
-            placeholder={canSearch ? 'Search any event...' : 'AI Search requires Pro plan'}
+            placeholder={canSearch ? t('search.placeholder') : t('search.placeholder_locked')}
             disabled={!canSearch}
             className="flex-1 bg-transparent outline-none"
             style={{ fontSize: '15px', color: 'var(--text-primary)', fontFamily: 'inherit' }}
@@ -75,13 +79,13 @@ export function SearchOverlay({ isOpen, onClose, plan }: Props) {
         {/* Paywall для free */}
         {!canSearch && (
           <div className="flex flex-col items-center gap-3 p-8 text-center">
-            <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>AI Search is available on Pro and Alpha plans</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>{t('search.paywall_desc')}</p>
             <a
               href="/profile?tab=subscription"
               className="px-4 py-2 rounded-md text-sm font-medium"
               style={{ background: 'var(--accent)', color: 'var(--bg-base)' }}
             >
-              Upgrade to Pro — $14.99/mo
+              {t('search.upgrade_cta')}
             </a>
           </div>
         )}
@@ -90,13 +94,13 @@ export function SearchOverlay({ isOpen, onClose, plan }: Props) {
         {state === 'searching' && (
           <div className="flex items-center justify-center gap-3 p-8">
             <div className="w-4 h-4 rounded-full animate-spin" style={{ border: '2px solid var(--border)', borderTopColor: 'var(--accent)' }} />
-            <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Searching the web...</span>
+            <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{t('search.searching')}</span>
           </div>
         )}
 
         {/* Error */}
         {state === 'error' && (
-          <p className="p-6 text-center" style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Search failed. Try again.</p>
+          <p className="p-6 text-center" style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{t('search.error')}</p>
         )}
 
         {/* Result */}
@@ -110,17 +114,17 @@ export function SearchOverlay({ isOpen, onClose, plan }: Props) {
             <p style={{ fontSize: '14px', color: 'var(--text-primary)', lineHeight: 1.7 }}>{result.summary}</p>
             <div className="flex items-center gap-2 pt-2 border-t" style={{ borderColor: 'var(--border)' }}>
               {analysisQueued ? (
-                <span style={{ fontSize: '12px', color: 'var(--accent)' }}>✓ Analysis queued — check your profile for results</span>
+                <span style={{ fontSize: '12px', color: 'var(--accent)' }}>{t('search.analysis_queued')}</span>
               ) : (
                 <button
                   onClick={handleAnalyze}
                   className="px-3 py-1.5 rounded-md font-medium transition-opacity hover:opacity-80"
                   style={{ background: 'var(--accent)', color: 'var(--bg-base)', fontSize: '12px' }}
                 >
-                  Run deep analysis
+                  {t('search.run_analysis')}
                 </button>
               )}
-              <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>uses 1 analysis credit</span>
+              <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{t('search.analysis_credit')}</span>
             </div>
           </div>
         )}

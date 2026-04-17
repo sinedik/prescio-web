@@ -129,14 +129,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { dotClass, textClass, labelKey } = STATUS_CONFIG[scanStatus]
 
   const LIVE_ACCENTS: Record<string, string> = {
-    '/sport/football':   '232 192 50',
-    '/sport/basketball': '230 100 20',
-    '/sport/tennis':     '200 230 60',
-    '/sport/mma':        '224 32 32',
-    '/cybersport/dota2': '192 57 43',
-    '/cybersport/cs2':   '230 100 20',
-    '/cybersport':       '230 100 20',
-    '/sport':            '232 192 50',
+    '/sport/football':   'var(--sport-football-rgb)',
+    '/sport/basketball': 'var(--sport-basketball-rgb)',
+    '/sport/tennis':     'var(--sport-tennis-rgb)',
+    '/sport/mma':        'var(--sport-mma-rgb)',
+    '/cybersport/dota2': 'var(--sport-dota2-rgb)',
+    '/cybersport/cs2':   'var(--sport-cs2-rgb)',
+    '/cybersport':       'var(--sport-cs2-rgb)',
+    '/sport':            'var(--sport-football-rgb)',
   }
   const liveAccentRgb = Object.entries(LIVE_ACCENTS).find(([prefix]) =>
     (pathname ?? '').startsWith(prefix)
@@ -154,15 +154,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           ...(liveAccentRgb ? { '--accent': liveAccentRgb } as React.CSSProperties : {}),
         }}
       >
-        <div className="h-full flex items-center px-5 gap-0">
+        <div className="h-full flex items-center px-5 gap-4">
 
           {/* Logo */}
-          <div className="flex items-center gap-2 mr-6 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             <Logo size={32} textSize={15} />
           </div>
 
-          {/* Nav — centred absolutely so right panel doesn't shift it */}
-          <nav className="absolute left-1/2 -translate-x-1/2 flex items-center gap-0.5">
+          {/* Nav — flex-1 centred in flow so it never overlaps the right cluster */}
+          <nav className="flex-1 min-w-0 flex items-center justify-center gap-0.5">
             {NAV_BASES.map(({ to, key }) => {
               const path = pathname ?? ''
               const isActive = path === to || path.startsWith(`${to}/`)
@@ -198,7 +198,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </nav>
 
           {/* Right cluster */}
-          <div className="ml-auto flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
 
             {/* Live status */}
             <div className="hidden sm:flex items-center gap-1.5">
@@ -221,12 +221,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <button
                   key={t}
                   onClick={() => setTheme(t)}
+                  data-theme-toggle={t}
                   title={t === 'dark' ? 'Dark mode' : 'Light mode'}
-                  className="w-6 h-6 flex items-center justify-center rounded text-[13px] transition-all duration-150"
-                  style={{
-                    background: theme === t ? 'rgb(var(--bg-border))' : 'transparent',
-                    boxShadow: theme === t ? '0 1px 2px rgb(0 0 0 / 0.15)' : 'none',
-                  }}
+                  className="theme-toggle-btn w-6 h-6 flex items-center justify-center rounded text-[13px] transition-all duration-150"
                 >
                   {t === 'dark' ? <IconMoon size={14} /> : <IconSun size={14} />}
                 </button>

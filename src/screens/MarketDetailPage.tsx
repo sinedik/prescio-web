@@ -97,7 +97,7 @@ function PriceChart({ history, loading }: {
   if (pts.length < 2) {
     return (
       <div className="w-full flex flex-col items-center justify-center gap-2" style={{ height: 160 }}>
-        <svg className="w-8 h-8 text-text-muted/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <svg className="w-8 h-8 text-text-muted/45" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
           <path d="M3 17l6-6 4 4 8-8" />
         </svg>
         <p className="text-xs font-mono text-text-muted">No price history available</p>
@@ -317,7 +317,6 @@ export default function MarketDetailPage() {
   useEffect(() => {
     if (!slug) return
     let cancelled = false
-    console.log('[MarketDetail] effect start, slug=', slug)
 
     // 1. Быстрый показ из sessionStorage (раньше — navigation state)
     let stateItem: Partial<MarketOpportunity> | undefined
@@ -389,8 +388,6 @@ export default function MarketDetailPage() {
         }
 
         if (!marketId || cancelled) return
-        const { data: { session: dbgSession } } = await (await import('../lib/supabase/client')).supabase.auth.getSession()
-        console.log('[MarketDetail] fetching fresh by UUID=', marketId, 'has_token=', !!dbgSession?.access_token, 'plan=?')
 
         // Запрашиваем полные данные по UUID (включая analysis)
         const fresh = await api.getMarket(marketId) as Market & { analysis?: Analysis; price_history?: HistoryPoint[]; siblings?: { id: string; question: string; price: number; resolution_date?: string; slug?: string }[] }

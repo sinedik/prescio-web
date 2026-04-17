@@ -2,6 +2,8 @@
 import React, { useEffect, useState, useTransition } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { LiveLayoutProvider, useLiveLayout, type SidebarLeague } from '@/contexts/LiveLayoutContext'
+import { useLang } from '@/contexts/LanguageContext'
+import { useT } from '@/lib/i18n'
 import { WorldBackground } from '@/components/WorldBackground'
 import { ACCENT, type Discipline } from '@/components/disciplines'
 import { LiveHero } from '@/components/LiveHero'
@@ -44,6 +46,8 @@ function LiveSidebar({
   onMobileClose: () => void
 }) {
   const { leagues, selectedLeague, setSelectedLeague, liveCount } = useLiveLayout()
+  const { lang } = useLang()
+  const t = useT(lang)
   const accent = ACCENT[discipline]
   const isSport = pathname.startsWith('/sport')
   const items = isSport ? SPORT_ITEMS : GAME_ITEMS
@@ -91,17 +95,17 @@ function LiveSidebar({
               disabled={item.disabled || isPending}
               className={`w-full flex items-center gap-2.5 px-3.5 py-[7px] text-left transition-all border-l-2 text-[12px]
                 ${item.disabled
-                  ? 'border-l-transparent text-text-muted/30 cursor-not-allowed'
+                  ? 'border-l-transparent text-text-muted/45 cursor-not-allowed'
                   : isActive
-                    ? 'text-text-primary bg-white/[0.04]'
-                    : 'border-l-transparent text-text-muted hover:text-text-secondary hover:bg-white/[0.02]'
+                    ? 'text-text-primary bg-text-primary/[0.04]'
+                    : 'border-l-transparent text-text-muted hover:text-text-secondary hover:bg-text-primary/[0.02]'
                 }`}
               style={isActive && !item.disabled ? { borderLeftColor: itemAccent } : {}}
             >
               <span className={isActive && !item.disabled ? 'opacity-100' : 'opacity-60'}>{item.icon}</span>
               {item.label}
               {item.disabled && (
-                <span className="ml-auto text-[8px] font-mono text-text-muted/30">soon</span>
+                <span className="ml-auto text-[8px] font-mono text-text-muted/45">soon</span>
               )}
               {isActive && !item.disabled && liveCount > 0 && (
                 <span className="ml-auto flex items-center gap-0.5 text-[8px] font-bold px-1 py-0.5 rounded"
@@ -119,23 +123,23 @@ function LiveSidebar({
       {leagues.length > 0 && (
         <div className="flex flex-col min-h-0 flex-1 overflow-y-auto pb-2">
           <p className="text-[9px] font-bold tracking-[0.16em] text-text-muted/50 uppercase px-3.5 mb-1.5 pt-0 shrink-0">
-            {isSport ? 'Лиги' : 'Турниры'}
+            {isSport ? t('sidebar.leagues') : t('sidebar.tournaments')}
           </p>
           <button
             onClick={() => { setSelectedLeague(null); if (pathname !== basePath) navigate(basePath) }}
             className={`w-full flex items-center gap-2.5 px-3.5 py-[7px] text-[12px] border-l-2 transition-all
               ${selectedLeague === null
-                ? 'text-text-primary bg-white/[0.04]'
-                : 'border-l-transparent text-text-muted hover:text-text-secondary hover:bg-white/[0.02]'
+                ? 'text-text-primary bg-text-primary/[0.04]'
+                : 'border-l-transparent text-text-muted hover:text-text-secondary hover:bg-text-primary/[0.02]'
               }`}
             style={selectedLeague === null ? { borderLeftColor: accent } : {}}
-          >Все</button>
+          >{t('common.all')}</button>
           {leagues.map(l => {
             const isActive = selectedLeague === l.name
             return (
               <div key={l.name}
                 className={`flex items-center border-l-2 transition-all text-[12px] group
-                  ${isActive ? 'text-text-primary bg-white/[0.04]' : 'border-l-transparent text-text-muted hover:bg-white/[0.02]'}`}
+                  ${isActive ? 'text-text-primary bg-text-primary/[0.04]' : 'border-l-transparent text-text-muted hover:bg-text-primary/[0.02]'}`}
                 style={isActive ? { borderLeftColor: accent } : {}}
               >
                 <button
@@ -153,7 +157,7 @@ function LiveSidebar({
                   <button
                     onClick={() => handleLeagueNavigate(l)}
                     className="shrink-0 pr-2.5 pl-1 py-2 opacity-0 group-hover:opacity-50 hover:!opacity-100 transition-opacity text-text-muted"
-                    title={`Страница ${l.name}`}
+                    title={lang === 'ru' ? `Страница ${l.name}` : `${l.name} page`}
                   >
                     <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <path d="M7 17L17 7M17 7H7M17 7v10"/>
@@ -200,7 +204,7 @@ function LiveLayoutInner({ children }: { children: React.ReactNode }) {
   return (
     <>
       {/* Background — starts after sidebar on desktop, full width on mobile */}
-      <div className="fixed top-[52px] left-0 md:left-[200px] right-0 bottom-0 pointer-events-none overflow-hidden"
+      <div className="live-world-bg fixed top-[52px] left-0 md:left-[200px] right-0 bottom-0 pointer-events-none overflow-hidden"
         style={{ zIndex: 0, opacity: isPending ? 0.35 : 1, transition: 'opacity 0.4s ease' }}>
         <WorldBackground discipline={discipline} />
       </div>
@@ -234,8 +238,8 @@ function LiveLayoutInner({ children }: { children: React.ReactNode }) {
 
         <div
           id="live-content"
-          className="flex-1 min-w-0"
-          style={{ opacity: isPending ? 0.45 : 1, transition: 'opacity 0.25s ease', position: 'relative', overflowY: 'auto', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)', background: 'rgba(8,8,8,0.35)' }}
+          className="live-content flex-1 min-w-0"
+          style={{ opacity: isPending ? 0.45 : 1, transition: 'opacity 0.25s ease', position: 'relative', overflowY: 'auto' }}
         >
           {/* Progress bar */}
           {isPending && (

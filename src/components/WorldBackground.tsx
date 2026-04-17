@@ -1,7 +1,7 @@
 'use client'
 import React from 'react'
 import { TennisCourtArt } from './artwork/TennisCourtArt'
-import { ACCENT, type Discipline } from './disciplines'
+import { ACCENT, mix, type Discipline } from './disciplines'
 
 export { ACCENT, type Discipline }
 
@@ -166,7 +166,7 @@ export function WorldBackground({ discipline }: { discipline: Discipline }) {
         position: 'absolute', top: -60, left: '50%',
         transform: 'translateX(-50%)',
         width: 960, height: 620,
-        background: `radial-gradient(ellipse 68% 58% at 50% 18%, ${a}1c 0%, ${a}09 44%, transparent 70%)`,
+        background: `radial-gradient(ellipse 68% 58% at 50% 18%, ${mix(a, 11)} 0%, ${mix(a, 4)} 44%, transparent 70%)`,
       }} />
 
       {/* SVG artwork */}

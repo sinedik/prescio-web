@@ -25,7 +25,11 @@ const SportEventPage = dynamic(() => import('./SportEventPage'), {
 })
 
 import { LogoFootball, LogoBasketball, LogoTennis, LogoMMA } from '../components/icons/games'
+import { mix } from '../components/disciplines'
 import { useLiveLayout } from '../contexts/LiveLayoutContext'
+import { useLang } from '../contexts/LanguageContext'
+import { t as tFn, useT } from '../lib/i18n'
+import type { Lang } from '../lib/i18n'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export type Sport = 'football' | 'basketball' | 'tennis' | 'mma'
@@ -34,10 +38,10 @@ export type Sport = 'football' | 'basketball' | 'tennis' | 'mma'
 type SelectedDate = 'live' | string
 
 const SPORT_ACCENT: Record<Sport, string> = {
-  football:   '#e8c032',
-  basketball: '#e66414',
-  tennis:     '#C8E63C',
-  mma:        '#e02020',
+  football:   'var(--sport-football)',
+  basketball: 'var(--sport-basketball)',
+  tennis:     'var(--sport-tennis)',
+  mma:        'var(--sport-mma)',
 }
 
 const SPORTS: { key: Sport; label: string; icon: React.ReactNode }[] = [
@@ -69,16 +73,17 @@ function buildDateRange(days = 7): string[] {
   return result
 }
 
-function formatDateLabel(dateStr: string): { weekday: string; day: string; month: string } {
+function formatDateLabel(dateStr: string, lang: Lang): { weekday: string; day: string; month: string } {
   const d = new Date(dateStr + 'T12:00:00')
   const today = toLocalDateStr(new Date())
   const tomorrow = toLocalDateStr(new Date(Date.now() + 86_400_000))
-  if (dateStr === today)    return { weekday: 'Сегодня', day: '', month: '' }
-  if (dateStr === tomorrow) return { weekday: 'Завтра',  day: '', month: '' }
+  const locale = lang === 'ru' ? 'ru-RU' : 'en-US'
+  if (dateStr === today)    return { weekday: tFn('sport.today', lang), day: '', month: '' }
+  if (dateStr === tomorrow) return { weekday: tFn('sport.tomorrow', lang), day: '', month: '' }
   return {
-    weekday: d.toLocaleDateString('ru-RU', { weekday: 'short' }),
+    weekday: d.toLocaleDateString(locale, { weekday: 'short' }),
     day:     String(d.getDate()),
-    month:   d.toLocaleDateString('ru-RU', { month: 'short' }),
+    month:   d.toLocaleDateString(locale, { month: 'short' }),
   }
 }
 
@@ -89,12 +94,13 @@ function abbr(name: string): string {
   return (name ?? '--').slice(0, 2).toUpperCase()
 }
 
-function formatTime(iso: string): string {
+function formatTime(iso: string, lang: Lang): string {
   const d = new Date(iso)
   const now = new Date()
   const diff = d.getTime() - now.getTime()
-  if (diff > 0 && diff < 60 * 60_000) return `${Math.round(diff / 60000)}м`
-  return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+  const locale = lang === 'ru' ? 'ru-RU' : 'en-US'
+  if (diff > 0 && diff < 60 * 60_000) return `${Math.round(diff / 60000)}${lang === 'ru' ? 'м' : 'min'}`
+  return d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
 }
 
 // ─── Odds extraction ──────────────────────────────────────────────────────────
@@ -147,6 +153,7 @@ function Pagination({ current, total, totalEvents, pageStart, pageEnd, onChange,
   current: number; total: number; totalEvents: number; pageStart: number; pageEnd: number
   onChange: (p: number) => void; accent?: string
 }) {
+  const { lang } = useLang()
   if (total <= 1) return null
   const pages: (number | '...')[] = []
   if (total <= 7) {
@@ -161,8 +168,8 @@ function Pagination({ current, total, totalEvents, pageStart, pageEnd, onChange,
   const a = accent ?? 'rgba(0,200,150,1)'
   return (
     <div className="flex flex-col items-center gap-2 pt-4 pb-2">
-      <span className="text-[10px] font-mono text-[#888]">
-        Матчи {pageStart}–{pageEnd} из {totalEvents}
+      <span className="text-[10px] font-mono text-text-muted">
+        {lang === 'ru' ? `Матчи ${pageStart}–${pageEnd} из ${totalEvents}` : `Matches ${pageStart}–${pageEnd} of ${totalEvents}`}
       </span>
       <div className="flex items-center gap-1">
         <button onClick={() => onChange(current - 1)} disabled={current === 1}
@@ -176,7 +183,7 @@ function Pagination({ current, total, totalEvents, pageStart, pageEnd, onChange,
             <button key={p} onClick={() => onChange(p as number)}
               className="w-8 h-8 flex items-center justify-center rounded text-[11px] font-mono transition-all"
               style={p === current
-                ? { background: `${a}18`, color: a, border: `1px solid ${a}44` }
+                ? { background: mix(a, 9), color: a, border: `1px solid ${mix(a, 27)}` }
                 : { color: 'rgb(var(--text-muted))', border: '1px solid transparent' }
               }>{p}</button>
           )
@@ -191,7 +198,7 @@ function Pagination({ current, total, totalEvents, pageStart, pageEnd, onChange,
 }
 
 // ─── Date strip ───────────────────────────────────────────────────────────────
-function DateStrip({ dates, selected, onSelect, countByDate, liveCount, accent, syncingDate }: {
+function DateStrip({ dates, selected, onSelect, countByDate, liveCount, accent, syncingDate, lang }: {
   dates: string[]
   selected: SelectedDate
   onSelect: (d: SelectedDate) => void
@@ -199,6 +206,7 @@ function DateStrip({ dates, selected, onSelect, countByDate, liveCount, accent, 
   liveCount: number
   accent: string
   syncingDate?: string | null
+  lang: Lang
 }) {
   return (
     <div className="relative -mx-6">
@@ -211,21 +219,21 @@ function DateStrip({ dates, selected, onSelect, countByDate, liveCount, accent, 
           className="flex flex-col items-center px-3 py-2 rounded-lg border shrink-0 transition-all min-w-[52px]"
           style={selected === 'live'
             ? { borderColor: 'rgba(255,50,50,0.5)', background: 'rgba(255,50,50,0.1)', color: '#ff5252' }
-            : { borderColor: 'rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.03)', color: liveCount > 0 ? '#ff5252' : 'rgba(255,255,255,0.3)' }
+            : { borderColor: 'rgba(var(--surface-tint-rgb), 0.07)', background: 'rgba(var(--surface-tint-rgb), 0.03)', color: liveCount > 0 ? '#ff5252' : 'rgb(var(--text-muted))' }
           }
         >
           <div className="flex items-center gap-1">
             {liveCount > 0 && <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shrink-0" />}
             <span className="text-[11px] font-mono font-bold">Live</span>
           </div>
-          <span className="text-[10px] font-mono mt-0.5" style={{ color: selected === 'live' ? '#ff5252' : liveCount > 0 ? 'rgba(255,82,82,0.6)' : 'rgba(255,255,255,0.2)' }}>
+          <span className="text-[10px] font-mono mt-0.5" style={{ color: selected === 'live' ? '#ff5252' : liveCount > 0 ? 'rgba(255,82,82,0.6)' : 'rgba(var(--text-muted),0.5)' }}>
             {liveCount > 0 ? liveCount : '—'}
           </span>
         </button>
 
         {/* Date tabs */}
         {dates.map(dateStr => {
-          const { weekday, day, month } = formatDateLabel(dateStr)
+          const { weekday, day, month } = formatDateLabel(dateStr, lang)
           const count = countByDate.get(dateStr) ?? 0
           const isSelected = selected === dateStr
           return (
@@ -234,8 +242,8 @@ function DateStrip({ dates, selected, onSelect, countByDate, liveCount, accent, 
               onClick={() => onSelect(dateStr)}
               className="flex flex-col items-center px-3 py-2 rounded-lg border shrink-0 transition-all min-w-[52px]"
               style={isSelected
-                ? { borderColor: `${accent}55`, background: `${accent}12`, color: accent }
-                : { borderColor: 'rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.03)', color: count > 0 ? 'rgba(255,255,255,0.65)' : 'rgba(255,255,255,0.25)' }
+                ? { borderColor: mix(accent, 33), background: mix(accent, 7), color: accent }
+                : { borderColor: 'rgba(var(--surface-tint-rgb), 0.07)', background: 'rgba(var(--surface-tint-rgb), 0.03)', color: count > 0 ? 'rgb(var(--text-secondary))' : 'rgb(var(--text-muted))' }
               }
             >
               <span className="text-[11px] font-mono font-bold capitalize leading-tight">
@@ -247,7 +255,7 @@ function DateStrip({ dates, selected, onSelect, countByDate, liveCount, accent, 
                 </span>
               )}
               <span className="text-[10px] font-mono mt-0.5"
-                style={{ color: isSelected ? accent : count > 0 ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.15)' }}>
+                style={{ color: isSelected ? accent : count > 0 ? 'rgb(var(--text-muted))' : 'rgba(var(--text-muted),0.5)' }}>
                 {syncingDate === dateStr
                   ? <svg className="w-2.5 h-2.5 animate-spin inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>
                   : count > 0 ? count : '—'
@@ -259,7 +267,7 @@ function DateStrip({ dates, selected, onSelect, countByDate, liveCount, accent, 
       </div>
       {/* right fade */}
       <div className="pointer-events-none absolute right-0 top-0 bottom-2 w-10"
-        style={{ background: 'linear-gradient(to right, transparent, rgba(8,8,8,0.9))' }} />
+        style={{ background: 'linear-gradient(to right, transparent, rgba(var(--bg-base-rgb), 0.9))' }} />
     </div>
   )
 }
@@ -311,9 +319,9 @@ function LeagueDivider({ name, logo, flag, count, liveCount, first }: {
 
   return (
     <div className={`flex items-center gap-2.5 px-3.5 rounded-lg overflow-hidden ${first ? 'mt-0' : 'mt-5'} mb-1.5`}
-      style={{ minHeight: 40, background: 'rgba(255,255,255,0.05)', borderLeft: '3px solid rgba(255,255,255,0.08)' }}>
+      style={{ minHeight: 40, background: 'rgba(var(--surface-tint-rgb),0.05)', borderLeft: '3px solid rgba(var(--surface-tint-rgb),0.08)' }}>
       {icon}
-      <span className="text-[13px] font-semibold text-[#e0e0e0] truncate flex-1">
+      <span className="text-[13px] font-semibold text-text-primary truncate flex-1">
         {name}
       </span>
       {liveCount > 0 && (
@@ -323,7 +331,7 @@ function LeagueDivider({ name, logo, flag, count, liveCount, first }: {
           {liveCount}
         </span>
       )}
-      <span className="text-[10px] font-mono text-[#888] shrink-0 min-w-[18px] text-right">
+      <span className="text-[10px] font-mono text-text-muted shrink-0 min-w-[18px] text-right">
         {count}
       </span>
     </div>
@@ -335,7 +343,7 @@ function TeamLogo({ logo, abbr: abbrStr, size, accent }: { logo?: string | null;
   const [err, setErr] = useState(false)
   if (logo && !err) return (
     <div className="shrink-0 flex items-center justify-center rounded overflow-hidden border border-bg-border"
-      style={{ width: size, height: size, background: `${accent}08` }}>
+      style={{ width: size, height: size, background: mix(accent, 3) }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={logo} alt="" loading="lazy" onError={() => setErr(true)} style={{ width: size * 0.8, height: size * 0.8, objectFit: 'contain' }} />
     </div>
@@ -350,29 +358,31 @@ function TeamLogo({ logo, abbr: abbrStr, size, accent }: { logo?: string | null;
 
 // ─── Odds bar ─────────────────────────────────────────────────────────────────
 function OddsBar({ odds, accent, sport }: { odds: Odds3Way; accent: string; sport: Sport }) {
+  const { lang } = useLang()
+  const t = useT(lang)
   const showDraw = sport === 'football' && odds.draw != null
   const homeWins = odds.home > odds.away
   const awayWins = odds.away > odds.home
   return (
     <div className="flex gap-1 items-stretch">
       <div className="flex flex-col items-center px-1.5 sm:px-2 py-1.5 rounded-md border transition-all min-w-[36px] sm:min-w-[42px]"
-        style={homeWins ? { borderColor: `${accent}55`, background: `${accent}10` } : { borderColor: 'rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)' }}>
-        <span className="text-[7px] font-mono text-[#888] uppercase tracking-wide mb-0.5">Х</span>
+        style={homeWins ? { borderColor: mix(accent, 33), background: mix(accent, 6) } : { borderColor: 'rgba(var(--surface-tint-rgb),0.08)', background: 'rgba(var(--surface-tint-rgb),0.03)' }}>
+        <span className="text-[7px] font-mono text-text-muted uppercase tracking-wide mb-0.5">{t('sport.home_label')}</span>
         <span className="text-[12px] font-mono font-semibold leading-none"
-          style={{ color: homeWins ? accent : '#ccc' }}>{odds.home}%</span>
+          style={{ color: homeWins ? accent : 'rgb(var(--text-secondary))' }}>{odds.home}%</span>
       </div>
       {showDraw && (
         <div className="flex flex-col items-center px-1.5 sm:px-2 py-1.5 rounded-md border transition-all min-w-[32px] sm:min-w-[38px]"
-          style={{ borderColor: 'rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
-          <span className="text-[7px] font-mono text-[#888] uppercase tracking-wide mb-0.5">Н</span>
-          <span className="text-[12px] font-mono font-semibold leading-none text-[#aaa]">{odds.draw}%</span>
+          style={{ borderColor: 'rgba(var(--surface-tint-rgb),0.08)', background: 'rgba(var(--surface-tint-rgb),0.02)' }}>
+          <span className="text-[7px] font-mono text-text-muted uppercase tracking-wide mb-0.5">{t('sport.th.draws')}</span>
+          <span className="text-[12px] font-mono font-semibold leading-none text-text-secondary">{odds.draw}%</span>
         </div>
       )}
       <div className="flex flex-col items-center px-1.5 sm:px-2 py-1.5 rounded-md border transition-all min-w-[36px] sm:min-w-[42px]"
-        style={awayWins ? { borderColor: `${accent}55`, background: `${accent}10` } : { borderColor: 'rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)' }}>
-        <span className="text-[7px] font-mono text-[#888] uppercase tracking-wide mb-0.5">Г</span>
+        style={awayWins ? { borderColor: mix(accent, 33), background: mix(accent, 6) } : { borderColor: 'rgba(var(--surface-tint-rgb),0.08)', background: 'rgba(var(--surface-tint-rgb),0.03)' }}>
+        <span className="text-[7px] font-mono text-text-muted uppercase tracking-wide mb-0.5">{t('sport.away_label')}</span>
         <span className="text-[12px] font-mono font-semibold leading-none"
-          style={{ color: awayWins ? accent : '#ccc' }}>{odds.away}%</span>
+          style={{ color: awayWins ? accent : 'rgb(var(--text-secondary))' }}>{odds.away}%</span>
       </div>
     </div>
   )
@@ -384,6 +394,8 @@ const SportRow = memo(function SportRow({ event, sport, accent }: {
 }) {
   const [expanded, setExpanded] = useState(false)
   const router = useRouter()
+  const { lang } = useLang()
+  const t = useT(lang)
   const isLive     = event.status === 'live'
   const isFinished = event.status === 'finished'
   const hasScore   = event.home_score != null && event.away_score != null
@@ -399,14 +411,14 @@ const SportRow = memo(function SportRow({ event, sport, accent }: {
 
   return (
     <div className="rounded-lg overflow-hidden"
-      style={{ border: `1px solid ${isLive ? 'rgba(255,50,50,0.2)' : 'rgba(255,255,255,0.06)'}` }}>
+      style={{ border: `1px solid ${isLive ? 'rgba(255,50,50,0.2)' : 'rgba(var(--surface-tint-rgb),0.06)'}` }}>
       <Link
         href={href}
         prefetch={false}
         onMouseEnter={() => router.prefetch(href)}
         className="grid items-center gap-2 sm:gap-3 px-3 sm:px-3.5 py-2.5 transition-all group relative [grid-template-columns:48px_1fr_auto] sm:[grid-template-columns:64px_1fr_auto]"
         style={{
-          background: isLive ? 'rgba(255,50,50,0.04)' : 'rgba(8,8,8,0.55)',
+          background: isLive ? 'rgba(255,50,50,0.04)' : 'rgba(var(--bg-base-rgb), 0.55)',
           backdropFilter: 'blur(2px)',
           display: 'grid',
         }}
@@ -424,12 +436,12 @@ const SportRow = memo(function SportRow({ event, sport, accent }: {
               {hasScore && (
                 <div className="flex items-center gap-1 leading-none">
                   <span className="text-[18px] font-mono font-black"
-                    style={{ color: homeLeads ? '#ff5252' : awayLeads ? 'rgba(255,255,255,0.4)' : '#ff5252' }}>
+                    style={{ color: homeLeads ? '#ff5252' : awayLeads ? 'rgba(var(--surface-tint-rgb),0.4)' : '#ff5252' }}>
                     {event.home_score}
                   </span>
                   <span className="text-[12px] font-mono text-[#666]">:</span>
                   <span className="text-[18px] font-mono font-black"
-                    style={{ color: awayLeads ? '#ff5252' : homeLeads ? 'rgba(255,255,255,0.4)' : '#ff5252' }}>
+                    style={{ color: awayLeads ? '#ff5252' : homeLeads ? 'rgba(var(--surface-tint-rgb),0.4)' : '#ff5252' }}>
                     {event.away_score}
                   </span>
                 </div>
@@ -445,20 +457,20 @@ const SportRow = memo(function SportRow({ event, sport, accent }: {
             <>
               <div className="flex items-center gap-1 leading-none">
                 <span className="text-[18px] font-mono font-black"
-                  style={{ color: homeLeads ? 'rgba(255,255,255,0.85)' : awayLeads ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.65)' }}>
+                  style={{ color: homeLeads ? 'rgba(var(--surface-tint-rgb),0.85)' : awayLeads ? 'rgba(var(--surface-tint-rgb),0.3)' : 'rgba(var(--surface-tint-rgb),0.65)' }}>
                   {event.home_score}
                 </span>
-                <span className="text-[12px] font-mono text-text-muted/30">:</span>
+                <span className="text-[12px] font-mono text-text-muted/45">:</span>
                 <span className="text-[18px] font-mono font-black"
-                  style={{ color: awayLeads ? 'rgba(255,255,255,0.85)' : homeLeads ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.65)' }}>
+                  style={{ color: awayLeads ? 'rgba(var(--surface-tint-rgb),0.85)' : homeLeads ? 'rgba(var(--surface-tint-rgb),0.3)' : 'rgba(var(--surface-tint-rgb),0.65)' }}>
                   {event.away_score}
                 </span>
               </div>
-              <span className="text-[8px] font-mono text-[#888] uppercase">ФТ</span>
+              <span className="text-[8px] font-mono text-text-muted uppercase">{t('sport.ft_abbr')}</span>
             </>
           ) : (
             <>
-              <span className="text-[13px] font-mono text-text-primary leading-none">{formatTime(event.starts_at)}</span>
+              <span className="text-[13px] font-mono text-text-primary leading-none">{formatTime(event.starts_at, lang)}</span>
             </>
           )}
         </div>
@@ -471,7 +483,7 @@ const SportRow = memo(function SportRow({ event, sport, accent }: {
               {odds.draw != null && odds.draw > 0 && (
                 <div style={{ width: `${odds.draw}%`, background: 'rgba(89,100,112,0.7)' }} />
               )}
-              <div style={{ flex: 1, background: 'rgba(255,255,255,0.22)', borderRadius: '0 99px 99px 0' }} />
+              <div style={{ flex: 1, background: 'rgba(var(--surface-tint-rgb),0.22)', borderRadius: '0 99px 99px 0' }} />
             </div>
           )}
           <div className="flex items-center gap-2 min-w-0">
@@ -495,11 +507,11 @@ const SportRow = memo(function SportRow({ event, sport, accent }: {
             onClick={e => { e.preventDefault(); setExpanded(v => !v) }}
             className="flex items-center gap-1 px-2 py-1 rounded border transition-all shrink-0"
             style={expanded
-              ? { borderColor: `${accent}44`, color: accent, background: `${accent}10` }
-              : { borderColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.3)' }
+              ? { borderColor: mix(accent, 27), color: accent, background: mix(accent, 6) }
+              : { borderColor: 'rgba(var(--surface-tint-rgb),0.08)', color: 'rgba(var(--surface-tint-rgb),0.3)' }
             }
           >
-            <span className="text-[9px] font-mono">Коэф.</span>
+            <span className="text-[9px] font-mono">{t('sport.odds_abbr')}</span>
             <svg className="w-2.5 h-2.5 transition-transform" style={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
               viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M6 9l6 6 6-6"/>
@@ -519,16 +531,18 @@ const SportRow = memo(function SportRow({ event, sport, accent }: {
 
 // ─── Match detail (expanded) ──────────────────────────────────────────────────
 function MatchDetail({ event, sport, accent }: { event: SportEvent; sport: Sport; accent: string }) {
+  const { lang } = useLang()
+  const t = useT(lang)
   const allOdds = event.sport_odds ?? []
   if (allOdds.length === 0) return (
     <div className="flex items-center justify-center py-3">
-      <span className="text-[10px] font-mono text-text-muted/40">Коэффициенты недоступны</span>
+      <span className="text-[10px] font-mono text-text-muted/40">{t('sport.odds_unavailable')}</span>
     </div>
   )
 
   const MARKET_LABELS: Record<string, string> = {
-    h2h: sport === 'football' ? '1X2' : 'Победитель',
-    spreads: 'Форы', totals: 'Тотал', btts: 'Обе забьют',
+    h2h: sport === 'football' ? '1X2' : t('sport.winner'),
+    spreads: t('sport.market.spreads'), totals: t('sport.market.totals'), btts: t('sport.market.btts'),
   }
 
   const byMarket = new Map<string, SportOdds[]>()
@@ -539,14 +553,14 @@ function MatchDetail({ event, sport, accent }: { event: SportEvent; sport: Sport
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-3 text-[10px] font-mono text-[#888]">
+      <div className="flex items-center gap-3 text-[10px] font-mono text-text-muted">
         {event.league && <span>{event.league}</span>}
         {(event.raw_data as Record<string, unknown> | null)?.season != null && (
-          <><span className="text-text-muted/20">·</span>
-          <span>Сезон {String((event.raw_data as Record<string, unknown>).season)}</span></>
+          <><span className="text-text-muted/35">·</span>
+          <span>{t('sport.season_label')} {String((event.raw_data as Record<string, unknown>).season)}</span></>
         )}
-        <span className="text-text-muted/20">·</span>
-        <span>{new Date(event.starts_at).toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+        <span className="text-text-muted/35">·</span>
+        <span>{new Date(event.starts_at).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
       </div>
 
       <div className="flex flex-col gap-2">
@@ -561,18 +575,18 @@ function MatchDetail({ event, sport, accent }: { event: SportEvent; sport: Sport
           return (
             <div key={marketType}>
               <div className="flex items-center gap-2 mb-1.5">
-                <p className="text-[8px] font-mono font-bold tracking-[0.1em] uppercase text-[#888]">
+                <p className="text-[8px] font-mono font-bold tracking-[0.1em] uppercase text-text-muted">
                   {MARKET_LABELS[marketType] ?? marketType}
                 </p>
-                <span className="text-[8px] font-mono text-[#666]">{marketOdds.length} букм.</span>
+                <span className="text-[8px] font-mono text-[#666]">{marketOdds.length} {t('sport.bk_abbr')}</span>
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {Array.from(bestByName.entries()).map(([name, { price, bookmaker }]) => (
                   <div key={name} className="flex flex-col items-center px-2.5 py-1.5 rounded border min-w-[56px]"
-                    style={{ borderColor: 'rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)' }}>
-                    <span className="text-[9px] font-mono text-[#888] truncate max-w-[80px] text-center leading-tight mb-0.5">{name}</span>
+                    style={{ borderColor: 'rgba(var(--surface-tint-rgb),0.08)', background: 'rgba(var(--surface-tint-rgb),0.03)' }}>
+                    <span className="text-[9px] font-mono text-text-muted truncate max-w-[80px] text-center leading-tight mb-0.5">{name}</span>
                     <span className="text-[14px] font-mono font-bold leading-none" style={{ color: accent }}>{price.toFixed(2)}</span>
-                    <span className="text-[7px] font-mono text-text-muted/25 mt-0.5 truncate max-w-[64px] text-center">{bookmaker}</span>
+                    <span className="text-[7px] font-mono text-text-muted/40 mt-0.5 truncate max-w-[64px] text-center">{bookmaker}</span>
                   </div>
                 ))}
               </div>
@@ -589,6 +603,8 @@ export function SportScreen({ initialSport, eventId, initialEvents, initialEvent
   usePageTitle('Sport')
   const router = useRouter()
   const { profile } = useAuthContext()
+  const { lang } = useLang()
+  const t = useT(lang)
   const _plan = (profile?.plan ?? (profile?.is_pro ? 'pro' : 'free')) as SubscriptionPlan
 
   const sport  = initialSport ?? 'football'
@@ -774,7 +790,7 @@ export function SportScreen({ initialSport, eventId, initialEvents, initialEvent
 
         {/* Page header */}
         <div className="flex items-center gap-0 mb-3 -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6 pt-3 pb-2"
-          style={{ position: 'sticky', top: 200, zIndex: 15, background: 'rgba(8,8,8,0.75)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
+          style={{ position: 'sticky', top: 200, zIndex: 15, background: 'rgba(var(--bg-base-rgb), 0.75)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
         >
           {eventId ? (
             /* BreadcrumbBar style — same as TeamPage / PlayerPage */
@@ -784,11 +800,11 @@ export function SportScreen({ initialSport, eventId, initialEvents, initialEvent
                 className="flex items-center gap-1.5 text-[11px] font-medium text-text-muted hover:text-text-primary transition-colors shrink-0 pr-2"
               >
                 <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-                Назад
+                {t('sport.back')}
               </button>
               {matchLeague && (
                 <>
-                  <span className="text-text-muted/30 text-[11px] mx-1.5">/</span>
+                  <span className="text-text-muted/45 text-[11px] mx-1.5">/</span>
                   {matchLeagueId
                     ? <button onClick={() => router.push(`/sport/${sport}/league/${matchLeagueId}`)} className="text-[11px] font-medium text-text-muted hover:text-text-primary transition-colors truncate max-w-[80px] sm:max-w-[120px] md:max-w-[140px]">{matchLeague}</button>
                     : <span className="text-[11px] font-medium text-text-muted truncate max-w-[80px] sm:max-w-[120px] md:max-w-[140px]">{matchLeague}</span>
@@ -797,7 +813,7 @@ export function SportScreen({ initialSport, eventId, initialEvents, initialEvent
               )}
               {(matchHome || matchAway) && (
                 <>
-                  <span className="text-text-muted/30 text-[11px] mx-1.5">/</span>
+                  <span className="text-text-muted/45 text-[11px] mx-1.5">/</span>
                   <span className="text-[11px] font-medium text-text-primary truncate max-w-[140px] sm:max-w-[200px] md:max-w-[260px]">{matchHome} — {matchAway}</span>
                 </>
               )}
@@ -825,6 +841,7 @@ export function SportScreen({ initialSport, eventId, initialEvents, initialEvent
               liveCount={liveCount}
               accent={accent}
               syncingDate={syncingDate}
+              lang={lang}
             />
           </div>
         )}
@@ -840,7 +857,7 @@ export function SportScreen({ initialSport, eventId, initialEvents, initialEvent
                 <svg className="w-3 h-3 text-text-muted/40 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
                 </svg>
-                <span className="text-[11px] font-mono text-text-muted/50 shrink-0">Лига:</span>
+                <span className="text-[11px] font-mono text-text-muted/50 shrink-0">{t('sport.league_filter')}</span>
                 <span className="text-[11px] font-mono font-bold text-text-primary truncate">{selectedLeague}</span>
                 <button onClick={() => setSelectedLeague(null)}
                   className="ml-auto text-[16px] leading-none text-text-muted/40 hover:text-text-muted transition-colors shrink-0">
@@ -865,20 +882,20 @@ export function SportScreen({ initialSport, eventId, initialEvents, initialEvent
                     <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
                   </svg>
                 </div>
-                <p className="text-sm font-mono text-text-muted">События не найдены</p>
-                <p className="text-xs font-mono text-text-muted/50 mt-1">Данные синхронизируются</p>
+                <p className="text-sm font-mono text-text-muted">{t('sport.no_events')}</p>
+                <p className="text-xs font-mono text-text-muted/50 mt-1">{t('sport.data_syncing')}</p>
               </div>
             )}
 
             {!showSkeleton && filteredEvents.length === 0 && events.length > 0 && (
               <div className="flex flex-col items-center justify-center py-16 text-center">
-                <p className="text-sm font-mono text-text-muted/60">Нет матчей на выбранную дату</p>
+                <p className="text-sm font-mono text-text-muted/60">{t('sport.no_matches_date')}</p>
                 <button
                   onClick={() => setSelectedDate(today)}
                   className="mt-3 text-[10px] font-mono px-3 py-1.5 rounded border transition-all"
-                  style={{ borderColor: `${accent}44`, color: accent }}
+                  style={{ borderColor: mix(accent, 27), color: accent }}
                 >
-                  Вернуться к сегодня
+                  {t('sport.back_to_today')}
                 </button>
               </div>
             )}

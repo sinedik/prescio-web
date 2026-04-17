@@ -11,10 +11,10 @@
 /* ── Theme: CSS variable definitions (RGB channels for Tailwind opacity support) ── */
 :root {
   /* Dark theme — default */
-  --bg-base:     8 8 8;
-  --bg-surface:  17 17 17;
-  --bg-elevated: 22 22 22;
-  --bg-border:   26 26 26;
+  --bg-base:     14 14 14;
+  --bg-surface:  26 26 26;
+  --bg-elevated: 36 36 36;
+  --bg-border:   48 48 48;
 
   --text-primary:   255 255 255;
   --text-secondary: 136 136 136;
@@ -29,24 +29,75 @@
   --metaculus:    167 139 250;
 
   /* Алиасы для совместимости компонентов */
-  --border:       rgb(26 26 26);
-  --bg-card:      rgb(17 17 17);
-  --bg-base-rgb:  8, 8, 8;
+  --border:       rgb(48 48 48);
+  --bg-card:      rgb(26 26 26);
+  --bg-base-rgb:  14, 14, 14;
   --accent-rgb:   0, 255, 136;
+  /* Surface tint — overlay colour for subtle dividers/cards (white on dark, black on light) */
+  --surface-tint-rgb: 255, 255, 255;
+
+  /* Sport accent colours (dark-theme defaults) */
+  --sport-football:   #e8c032;
+  --sport-basketball: #e66414;
+  --sport-tennis:     #C8E63C;
+  --sport-mma:        #e02020;
+  --sport-cs2:        #e66414;
+  --sport-dota2:      #c0392b;
+  --sport-valorant:   #ff4655;
+
+  /* RGB-channel variants for use in rgb(var(...) / alpha) and Layout's --accent override */
+  --sport-football-rgb:   232 192 50;
+  --sport-basketball-rgb: 230 100 20;
+  --sport-tennis-rgb:     200 230 60;
+  --sport-mma-rgb:        224 32 32;
+  --sport-cs2-rgb:        230 100 20;
+  --sport-dota2-rgb:      192 57 43;
+  --sport-valorant-rgb:   255 70 85;
+
+  /* Football position accents (RGB) */
+  --player-pos-gk:  74 158 234;
+  --player-pos-def: 97 223 110;
+  --player-pos-mid: 232 192 50;
+  --player-pos-fwd: 229 94 91;
+
+  /* Hero palette — dark theme defaults. Used by LiveHero to avoid hydration mismatch. */
+  --hero-surface-a:    10 9 6;
+  --hero-surface-b:    18 13 7;
+  --hero-vignette:     10 9 6;
+  --hero-text-primary: #f4f0e0;
+  --hero-text-soft:    rgba(255,255,255,0.06);
+  --hero-grid-line:    rgba(255,255,255,0.05);
+
+  --hero-cs2-base:      #060402;
+  --hero-cs2-deep:      #120d07;
+  --hero-cs2-mid:       #0f0a05;
+  --hero-cs2-accent1:   rgba(230,100,20,0.20);
+  --hero-cs2-accent2:   rgba(230,100,20,0.10);
+  --hero-cs2-noise:     rgba(255,255,255,0.012);
+  --hero-cs2-base-text: #f5ede0;
+
+  --hero-dota-base-grad: radial-gradient(ellipse 80% 120% at 70% 50%,#1a0608 0%,#120305 40%,#0a0203 100%);
+  --hero-dota-side-grad: linear-gradient(90deg,#050102 0%,#0d0304 30%,transparent 65%);
+  --hero-dota-text:      #d4c4a0;
+  --hero-dota-noise:     rgba(0,0,0,0.10);
+  --hero-dota-text-shadow: 0 0 40px rgba(192,57,43,0.5),0 0 80px rgba(192,57,43,0.2);
+
+  /* Logo symbol colour — theme-aware via CSS var to avoid hydration mismatch */
+  --logo-symbol: rgb(var(--accent));
 }
 
 [data-theme="light"] {
-  --bg-base:     245 245 240;
+  --bg-base:     236 236 230;
   --bg-surface:  255 255 255;
-  --bg-elevated: 235 235 235;
-  --bg-border:   224 224 216;
+  --bg-elevated: 246 246 240;
+  --bg-border:   208 208 200;
 
-  --text-primary:   15 15 15;
-  --text-secondary: 85 85 85;
-  --text-muted:     153 153 153;
+  --text-primary:   18 18 18;
+  --text-secondary: 75 75 75;
+  --text-muted:     105 105 100;
 
-  --accent:       0 184 92;
-  --accent-hover: 0 163 82;
+  --accent:       0 130 60;
+  --accent-hover: 0 110 50;
   --watch:        217 119 6;
   --danger:       220 38 38;
   --poly:         29 78 216;
@@ -54,10 +105,78 @@
   --metaculus:    109 40 217;
 
   /* Алиасы для совместимости компонентов */
-  --border:       rgb(224 224 216);
+  --border:       rgb(208 208 200);
   --bg-card:      rgb(255 255 255);
-  --bg-base-rgb:  245, 245, 240;
-  --accent-rgb:   0, 184, 92;
+  --bg-base-rgb:  236, 236, 230;
+  --accent-rgb:   0, 130, 60;
+  --surface-tint-rgb: 0, 0, 0;
+
+  /* Sport accents — darker shades for AA contrast on light bg */
+  --sport-football:   #8a6f10;
+  --sport-basketball: #a0420c;
+  --sport-tennis:     #5a7a18;
+  --sport-mma:        #a01010;
+  --sport-cs2:        #a0420c;
+  --sport-dota2:      #8e2820;
+  --sport-valorant:   #c8323d;
+
+  --sport-football-rgb:   138 111 16;
+  --sport-basketball-rgb: 160 66 12;
+  --sport-tennis-rgb:     90 122 24;
+  --sport-mma-rgb:        160 16 16;
+  --sport-cs2-rgb:        160 66 12;
+  --sport-dota2-rgb:      142 40 32;
+  --sport-valorant-rgb:   200 50 61;
+
+  /* Football position accents (RGB) — darker for light theme contrast */
+  --player-pos-gk:  37 112 184;
+  --player-pos-def: 45 163 64;
+  --player-pos-mid: 138 111 16;
+  --player-pos-fwd: 177 58 55;
+
+  /* Hero palette — light theme overrides */
+  --hero-surface-a:    252 248 238;
+  --hero-surface-b:    244 236 218;
+  --hero-vignette:     252 248 238;
+  --hero-text-primary: #1a1408;
+  --hero-text-soft:    rgba(0,0,0,0.06);
+  --hero-grid-line:    rgba(0,0,0,0.06);
+
+  --hero-cs2-base:      #fbf3e2;
+  --hero-cs2-deep:      #f0e3c4;
+  --hero-cs2-mid:       #e8d8b0;
+  --hero-cs2-accent1:   rgba(230,100,20,0.16);
+  --hero-cs2-accent2:   rgba(230,100,20,0.08);
+  --hero-cs2-noise:     rgba(0,0,0,0.018);
+  --hero-cs2-base-text: #1a1408;
+
+  --hero-dota-base-grad: radial-gradient(ellipse 80% 120% at 70% 50%,#f8e8d8 0%,#f0d8c0 40%,#e8c8a8 100%);
+  --hero-dota-side-grad: linear-gradient(90deg,#fbeedd 0%,#f5e3cf 30%,transparent 65%);
+  --hero-dota-text:      #3a1a08;
+  --hero-dota-noise:     rgba(120,60,20,0.08);
+  --hero-dota-text-shadow: 0 0 30px rgba(192,57,43,0.2);
+
+  --logo-symbol: rgb(var(--text-primary));
+}
+
+/* Light-theme contrast bumps for Tailwind 400-shade text colors used in pills/badges.
+   On dark these are crisp; on white they fall below WCAG AA — promote to 600/700. */
+[data-theme="light"] .text-blue-400   { color: rgb(29 78 216); }
+[data-theme="light"] .text-purple-400 { color: rgb(126 34 206); }
+[data-theme="light"] .text-amber-400  { color: rgb(180 83 9); }
+[data-theme="light"] .text-orange-400 { color: rgb(194 65 12); }
+[data-theme="light"] .text-red-400    { color: rgb(185 28 28); }
+[data-theme="light"] .text-green-400  { color: rgb(21 128 61); }
+[data-theme="light"] .text-cyan-400   { color: rgb(14 116 144); }
+[data-theme="light"] .text-pink-400   { color: rgb(190 24 93); }
+[data-theme="light"] .text-indigo-400 { color: rgb(67 56 202); }
+[data-theme="light"] .text-yellow-400 { color: rgb(161 98 7); }
+
+/* Light theme: opacity-modifier on muted text (e.g. text-text-muted/50) tanks
+   contrast against the pale bg below WCAG AA. Force solid colour and shift the
+   visual hierarchy down to text-secondary so muted/30-50 stay legible. */
+[data-theme="light"] [class*="text-text-muted/"] {
+  color: rgb(var(--text-secondary));
 }
 
 @layer base {
@@ -216,6 +335,46 @@
 }
 .auth-social-btn:hover {
   animation: socialGlow 200ms ease-out forwards;
+}
+
+/* ── Live layout (sport / cybersport) backgrounds ─────────────────────────── */
+.live-content {
+  background: rgba(var(--bg-base-rgb), 0.35);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+[data-theme="light"] .live-content {
+  background: rgba(var(--bg-base-rgb), 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+/* WorldBackground SVG art is dark-tuned. On light theme, multiply blend-mode
+   keeps the dark decorative strokes visible against the parchment-like base
+   (the white parts of the artwork drop out, the dark lines stay as sepia).
+   Applied to inner SVG/glow because the .live-world-bg wrapper has inline
+   opacity used for pending transitions. Walk descendants — WorldBackground
+   wraps everything in its own inner div. */
+[data-theme="light"] .live-world-bg svg,
+[data-theme="light"] .live-world-bg image {
+  opacity: 0.65;
+  mix-blend-mode: multiply;
+  filter: saturate(0.85) hue-rotate(-8deg);
+}
+[data-theme="light"] .live-world-bg > div > div {
+  opacity: 0.4;
+  mix-blend-mode: multiply;
+}
+
+/* Theme toggle buttons — driven by data-theme attribute, not React state.
+   Avoids hydration mismatch since SSR can't know the user's stored theme. */
+.theme-toggle-btn {
+  background: transparent;
+  box-shadow: none;
+}
+[data-theme="dark"]  .theme-toggle-btn[data-theme-toggle="dark"],
+[data-theme="light"] .theme-toggle-btn[data-theme-toggle="light"] {
+  background: rgb(var(--bg-border));
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.15);
 }
 
 /* scrollbar-hide utility */

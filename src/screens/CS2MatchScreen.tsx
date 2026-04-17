@@ -7,6 +7,8 @@ import { usePageTitle } from '../hooks/usePageTitle'
 import { api } from '../lib/api'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import MarketsPanel from '../components/esports/MarketsPanel'
+import { useLang } from '../contexts/LanguageContext'
+import { useT } from '../lib/i18n'
 import type { EsportsMatchDetail, EsportsGame, EsportsGameTeam, EsportsDraftAction, EsportsPlayer, EsportsTeamDetail, EsportsRound, EsportsPreMatch, EsportsRecentMatch } from '../types'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -158,7 +160,7 @@ function PlayerRow({ player, accent, isDota, isCs2, completedRounds }: {
   const healthPct    = player.currentHealth != null && player.currentHealth > 0
     ? Math.round((player.currentHealth / 100) * 100) : null
   return (
-    <div className="flex items-center gap-2 py-1 px-2 rounded hover:bg-white/[0.02] transition-colors">
+    <div className="flex items-center gap-2 py-1 px-2 rounded hover:bg-text-primary/[0.02] transition-colors">
       {player.firstKill && (
         <span className="text-[8px] font-mono px-1 py-0.5 rounded shrink-0"
           style={{ background: `${accent}18`, color: accent, border: `1px solid ${accent}33` }}>FK</span>
@@ -227,8 +229,8 @@ function MapVeto({ actions, teamA, teamB, accent }: {
             style={{
               padding: '6px 10px',
               borderRadius: 6,
-              background: isBan ? 'rgba(255,50,50,0.04)' : (isA ? `${accent}0d` : 'rgba(255,255,255,0.03)'),
-              border: `1px solid ${isBan ? 'rgba(255,50,50,0.18)' : (isA ? `${accent}2a` : 'rgba(255,255,255,0.08)')}`,
+              background: isBan ? 'rgba(255,50,50,0.04)' : (isA ? `${accent}0d` : 'rgba(var(--surface-tint-rgb),0.03)'),
+              border: `1px solid ${isBan ? 'rgba(255,50,50,0.18)' : (isA ? `${accent}2a` : 'rgba(var(--surface-tint-rgb),0.08)')}`,
             }}>
             <span className="text-text-muted/60 w-5">{i + 1}.</span>
             <span className="uppercase tracking-wider text-[9px] w-8"
@@ -286,25 +288,25 @@ function Cs2Minimap({ teamA, teamB, accent }: {
       <div className="relative" style={{ width: size, height: size, margin: '0 auto' }}>
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}
           style={{
-            background: 'rgba(255,255,255,0.02)',
-            border: '1px solid rgba(255,255,255,0.08)',
+            background: 'rgba(var(--surface-tint-rgb), 0.02)',
+            border: '1px solid rgba(var(--surface-tint-rgb),0.08)',
             borderRadius: 8,
           }}>
           {/* Grid */}
-          <line x1={size/2} y1={0} x2={size/2} y2={size} stroke="rgba(255,255,255,0.04)" strokeDasharray="2 4" />
-          <line x1={0} y1={size/2} x2={size} y2={size/2} stroke="rgba(255,255,255,0.04)" strokeDasharray="2 4" />
+          <line x1={size/2} y1={0} x2={size/2} y2={size} stroke="rgba(var(--surface-tint-rgb),0.04)" strokeDasharray="2 4" />
+          <line x1={0} y1={size/2} x2={size} y2={size/2} stroke="rgba(var(--surface-tint-rgb),0.04)" strokeDasharray="2 4" />
           {all.map(({ p, side }) => {
             const cx = norm(p.position!.x, minX, rangeX)
             const cy = size - norm(p.position!.y, minY, rangeY)
             const alive = p.alive !== false
-            const color = side === 'A' ? accent : '#e0e0e0'
+            const color = side === 'A' ? accent : 'rgb(var(--text-secondary))'
             return (
               <g key={p.id} opacity={alive ? 1 : 0.3}>
                 <circle cx={cx} cy={cy} r={6} fill={color} stroke="rgba(0,0,0,0.5)" strokeWidth={1} />
                 {!alive && (
                   <line x1={cx-4} y1={cy-4} x2={cx+4} y2={cy+4} stroke="#ff5252" strokeWidth={1.5} />
                 )}
-                <text x={cx} y={cy - 9} fontSize={7} fill="rgba(255,255,255,0.7)"
+                <text x={cx} y={cy - 9} fontSize={7} fill="rgba(var(--surface-tint-rgb),0.7)"
                   textAnchor="middle" fontFamily="monospace">
                   {(p.name ?? '').slice(0, 6)}
                 </text>
@@ -327,6 +329,8 @@ function GamesTabs({ games, teamA, teamB, isDota, isCs2, accent }: {
   isCs2?: boolean
   accent: string
 }) {
+  const { lang } = useLang()
+  const t = useT(lang)
   const liveIdx = games.findIndex(g => g.started && !g.finished)
   const defaultIdx = liveIdx >= 0 ? liveIdx : games.length - 1
   const [active, setActive] = useState(defaultIdx)
@@ -348,7 +352,7 @@ function GamesTabs({ games, teamA, teamB, isDota, isCs2, accent }: {
           {isDota ? 'Games' : 'Maps'}
         </p>
         <span className="text-[9px] font-mono text-text-muted/50">
-          Нажмите на карту, чтобы открыть →
+          {t('esports.click_to_open')}
         </span>
       </div>
 
@@ -357,10 +361,10 @@ function GamesTabs({ games, teamA, teamB, isDota, isCs2, accent }: {
         <div className="rounded-md border border-amber-500/25 bg-amber-500/5 px-3 py-2 flex items-center gap-2">
           <span className="text-[9px] font-mono font-bold px-1.5 py-[1px] rounded uppercase tracking-wider"
             style={{ background: 'rgba(245,158,11,0.15)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.3)' }}>
-            Перерыв
+            {t('esports.halftime')}
           </span>
           <span className="text-[10px] font-mono text-text-muted">
-            {isDota ? `Game ${lastFinishedSeq}` : `Map ${lastFinishedSeq}`} завершена · ждём {isDota ? `Game ${nextUpSeq}` : `Map ${nextUpSeq}`}
+            {isDota ? `Game ${lastFinishedSeq}` : `Map ${lastFinishedSeq}`} {t('esports.finished_waiting')} {isDota ? `Game ${nextUpSeq}` : `Map ${nextUpSeq}`}
           </span>
         </div>
       )}
@@ -382,7 +386,7 @@ function GamesTabs({ games, teamA, teamB, isDota, isCs2, accent }: {
               type="button"
               role="tab"
               aria-selected={isActive}
-              title={gFin ? 'Смотреть карту' : gLive ? 'Идёт сейчас' : 'Карта ещё не начата'}
+              title={gFin ? t('map.watching') : gLive ? t('map.live') : t('map.not_started')}
               onClick={() => setActive(i)}
               className={`shrink-0 flex flex-col items-start gap-0.5 px-3 py-2 rounded-md border cursor-pointer transition-all ${
                 isActive
@@ -418,7 +422,7 @@ function GamesTabs({ games, teamA, teamB, isDota, isCs2, accent }: {
                     <span className={aWon ? 'font-bold' : 'text-text-muted/60'} style={aWon ? { color: accent } : undefined}>
                       {gA?.score}
                     </span>
-                    <span className="text-text-muted/30">:</span>
+                    <span className="text-text-muted/45">:</span>
                     <span className={bWon ? 'font-bold' : 'text-text-muted/60'} style={bWon ? { color: accent } : undefined}>
                       {gB?.score}
                     </span>
@@ -426,9 +430,9 @@ function GamesTabs({ games, teamA, teamB, isDota, isCs2, accent }: {
                 ) : gLive ? (
                   <span className="text-text-muted/50">in progress</span>
                 ) : gUpcoming ? (
-                  <span className="text-text-muted/30">not started</span>
+                  <span className="text-text-muted/45">not started</span>
                 ) : (
-                  <span className="text-text-muted/30">—</span>
+                  <span className="text-text-muted/45">—</span>
                 )}
                 {g.map && <span className="text-text-muted/40 ml-1 truncate max-w-[80px]">{g.map}</span>}
               </span>
@@ -445,10 +449,10 @@ function GamesTabs({ games, teamA, teamB, isDota, isCs2, accent }: {
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2 px-1">
               <span className="text-[9px] font-mono font-bold uppercase tracking-wider" style={{ color: selLive ? '#ff3d3d' : accent }}>
-                Просмотр: {selLabel}
+                {t('esports.viewing')} {selLabel}
               </span>
-              {selFin && <span className="text-[9px] font-mono text-text-muted/50">— завершена</span>}
-              {selLive && <span className="text-[9px] font-mono text-text-muted/70">— в прямом эфире</span>}
+              {selFin && <span className="text-[9px] font-mono text-text-muted/50">{t('esports.map_finished')}</span>}
+              {selLive && <span className="text-[9px] font-mono text-text-muted/70">{t('esports.map_live')}</span>}
             </div>
             <GameCard
               key={sel.seq}
@@ -517,15 +521,15 @@ function RoundTimeline({ rounds, teamAName, teamBName }: {
                 title={tip}
                 className="w-5 h-7 rounded-sm flex flex-col items-center justify-center font-mono shrink-0"
                 style={{
-                  background: winner ? `${col}29` : isLive ? 'rgba(255,61,61,0.12)' : 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${winner ? `${col}66` : isLive ? `${LIVE_RED}66` : 'rgba(255,255,255,0.06)'}`,
+                  background: winner ? `${col}29` : isLive ? 'rgba(255,61,61,0.12)' : 'rgba(var(--surface-tint-rgb),0.03)',
+                  border: `1px solid ${winner ? `${col}66` : isLive ? `${LIVE_RED}66` : 'rgba(var(--surface-tint-rgb),0.06)'}`,
                 }}
               >
-                <span className="text-[8px] leading-none" style={{ color: winner ? col : isLive ? LIVE_RED : 'rgba(255,255,255,0.25)' }}>
+                <span className="text-[8px] leading-none" style={{ color: winner ? col : isLive ? LIVE_RED : 'rgba(var(--surface-tint-rgb),0.25)' }}>
                   {winner ? winIcon(wt) : isLive ? '●' : '·'}
                 </span>
                 <span className="text-[7px] leading-none mt-0.5 tabular-nums"
-                  style={{ color: winner ? `${col}cc` : 'rgba(255,255,255,0.3)' }}>
+                  style={{ color: winner ? `${col}cc` : 'rgba(var(--surface-tint-rgb),0.3)' }}>
                   {r.round}
                 </span>
               </div>
@@ -591,7 +595,7 @@ function GameCard({ game, teamA, teamB, isDota, isCs2, accent }: {
               <>
                 <span className={`text-base font-bold ${gA?.won ? '' : 'text-text-muted'}`}
                   style={{ color: gA?.won ? colorA : undefined }}>{gA.score}</span>
-                <span className="text-text-muted/30 text-sm">:</span>
+                <span className="text-text-muted/45 text-sm">:</span>
                 <span className={`text-base font-bold ${gB?.won ? '' : 'text-text-muted'}`}
                   style={{ color: gB?.won ? colorB : undefined }}>{gB.score}</span>
               </>
@@ -599,7 +603,7 @@ function GameCard({ game, teamA, teamB, isDota, isCs2, accent }: {
               <span className="text-[9px] font-mono animate-pulse px-1.5 py-0.5 rounded"
                 style={{ background: `${LIVE_RED}1f`, color: LIVE_RED }}>LIVE</span>
             ) : (
-              <span className="text-text-muted/30 text-sm">—</span>
+              <span className="text-text-muted/45 text-sm">—</span>
             )}
           </div>
 
@@ -659,7 +663,7 @@ function GameCard({ game, teamA, teamB, isDota, isCs2, accent }: {
               <span className="text-[10px] font-mono tabular-nums shrink-0 w-14" style={{ color: colorA }}>
                 ${aLoad.toLocaleString()}
               </span>
-              <div className="flex-1 h-1.5 rounded-full overflow-hidden flex" style={{ background: 'rgba(255,255,255,0.04)' }}>
+              <div className="flex-1 h-1.5 rounded-full overflow-hidden flex" style={{ background: 'rgba(var(--surface-tint-rgb), 0.04)' }}>
                 <div className="h-full transition-all duration-500" style={{ width: `${aPct}%`, background: colorA }} />
                 <div className="h-full transition-all duration-500" style={{ width: `${100 - aPct}%`, background: colorB }} />
               </div>
@@ -680,14 +684,14 @@ function GameCard({ game, teamA, teamB, isDota, isCs2, accent }: {
           <div className="flex items-center gap-2 px-2 pb-1">
             <span className="flex-1 text-[9px] font-mono text-text-muted/40 uppercase tracking-wider">Player</span>
             <span className="text-[9px] font-mono text-text-muted/40 w-6 text-center">K</span>
-            <span className="text-[10px] font-mono text-text-muted/20">/</span>
+            <span className="text-[10px] font-mono text-text-muted/35">/</span>
             <span className="text-[9px] font-mono text-text-muted/40 w-6 text-center">D</span>
-            <span className="text-[10px] font-mono text-text-muted/20">/</span>
+            <span className="text-[10px] font-mono text-text-muted/35">/</span>
             <span className="text-[9px] font-mono text-text-muted/40 w-6 text-center">A</span>
             {isDota && <span className="text-[9px] font-mono text-text-muted/40 w-12 text-right">NW</span>}
             {isCs2 && <span className="text-[9px] font-mono text-yellow-500/40 w-8 text-right">HS</span>}
             {isCs2 && completedRounds > 0 && <span className="text-[9px] font-mono text-text-muted/40 w-10 text-right" title={`ADR = damage / ${completedRounds} rounds`}>ADR</span>}
-            {isCs2 && <span className="text-[9px] font-mono text-text-muted/30 w-14 text-right">DMG</span>}
+            {isCs2 && <span className="text-[9px] font-mono text-text-muted/45 w-14 text-right">DMG</span>}
             {isCs2 && <span className="text-[9px] font-mono text-green-500/40 w-8 text-right">HP</span>}
           </div>
 
@@ -799,11 +803,11 @@ function RoundsHistory({ rounds, teamAName, teamBName, accent }: {
               className="relative flex items-center justify-center cursor-default"
               style={{
                 width: 18, height: 22, borderRadius: 3,
-                background: aWon ? `${sideCol}22` : 'rgba(255,255,255,0.04)',
-                border: `1px solid ${aWon ? sideCol : 'rgba(255,255,255,0.08)'}`,
+                background: aWon ? `${sideCol}22` : 'rgba(var(--surface-tint-rgb),0.04)',
+                border: `1px solid ${aWon ? sideCol : 'rgba(var(--surface-tint-rgb),0.08)'}`,
                 boxShadow: isPistol ? `inset 0 -2px 0 ${accent}` : undefined,
               }}>
-              <span className="text-[9px] font-mono" style={{ color: aWon ? sideCol : 'rgba(255,255,255,0.25)' }}>
+              <span className="text-[9px] font-mono" style={{ color: aWon ? sideCol : 'rgba(var(--surface-tint-rgb),0.25)' }}>
                 {icon}
               </span>
               {mvp && (mvp.kills >= 3) && (
@@ -884,9 +888,9 @@ function StreamPlayer({ urls }: { urls: string[] }) {
             <button key={s.url} onClick={() => setIdx(i)}
               className="text-[10px] font-mono font-bold px-2 py-0.5 rounded transition-colors"
               style={{
-                background: i === idx ? 'rgba(145,70,255,0.18)' : 'rgba(255,255,255,0.04)',
+                background: i === idx ? 'rgba(145,70,255,0.18)' : 'rgba(var(--surface-tint-rgb),0.04)',
                 color: i === idx ? '#b388ff' : 'rgb(var(--text-muted))',
-                border: `1px solid ${i === idx ? 'rgba(145,70,255,0.35)' : 'rgba(255,255,255,0.08)'}`,
+                border: `1px solid ${i === idx ? 'rgba(145,70,255,0.35)' : 'rgba(var(--surface-tint-rgb),0.08)'}`,
               }}>
               {s.kind === 'twitch' ? 'Twitch' : 'YouTube'} · {s.id.slice(0, 14)}
             </button>
@@ -935,7 +939,7 @@ function RecentFormStrip({ matches, accent }: { matches: EsportsRecentMatch[]; a
       {matches.slice(0, 5).map(m => {
         const isW = m.outcome === 'W'
         const isL = m.outcome === 'L'
-        const bg  = isW ? accent : isL ? 'rgba(255,77,77,0.4)' : 'rgba(255,255,255,0.08)'
+        const bg  = isW ? accent : isL ? 'rgba(255,77,77,0.4)' : 'rgba(var(--surface-tint-rgb),0.08)'
         const label = m.outcome ?? '?'
         const score = m.scoreSelf != null && m.scoreOpp != null ? ` ${m.scoreSelf}:${m.scoreOpp}` : ''
         const title = `${m.outcome ?? 'TBD'} vs ${m.opponent?.name ?? '?'}${score} · ${m.tournament ?? ''} · ${fmtDate(m.startsAt)}`
@@ -955,7 +959,7 @@ function RecentFormStrip({ matches, accent }: { matches: EsportsRecentMatch[]; a
 function RecentMatchRow({ m }: { m: EsportsRecentMatch }) {
   const color = m.outcome === 'W' ? '#4ade80' : m.outcome === 'L' ? '#f87171' : '#888'
   return (
-    <div className="flex items-center gap-2 px-2 py-1 rounded hover:bg-white/[0.02] transition-colors">
+    <div className="flex items-center gap-2 px-2 py-1 rounded hover:bg-text-primary/[0.02] transition-colors">
       <span className="text-[10px] font-mono font-bold w-4 text-center" style={{ color }}>
         {m.outcome ?? '—'}
       </span>
@@ -972,7 +976,7 @@ function RecentMatchRow({ m }: { m: EsportsRecentMatch }) {
       )}
       <span className="text-[9px] font-mono text-text-muted/40 shrink-0 truncate max-w-[80px]"
         title={m.tournament ?? ''}>{m.tournament ?? ''}</span>
-      <span className="text-[9px] font-mono text-text-muted/30 shrink-0 tabular-nums w-12 text-right">
+      <span className="text-[9px] font-mono text-text-muted/45 shrink-0 tabular-nums w-12 text-right">
         {fmtDate(m.startsAt)}
       </span>
     </div>
@@ -1147,6 +1151,9 @@ export default function CS2MatchScreen({ seriesId, initialData }: { seriesId: st
 
   const titleTeams = match ? `${match.teamA?.name ?? '?'} vs ${match.teamB?.name ?? '?'}` : null
   usePageTitle(titleTeams ? `${titleTeams} — Esports` : 'Match')
+
+  const { lang } = useLang()
+  const t = useT(lang)
 
   const isLive     = match?.status === 'live'
   const isFinished = match?.status === 'finished'
@@ -1360,7 +1367,7 @@ export default function CS2MatchScreen({ seriesId, initialData }: { seriesId: st
             </span>
           )}
           {isRefreshing && (
-            <svg className="w-3 h-3 animate-spin text-text-muted/30 ml-auto shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg className="w-3 h-3 animate-spin text-text-muted/45 ml-auto shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 12a9 9 0 11-6.219-8.56"/>
             </svg>
           )}
@@ -1389,7 +1396,7 @@ export default function CS2MatchScreen({ seriesId, initialData }: { seriesId: st
         if (empty) return (
           <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3">
             <p className="text-[11px] font-mono text-amber-300/90">
-              Детали матча (составы, форма, потоки) недоступны — ограничение GRID dev-ключа.
+              {t('esports.grid_dev_limit')}
             </p>
           </div>
         )

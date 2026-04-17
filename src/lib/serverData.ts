@@ -4,7 +4,7 @@
 
 import { cache } from 'react'
 import { unstable_cache } from 'next/cache'
-import { getSupabaseServerClient } from './supabase/server'
+import { getSupabaseAnonClient } from './supabase/server'
 import type { EsportsMatch, EsportsTeamPageData, Market } from '../types'
 import type { SportEvent, SportTeam, SportStanding, SportInjury, SportSquadPlayer, PlayerProfile, LeaguePageData } from '../types/index'
 
@@ -38,7 +38,7 @@ async function fetchEsportsListImpl(game: string, window: string): Promise<Espor
   const horizon = window === 'live' ? 0 : window === '1h' ? 1 : window === '3h' ? 3 : window === '12h' ? 12 : 48
   const to   = new Date(now + horizon * 3600_000).toISOString()
 
-  const supabase = await getSupabaseServerClient()
+  const supabase = getSupabaseAnonClient()
   const { data, error } = await supabase
     .from('esports_markets')
     .select(`
@@ -110,7 +110,7 @@ async function fetchSportEventsImpl(subcategory: string): Promise<SportEvent[]> 
   const from = new Date(); from.setHours(0, 0, 0, 0)
   const to   = new Date(from); to.setDate(to.getDate() + 30); to.setHours(23, 59, 59, 999)
 
-  const supabase = await getSupabaseServerClient()
+  const supabase = getSupabaseAnonClient()
   const { data, error } = await supabase
     .from('sport_events')
     .select('id,source,category,subcategory,league,home_team,away_team,starts_at,status,home_score,away_score,raw_data,sport_odds(bookmaker,market_type,outcomes)')
@@ -200,7 +200,7 @@ interface UnifiedEventRow {
 }
 
 async function fetchUnifiedEventImpl(id: string): Promise<UnifiedEventRow | null> {
-  const supabase = await getSupabaseServerClient()
+  const supabase = getSupabaseAnonClient()
   const { data, error } = await supabase
     .from('unified_events')
     .select('id, title, description, category, subcategory, image_url, enrichment_status, updated_at')

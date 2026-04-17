@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import type { Position, PositionDirection } from '../types'
 import { calcKelly } from '../hooks/usePortfolio'
+import { useLang } from '../contexts/LanguageContext'
+import { useT } from '../lib/i18n'
 
 interface Prefill {
   question?: string
@@ -22,6 +24,8 @@ interface Props {
 const PLATFORMS = ['Polymarket', 'Kalshi', 'Metaculus', 'Manifold', 'Other']
 
 export default function AddPositionModal({ onAdd, onClose, prefill }: Props) {
+  const { lang } = useLang()
+  const t = useT(lang)
   const [question, setQuestion] = useState(prefill?.question ?? '')
   const [platform, setPlatform] = useState(prefill?.platform ?? 'Polymarket')
   const [topic, setTopic] = useState('')
@@ -83,7 +87,7 @@ export default function AddPositionModal({ onAdd, onClose, prefill }: Props) {
       <div className="relative w-full max-w-lg bg-bg-surface border border-bg-border rounded-xl shadow-2xl animate-slide-up overflow-y-auto max-h-[85vh]">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-bg-border">
-          <h2 className="text-sm font-mono font-bold text-text-primary tracking-widest">ADD POSITION</h2>
+          <h2 className="text-sm font-mono font-bold text-text-primary tracking-widest">{t('portfolio.add_title')}</h2>
           <button onClick={onClose} className="text-text-muted hover:text-text-primary transition-colors">
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M18 6L6 18M6 6l12 12" />
@@ -94,11 +98,11 @@ export default function AddPositionModal({ onAdd, onClose, prefill }: Props) {
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {/* Question */}
           <div>
-            <label className="block text-[10px] font-mono text-text-muted mb-1.5 tracking-wider">MARKET QUESTION *</label>
+            <label className="block text-[10px] font-mono text-text-muted mb-1.5 tracking-wider">{t('portfolio.market_question')} *</label>
             <textarea
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
-              placeholder="Will X happen by Y date?"
+              placeholder={t('portfolio.ph.question')}
               rows={2}
               className="w-full bg-bg-elevated border border-bg-border rounded px-3 py-2 text-sm font-sans
                 text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent/40
@@ -109,7 +113,7 @@ export default function AddPositionModal({ onAdd, onClose, prefill }: Props) {
           {/* Platform + Direction */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[10px] font-mono text-text-muted mb-1.5 tracking-wider">PLATFORM</label>
+              <label className="block text-[10px] font-mono text-text-muted mb-1.5 tracking-wider">{t('portfolio.platform')}</label>
               <select
                 value={platform}
                 onChange={(e) => setPlatform(e.target.value)}
@@ -121,7 +125,7 @@ export default function AddPositionModal({ onAdd, onClose, prefill }: Props) {
             </div>
 
             <div>
-              <label className="block text-[10px] font-mono text-text-muted mb-1.5 tracking-wider">DIRECTION</label>
+              <label className="block text-[10px] font-mono text-text-muted mb-1.5 tracking-wider">{t('portfolio.direction')}</label>
               <div className="flex gap-2">
                 {(['YES', 'NO'] as PositionDirection[]).map((d) => (
                   <button
@@ -146,13 +150,13 @@ export default function AddPositionModal({ onAdd, onClose, prefill }: Props) {
           {/* Entry price + Fair prob */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[10px] font-mono text-text-muted mb-1.5 tracking-wider">ENTRY PRICE % *</label>
+              <label className="block text-[10px] font-mono text-text-muted mb-1.5 tracking-wider">{t('portfolio.entry_price')} *</label>
               <div className="relative">
                 <input
                   type="number"
                   value={entryPrice}
                   onChange={(e) => setEntryPrice(e.target.value)}
-                  placeholder="e.g. 42"
+                  placeholder={t('portfolio.ph.entry')}
                   min={1} max={99} step={0.1}
                   className="w-full bg-bg-elevated border border-bg-border rounded px-3 py-2 pr-7 text-sm font-mono
                     text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent/40 transition-colors"
@@ -162,13 +166,13 @@ export default function AddPositionModal({ onAdd, onClose, prefill }: Props) {
             </div>
 
             <div>
-              <label className="block text-[10px] font-mono text-text-muted mb-1.5 tracking-wider">MY FAIR PROB %</label>
+              <label className="block text-[10px] font-mono text-text-muted mb-1.5 tracking-wider">{t('portfolio.fair_prob')}</label>
               <div className="relative">
                 <input
                   type="number"
                   value={myFairProb}
                   onChange={(e) => setMyFairProb(e.target.value)}
-                  placeholder="e.g. 58"
+                  placeholder={t('portfolio.ph.fair')}
                   min={1} max={99} step={0.1}
                   className="w-full bg-bg-elevated border border-bg-border rounded px-3 py-2 pr-7 text-sm font-mono
                     text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent/40 transition-colors"
@@ -185,32 +189,32 @@ export default function AddPositionModal({ onAdd, onClose, prefill }: Props) {
                 ? 'bg-accent/5 border-accent/20'
                 : 'bg-danger/5 border-danger/20'
             }`}>
-              <p className="text-[10px] font-mono text-text-muted mb-2 tracking-wider">KELLY CALCULATOR</p>
+              <p className="text-[10px] font-mono text-text-muted mb-2 tracking-wider">{t('portfolio.kelly_calc')}</p>
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <p className="text-[9px] font-mono text-text-muted">EDGE</p>
+                  <p className="text-[9px] font-mono text-text-muted">{t('portfolio.edge_label')}</p>
                   <p className={`text-base font-mono font-bold ${kelly.edge > 0 ? 'text-accent' : 'text-danger'}`}>
                     {kelly.edge > 0 ? '+' : ''}{kelly.edge.toFixed(1)}pp
                   </p>
                 </div>
                 <div>
-                  <p className="text-[9px] font-mono text-text-muted">FULL KELLY</p>
+                  <p className="text-[9px] font-mono text-text-muted">{t('portfolio.full_kelly')}</p>
                   <p className="text-base font-mono font-bold text-text-primary">{kelly.kellyFull.toFixed(1)}%</p>
                 </div>
                 <div>
-                  <p className="text-[9px] font-mono text-text-muted">HALF KELLY</p>
+                  <p className="text-[9px] font-mono text-text-muted">{t('portfolio.half_kelly')}</p>
                   <p className="text-base font-mono font-bold text-watch">{kelly.kellyHalf.toFixed(1)}%</p>
                 </div>
               </div>
               {kelly.edge <= 0 && (
-                <p className="text-[10px] font-mono text-danger mt-2">No edge — consider skipping</p>
+                <p className="text-[10px] font-mono text-danger mt-2">{t('portfolio.no_edge')}</p>
               )}
             </div>
           )}
 
           {/* Amount */}
           <div>
-            <label className="block text-[10px] font-mono text-text-muted mb-1.5 tracking-wider">AMOUNT $ *</label>
+            <label className="block text-[10px] font-mono text-text-muted mb-1.5 tracking-wider">{t('portfolio.amount')} *</label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-text-muted font-mono">$</span>
               <input
@@ -225,7 +229,7 @@ export default function AddPositionModal({ onAdd, onClose, prefill }: Props) {
             </div>
             {potentialWin && (
               <p className="text-[10px] font-mono text-accent mt-1">
-                Potential win: +${potentialWin}
+                {t('portfolio.potential_win')}{potentialWin}
               </p>
             )}
           </div>
@@ -233,18 +237,18 @@ export default function AddPositionModal({ onAdd, onClose, prefill }: Props) {
           {/* Topic + Resolution */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[10px] font-mono text-text-muted mb-1.5 tracking-wider">TOPIC</label>
+              <label className="block text-[10px] font-mono text-text-muted mb-1.5 tracking-wider">{t('portfolio.topic')}</label>
               <input
                 type="text"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
-                placeholder="iran, crypto, election..."
+                placeholder={t('portfolio.ph.topic')}
                 className="w-full bg-bg-elevated border border-bg-border rounded px-3 py-2 text-sm font-mono
                   text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent/40 transition-colors"
               />
             </div>
             <div>
-              <label className="block text-[10px] font-mono text-text-muted mb-1.5 tracking-wider">RESOLUTION DATE</label>
+              <label className="block text-[10px] font-mono text-text-muted mb-1.5 tracking-wider">{t('portfolio.resolution_date')}</label>
               <input
                 type="date"
                 value={resolutionDate}
@@ -257,11 +261,11 @@ export default function AddPositionModal({ onAdd, onClose, prefill }: Props) {
 
           {/* Thesis */}
           <div>
-            <label className="block text-[10px] font-mono text-text-muted mb-1.5 tracking-wider">THESIS</label>
+            <label className="block text-[10px] font-mono text-text-muted mb-1.5 tracking-wider">{t('portfolio.thesis')}</label>
             <textarea
               value={thesis}
               onChange={(e) => setThesis(e.target.value)}
-              placeholder="Why do you have edge here?"
+              placeholder={t('portfolio.ph.thesis')}
               rows={2}
               className="w-full bg-bg-elevated border border-bg-border rounded px-3 py-2 text-sm font-sans
                 text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent/40
@@ -271,7 +275,7 @@ export default function AddPositionModal({ onAdd, onClose, prefill }: Props) {
 
           {/* URL */}
           <div>
-            <label className="block text-[10px] font-mono text-text-muted mb-1.5 tracking-wider">MARKET URL</label>
+            <label className="block text-[10px] font-mono text-text-muted mb-1.5 tracking-wider">{t('portfolio.market_url')}</label>
             <input
               type="url"
               value={url}
@@ -290,7 +294,7 @@ export default function AddPositionModal({ onAdd, onClose, prefill }: Props) {
               className="flex-1 py-2.5 text-xs font-mono font-bold text-text-secondary border border-bg-border
                 rounded hover:border-text-muted hover:text-text-primary transition-colors"
             >
-              CANCEL
+              {t('portfolio.cancel')}
             </button>
             <button
               type="submit"
@@ -299,7 +303,7 @@ export default function AddPositionModal({ onAdd, onClose, prefill }: Props) {
                 text-accent rounded hover:bg-accent/25 transition-colors
                 disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              ADD POSITION
+              {t('portfolio.add_btn')}
             </button>
           </div>
         </form>

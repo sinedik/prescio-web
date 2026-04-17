@@ -1,4 +1,6 @@
+'use client'
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { useLang } from '@/contexts/LanguageContext'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -18,25 +20,37 @@ const R2 = (a: number) => `rgba(248,113,113,${a})`
 // ─── Copy ─────────────────────────────────────────────────────────────────────
 
 const T1 = [
-  { t: 'оцениваю ценовую динамику...', r: 'market analysis · phase 1' },
-  { t: 'проверяю исторические паттерны...', r: 'edge detection' },
-  { t: 'рассчитываю справедливую стоимость...', r: 'fair value model' },
-  { t: 'ищу расхождение с рынком...', r: 'mispricing scan' },
-  { t: 'взвешиваю kelly criterion...', r: 'position sizing' },
+  { t: { en: 'evaluating price dynamics...',        ru: 'оцениваю ценовую динамику...' },        r: 'market analysis · phase 1' },
+  { t: { en: 'checking historical patterns...',     ru: 'проверяю исторические паттерны...' },   r: 'edge detection' },
+  { t: { en: 'calculating fair value...',           ru: 'рассчитываю справедливую стоимость...' }, r: 'fair value model' },
+  { t: { en: 'scanning for mispricing...',          ru: 'ищу расхождение с рынком...' },         r: 'mispricing scan' },
+  { t: { en: 'applying kelly criterion...',         ru: 'взвешиваю kelly criterion...' },         r: 'position sizing' },
 ]
 const T2 = [
-  { t: 'изучаю контекст события...', r: 'event intelligence · phase 2' },
-  { t: 'анализирую участников и факторы...', r: 'actor mapping' },
-  { t: 'картографирую пространство факторов...', r: 'geographic mapping' },
-  { t: 'строю сценарии исхода...', r: 'scenario tree' },
-  { t: 'оцениваю crowd bias...', r: 'behavioral analysis' },
-  { t: 'три независимых пути\nведут в одно место', r: 'инвариантность' },
-  { t: 'форма знакома.\nно контекст изменился', r: 'паттерн в новой среде' },
-  { t: 'граница между порядком\nи хаосом — здесь', r: 'точка бифуркации' },
-  { t: 'формирую итоговый тезис...', r: 'synthesis complete' },
+  { t: { en: 'studying event context...',           ru: 'изучаю контекст события...' },           r: 'event intelligence · phase 2' },
+  { t: { en: 'analyzing actors and factors...',     ru: 'анализирую участников и факторы...' },   r: 'actor mapping' },
+  { t: { en: 'mapping factor space...',             ru: 'картографирую пространство факторов...' }, r: 'geographic mapping' },
+  { t: { en: 'building outcome scenarios...',       ru: 'строю сценарии исхода...' },             r: 'scenario tree' },
+  { t: { en: 'evaluating crowd bias...',            ru: 'оцениваю crowd bias...' },               r: 'behavioral analysis' },
+  { t: { en: 'three independent paths\nlead to one place',     ru: 'три независимых пути\nведут в одно место' }, r: { en: 'invariance',           ru: 'инвариантность' } },
+  { t: { en: 'the pattern is familiar.\nbut context has changed', ru: 'форма знакома.\nно контекст изменился' }, r: { en: 'pattern in new context', ru: 'паттерн в новой среде' } },
+  { t: { en: 'the boundary between order\nand chaos — is here', ru: 'граница между порядком\nи хаосом — здесь' }, r: { en: 'bifurcation point',     ru: 'точка бифуркации' } },
+  { t: { en: 'forming final thesis...',             ru: 'формирую итоговый тезис...' },           r: 'synthesis complete' },
 ]
-const S1 = ['Анализирую рыночные данные...','Вычисляю edge score...','Строю модель fair value...','Оцениваю Kelly criterion...','Завершаю анализ маркета...']
-const S2 = ['Загружаю данные события...','Картографирую пространство факторов...','Строю сценарии исхода...','Оцениваю crowd bias...','Формирую Event Intelligence...']
+const S1 = [
+  { en: 'Analyzing market data...',        ru: 'Анализирую рыночные данные...' },
+  { en: 'Computing edge score...',         ru: 'Вычисляю edge score...' },
+  { en: 'Building fair value model...',    ru: 'Строю модель fair value...' },
+  { en: 'Evaluating Kelly criterion...',   ru: 'Оцениваю Kelly criterion...' },
+  { en: 'Completing market analysis...',   ru: 'Завершаю анализ маркета...' },
+]
+const S2 = [
+  { en: 'Loading event data...',           ru: 'Загружаю данные события...' },
+  { en: 'Mapping factor space...',         ru: 'Картографирую пространство факторов...' },
+  { en: 'Building outcome scenarios...',   ru: 'Строю сценарии исхода...' },
+  { en: 'Evaluating crowd bias...',        ru: 'Оцениваю crowd bias...' },
+  { en: 'Generating Event Intelligence...', ru: 'Формирую Event Intelligence...' },
+]
 
 // ─── Globe data ───────────────────────────────────────────────────────────────
 
@@ -117,9 +131,12 @@ const P2_SCENES = [
 const ASSETS = ['BTC','ETH','SPX','DXY','GLD','OIL','EUR','JPY','BND']
 const ACOL: Record<string,(a:number)=>string> = {BTC:RD,ETH:R2,SPX:G2,DXY:RD,GLD:G2,OIL:RD,EUR:G2,JPY:GR,BND:RD}
 const ENTS = [
-  {l:'Трамп',C:RD},{l:'Байден',C:G2},{l:'Путин',C:RD},{l:'Си Цзиньпин',C:RD},
-  {l:'Нефть WTI',C:G2},{l:'Газ',C:G2},{l:'Золото',C:G2},{l:'Пшеница',C:RD},
-  {l:'ФРС',C:RD},{l:'ЕЦБ',C:G2},{l:'Инфляция',C:RD},{l:'Рецессия',C:RD},
+  {l:{en:'Trump',     ru:'Трамп'},     C:RD},{l:{en:'Biden',    ru:'Байден'},    C:G2},
+  {l:{en:'Putin',     ru:'Путин'},     C:RD},{l:{en:'Xi Jinping',ru:'Си Цзиньпин'},C:RD},
+  {l:{en:'Oil WTI',   ru:'Нефть WTI'}, C:G2},{l:{en:'Gas',      ru:'Газ'},       C:G2},
+  {l:{en:'Gold',      ru:'Золото'},    C:G2},{l:{en:'Wheat',     ru:'Пшеница'},   C:RD},
+  {l:{en:'Fed',       ru:'ФРС'},       C:RD},{l:{en:'ECB',       ru:'ЕЦБ'},       C:G2},
+  {l:{en:'Inflation', ru:'Инфляция'},  C:RD},{l:{en:'Recession', ru:'Рецессия'},  C:RD},
 ]
 
 // ─── Noise ────────────────────────────────────────────────────────────────────
@@ -232,13 +249,13 @@ function drawPriceLine(ctx:CanvasRenderingContext2D,s:S,w:number,h:number,alpha:
   ctx.restore()
 }
 
-function drawEntities(ctx:CanvasRenderingContext2D,s:S,w:number,h:number,alpha:number){
+function drawEntities(ctx:CanvasRenderingContext2D,s:S,w:number,h:number,alpha:number,lang:'en'|'ru'){
   ctx.save();ctx.globalAlpha=alpha
   s.entVals.forEach(v=>{v.cur+=(v.target-v.cur)*v.speed;if(Math.abs(v.target-v.cur)<.02)v.target=.05+Math.random()*.9})
   s.scanLine=(s.scanLine+.9)%(w*.86);const sl=w*.07+s.scanLine
   ctx.strokeStyle=G2(.13);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(sl,h*.05);ctx.lineTo(sl,h*.95);ctx.stroke()
   const cols=3,cellW=(w*.84)/cols,cellH=(h*.82)/Math.ceil(ENTS.length/cols),sx=w*.08,sy=h*.1
-  ENTS.forEach((e,i)=>{const col=i%cols,row=Math.floor(i/cols),cx2=sx+col*cellW,cy2=sy+row*cellH,C=e.C;const boost=Math.abs(sl-(cx2+cellW*.5))<cellW*.6?(.6-Math.abs(sl-(cx2+cellW*.5))/cellW)*.42:0;if(row>0&&col===0){ctx.strokeStyle=GR(.04);ctx.lineWidth=.4;ctx.beginPath();ctx.moveTo(sx,cy2-2);ctx.lineTo(w*.92,cy2-2);ctx.stroke()}ctx.font='500 10px monospace';ctx.fillStyle=C(.36+boost);ctx.fillText(e.l,cx2,cy2+12);const bx=cx2,by=cy2+16,bw=cellW*.84,bh=3;ctx.fillStyle=GR(.06);ctx.fillRect(bx,by,bw,bh);ctx.fillStyle=C(.28+s.entVals[i].cur*.26+boost);ctx.fillRect(bx,by,bw*s.entVals[i].cur,bh);ctx.fillStyle=C(.82+boost);ctx.fillRect(bx+bw*s.entVals[i].cur-2,by,2,bh);ctx.beginPath();ctx.arc(bx+bw*s.entVals[i].cur,by+1.5,2,0,Math.PI*2);ctx.fillStyle=C(.62+boost*.4);ctx.fill();ctx.font='8px monospace';ctx.fillStyle=C(.25+boost);ctx.fillText(Math.round(s.entVals[i].cur*100)+'%',bx+bw+2,by+bh)})
+  ENTS.forEach((e,i)=>{const col=i%cols,row=Math.floor(i/cols),cx2=sx+col*cellW,cy2=sy+row*cellH,C=e.C;const boost=Math.abs(sl-(cx2+cellW*.5))<cellW*.6?(.6-Math.abs(sl-(cx2+cellW*.5))/cellW)*.42:0;if(row>0&&col===0){ctx.strokeStyle=GR(.04);ctx.lineWidth=.4;ctx.beginPath();ctx.moveTo(sx,cy2-2);ctx.lineTo(w*.92,cy2-2);ctx.stroke()}ctx.font='500 10px monospace';ctx.fillStyle=C(.36+boost);ctx.fillText(e.l[lang],cx2,cy2+12);const bx=cx2,by=cy2+16,bw=cellW*.84,bh=3;ctx.fillStyle=GR(.06);ctx.fillRect(bx,by,bw,bh);ctx.fillStyle=C(.28+s.entVals[i].cur*.26+boost);ctx.fillRect(bx,by,bw*s.entVals[i].cur,bh);ctx.fillStyle=C(.82+boost);ctx.fillRect(bx+bw*s.entVals[i].cur-2,by,2,bh);ctx.beginPath();ctx.arc(bx+bw*s.entVals[i].cur,by+1.5,2,0,Math.PI*2);ctx.fillStyle=C(.62+boost*.4);ctx.fill();ctx.font='8px monospace';ctx.fillStyle=C(.25+boost);ctx.fillText(Math.round(s.entVals[i].cur*100)+'%',bx+bw+2,by+bh)})
   ctx.restore()
 }
 
@@ -255,6 +272,10 @@ function drawGraph(ctx:CanvasRenderingContext2D,s:S,w:number,h:number,alpha:numb
 export default function AnalysisLoader({
   height=220, startPhase=1,
 }: AnalysisLoaderProps) {
+  const { lang } = useLang()
+  const langRef = useRef(lang)
+  langRef.current = lang
+
   const canvasRef=useRef<HTMLCanvasElement>(null)
   const rafRef=useRef<number>(0)
   const stateRef=useRef<S>({...mkState(), phase: startPhase})
@@ -266,7 +287,10 @@ export default function AnalysisLoader({
   const [thoughtText,setThoughtText]=useState('')
   const [remarkText,setRemarkText]=useState('')
   const [remarkVis,setRemarkVis]=useState(false)
-  const [statusText,setStatusText]=useState(startPhase===2?S2[0]:S1[0])
+  const [statusText,setStatusText]=useState(() => {
+    const arr = startPhase === 2 ? S2 : S1
+    return arr[0].en
+  })
   const [pct,setPct]=useState(0)
   const [sceneLabel,setSceneLabel]=useState('')
 
@@ -284,7 +308,13 @@ export default function AnalysisLoader({
 
   const nextThought=useCallback(()=>{
     const arr=phaseRef.current===1?T1:T2
-    typeThought(arr[tIdx.current%arr.length]);tIdx.current++
+    const item=arr[tIdx.current%arr.length]
+    const lg=langRef.current
+    typeThought({
+      t: item.t[lg],
+      r: typeof item.r==='string' ? item.r : item.r[lg],
+    })
+    tIdx.current++
   },[typeThought])
 
   useEffect(()=>{
@@ -300,7 +330,7 @@ export default function AnalysisLoader({
     nextThought()
     const tTimer=setInterval(nextThought,3600)
     const statusArr=startPhase===1?S1:S2
-    const sTimer=setInterval(()=>{setStatusText(statusArr[sIdx.current%statusArr.length]);sIdx.current++},1700)
+    const sTimer=setInterval(()=>{const item=statusArr[sIdx.current%statusArr.length];setStatusText(langRef.current==='ru'?item.ru:item.en);sIdx.current++},1700)
     const pTimer=setInterval(()=>{pctT.current=Math.min(pctT.current+2+Math.random()*2.5,97)},420)
     const paTimer=setInterval(()=>{pctV.current+=(pctT.current-pctV.current)*.14;setPct(Math.round(pctV.current))},30)
 
@@ -331,7 +361,7 @@ export default function AnalysisLoader({
       else if(id==='americas'||id==='eurasia'||id==='fareast')drawRegion(ctx,s,w,h,sc.alpha)
       else if(id==='candles')drawCandles(ctx,s,w,h,sc.alpha)
       else if(id==='price')drawPriceLine(ctx,s,w,h,sc.alpha)
-      else if(id==='entities')drawEntities(ctx,s,w,h,sc.alpha)
+      else if(id==='entities')drawEntities(ctx,s,w,h,sc.alpha,langRef.current)
       else if(id==='graph')drawGraph(ctx,s,w,h,sc.alpha)
       s.frame++
       rafRef.current=requestAnimationFrame(loop)
@@ -354,7 +384,7 @@ export default function AnalysisLoader({
         {/* Steps column */}
         <div style={{display:'flex',flexDirection:'column',alignItems:'center',paddingTop:2}}>
           <StepDot state={step1State}/>
-          <div style={{width:1,flex:1,background:step1State==='done'?'rgba(34,197,94,.35)':'rgba(255,255,255,.07)',transition:'background .6s',marginTop:4,marginBottom:4,minHeight:24}}/>
+          <div style={{width:1,flex:1,background:step1State==='done'?'rgba(34,197,94,.35)':'rgba(var(--surface-tint-rgb),.07)',transition:'background .6s',marginTop:4,marginBottom:4,minHeight:24}}/>
           <StepDot state={step2State}/>
         </div>
         {/* Labels column */}
@@ -404,7 +434,7 @@ function StepDot({state}:{state:'active'|'done'|'pending'}){
   const c={
     active:{border:'#4ade80',bg:'rgba(74,222,128,.12)',text:'#4ade80'},
     done:  {border:'rgba(34,197,94,.5)',bg:'rgba(34,197,94,.06)',text:'rgba(34,197,94,.7)'},
-    pending:{border:'rgba(255,255,255,.1)',bg:'transparent',text:'rgba(255,255,255,.18)'},
+    pending:{border:'rgba(var(--surface-tint-rgb),.1)',bg:'transparent',text:'rgba(var(--surface-tint-rgb),.18)'},
   }[state]
   return(
     <div style={{width:18,height:18,borderRadius:'50%',border:`1px solid ${c.border}`,background:c.bg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,animation:state==='active'?'sp 1.4s ease-in-out infinite':'none',transition:'all .5s'}}>
@@ -421,12 +451,12 @@ function StepLabel({num,label,sub,state}:{num:string;label:string;sub:string;sta
   return(
     <div>
       <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:1}}>
-        <span style={{fontSize:8,fontWeight:700,color:active?'rgba(74,222,128,.5)':done?'rgba(34,197,94,.3)':'rgba(255,255,255,.12)',letterSpacing:'.06em'}}>{num}</span>
-        <span style={{fontSize:9,fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',color:active?'#4ade80':done?'rgba(34,197,94,.55)':'rgba(255,255,255,.18)',transition:'color .5s'}}>{label}</span>
+        <span style={{fontSize:8,fontWeight:700,color:active?'rgba(74,222,128,.5)':done?'rgba(34,197,94,.3)':'rgba(var(--surface-tint-rgb),.12)',letterSpacing:'.06em'}}>{num}</span>
+        <span style={{fontSize:9,fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',color:active?'#4ade80':done?'rgba(34,197,94,.55)':'rgba(var(--surface-tint-rgb),.18)',transition:'color .5s'}}>{label}</span>
         {active&&<span style={{fontSize:7,color:'rgba(74,222,128,.5)',letterSpacing:'.08em',marginLeft:2}}>● RUNNING</span>}
         {done&&<span style={{fontSize:7,color:'rgba(34,197,94,.35)',letterSpacing:'.06em',marginLeft:2}}>DONE</span>}
       </div>
-      <div style={{fontSize:7,color:active?'rgba(16,185,129,.4)':done?'rgba(34,197,94,.22)':'rgba(255,255,255,.1)',letterSpacing:'.08em',paddingLeft:13}}>{sub}</div>
+      <div style={{fontSize:7,color:active?'rgba(16,185,129,.4)':done?'rgba(34,197,94,.22)':'rgba(var(--surface-tint-rgb),.1)',letterSpacing:'.08em',paddingLeft:13}}>{sub}</div>
     </div>
   )
 }

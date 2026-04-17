@@ -18,12 +18,17 @@ async function getAuthHeader(): Promise<Record<string, string>> {
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
+function getLang(): string {
+  try { return localStorage.getItem('prescio_lang') || 'en' } catch { return 'en' }
+}
+
 async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const authHeaders = await getAuthHeader()
   const res = await fetch(`/api${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      'X-Lang': getLang(),
       ...authHeaders,
       ...(options.headers as Record<string, string> ?? {}),
     },

@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
 const url     = process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'https://placeholder.supabase.co'
@@ -21,4 +22,16 @@ export async function getSupabaseServerClient() {
       },
     },
   })
+}
+
+// Cookie-less client for use inside unstable_cache() — public read-only data.
+// cookies() is dynamic and incompatible with cached scopes.
+let _anonClient: ReturnType<typeof createClient> | null = null
+export function getSupabaseAnonClient() {
+  if (!_anonClient) {
+    _anonClient = createClient(url, anonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+  }
+  return _anonClient
 }

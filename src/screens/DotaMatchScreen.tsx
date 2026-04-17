@@ -7,6 +7,8 @@ import { usePageTitle } from '../hooks/usePageTitle'
 import { api } from '../lib/api'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import MarketsPanel from '../components/esports/MarketsPanel'
+import { useLang } from '../contexts/LanguageContext'
+import { useT } from '../lib/i18n'
 import type { EsportsMatchDetail, EsportsGame, EsportsGameTeam, EsportsDraftAction, EsportsPlayer, EsportsTeamDetail, EsportsRound, EsportsDotaLive, EsportsDotaPlayer, EsportsPreMatch, EsportsRecentMatch } from '../types'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -197,7 +199,7 @@ function PlayerRow({ player, accent, isDota, isCs2, completedRounds }: {
   const healthPct    = player.currentHealth != null && player.currentHealth > 0
     ? Math.round((player.currentHealth / 100) * 100) : null
   return (
-    <div className="flex items-center gap-2 py-1 px-2 rounded hover:bg-white/[0.02] transition-colors">
+    <div className="flex items-center gap-2 py-1 px-2 rounded hover:bg-text-primary/[0.02] transition-colors">
       {player.firstKill && (
         <span className="text-[8px] font-mono px-1 py-0.5 rounded shrink-0"
           style={{ background: `${accent}18`, color: accent, border: `1px solid ${accent}33` }}>FK</span>
@@ -266,7 +268,7 @@ function DraftRow({ actions, teamAId, teamBId, accent }: {
               <div key={i} className="flex flex-col items-center gap-0.5 group" title={a.heroName ?? undefined}>
                 {portrait ? (
                   <div className="rounded overflow-hidden" style={{
-                    border: `1px solid ${isA ? `${accent}55` : 'rgba(255,255,255,0.12)'}`,
+                    border: `1px solid ${isA ? `${accent}55` : 'rgba(var(--surface-tint-rgb),0.12)'}`,
                     boxShadow: isA ? `0 0 6px ${accent}22` : undefined,
                   }}>
                     {portrait}
@@ -274,9 +276,9 @@ function DraftRow({ actions, teamAId, teamBId, accent }: {
                 ) : (
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded"
                     style={{
-                      background: isA ? `${accent}18` : isB ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.04)',
+                      background: isA ? `${accent}18` : isB ? 'rgba(var(--surface-tint-rgb),0.06)' : 'rgba(var(--surface-tint-rgb),0.04)',
                       color: isA ? accent : 'rgb(var(--text-secondary))',
-                      border: `1px solid ${isA ? `${accent}33` : 'rgba(255,255,255,0.08)'}`,
+                      border: `1px solid ${isA ? `${accent}33` : 'rgba(var(--surface-tint-rgb),0.08)'}`,
                     }}>
                     {a.heroName ?? `pick#${i + 1}`}
                   </span>
@@ -327,6 +329,8 @@ function GamesTabs({ games, teamA, teamB, isDota, isCs2, accent }: {
   isCs2?: boolean
   accent: string
 }) {
+  const { lang } = useLang()
+  const t = useT(lang)
   const liveIdx = games.findIndex(g => g.started && !g.finished)
   const defaultIdx = liveIdx >= 0 ? liveIdx : games.length - 1
   const [active, setActive] = useState(defaultIdx)
@@ -348,7 +352,7 @@ function GamesTabs({ games, teamA, teamB, isDota, isCs2, accent }: {
           {isDota ? 'Games' : 'Maps'}
         </p>
         <span className="text-[9px] font-mono text-text-muted/50">
-          Нажмите на карту, чтобы открыть →
+          {t('esports.click_to_open')}
         </span>
       </div>
 
@@ -357,10 +361,10 @@ function GamesTabs({ games, teamA, teamB, isDota, isCs2, accent }: {
         <div className="rounded-md border border-amber-500/25 bg-amber-500/5 px-3 py-2 flex items-center gap-2">
           <span className="text-[9px] font-mono font-bold px-1.5 py-[1px] rounded uppercase tracking-wider"
             style={{ background: 'rgba(245,158,11,0.15)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.3)' }}>
-            Перерыв
+            {t('esports.halftime')}
           </span>
           <span className="text-[10px] font-mono text-text-muted">
-            {isDota ? `Game ${lastFinishedSeq}` : `Map ${lastFinishedSeq}`} завершена · ждём {isDota ? `Game ${nextUpSeq}` : `Map ${nextUpSeq}`}
+            {isDota ? `Game ${lastFinishedSeq}` : `Map ${lastFinishedSeq}`} {t('esports.finished_waiting')} {isDota ? `Game ${nextUpSeq}` : `Map ${nextUpSeq}`}
           </span>
         </div>
       )}
@@ -382,7 +386,7 @@ function GamesTabs({ games, teamA, teamB, isDota, isCs2, accent }: {
               type="button"
               role="tab"
               aria-selected={isActive}
-              title={gFin ? 'Смотреть карту' : gLive ? 'Идёт сейчас' : 'Карта ещё не начата'}
+              title={gFin ? t('map.watching') : gLive ? t('map.live') : t('map.not_started')}
               onClick={() => setActive(i)}
               className={`shrink-0 flex flex-col items-start gap-0.5 px-3 py-2 rounded-md border cursor-pointer transition-all ${
                 isActive
@@ -418,7 +422,7 @@ function GamesTabs({ games, teamA, teamB, isDota, isCs2, accent }: {
                     <span className={aWon ? 'font-bold' : 'text-text-muted/60'} style={aWon ? { color: accent } : undefined}>
                       {gA?.score}
                     </span>
-                    <span className="text-text-muted/30">:</span>
+                    <span className="text-text-muted/45">:</span>
                     <span className={bWon ? 'font-bold' : 'text-text-muted/60'} style={bWon ? { color: accent } : undefined}>
                       {gB?.score}
                     </span>
@@ -426,9 +430,9 @@ function GamesTabs({ games, teamA, teamB, isDota, isCs2, accent }: {
                 ) : gLive ? (
                   <span className="text-text-muted/50">in progress</span>
                 ) : gUpcoming ? (
-                  <span className="text-text-muted/30">not started</span>
+                  <span className="text-text-muted/45">not started</span>
                 ) : (
-                  <span className="text-text-muted/30">—</span>
+                  <span className="text-text-muted/45">—</span>
                 )}
                 {g.map && <span className="text-text-muted/40 ml-1 truncate max-w-[80px]">{g.map}</span>}
               </span>
@@ -445,10 +449,10 @@ function GamesTabs({ games, teamA, teamB, isDota, isCs2, accent }: {
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2 px-1">
               <span className="text-[9px] font-mono font-bold uppercase tracking-wider" style={{ color: selLive ? '#ff3d3d' : accent }}>
-                Просмотр: {selLabel}
+                {t('esports.viewing')} {selLabel}
               </span>
-              {selFin && <span className="text-[9px] font-mono text-text-muted/50">— завершена</span>}
-              {selLive && <span className="text-[9px] font-mono text-text-muted/70">— в прямом эфире</span>}
+              {selFin && <span className="text-[9px] font-mono text-text-muted/50">{t('esports.map_finished')}</span>}
+              {selLive && <span className="text-[9px] font-mono text-text-muted/70">{t('esports.map_live')}</span>}
             </div>
             <GameCard
               key={sel.seq}
@@ -521,7 +525,7 @@ function GameCard({ game, teamA, teamB, isDota, isCs2, accent }: {
               <>
                 <span className={`text-base font-bold ${gA?.won ? '' : 'text-text-muted'}`}
                   style={{ color: gA?.won ? colorA : undefined }}>{gA.score}</span>
-                <span className="text-text-muted/30 text-sm">:</span>
+                <span className="text-text-muted/45 text-sm">:</span>
                 <span className={`text-base font-bold ${gB?.won ? '' : 'text-text-muted'}`}
                   style={{ color: gB?.won ? colorB : undefined }}>{gB.score}</span>
               </>
@@ -529,7 +533,7 @@ function GameCard({ game, teamA, teamB, isDota, isCs2, accent }: {
               <span className="text-[9px] font-mono animate-pulse px-1.5 py-0.5 rounded"
                 style={{ background: `${LIVE_RED}1f`, color: LIVE_RED }}>LIVE</span>
             ) : (
-              <span className="text-text-muted/30 text-sm">—</span>
+              <span className="text-text-muted/45 text-sm">—</span>
             )}
           </div>
 
@@ -582,14 +586,14 @@ function GameCard({ game, teamA, teamB, isDota, isCs2, accent }: {
           <div className="flex items-center gap-2 px-2 pb-1">
             <span className="flex-1 text-[9px] font-mono text-text-muted/40 uppercase tracking-wider">Player</span>
             <span className="text-[9px] font-mono text-text-muted/40 w-6 text-center">K</span>
-            <span className="text-[10px] font-mono text-text-muted/20">/</span>
+            <span className="text-[10px] font-mono text-text-muted/35">/</span>
             <span className="text-[9px] font-mono text-text-muted/40 w-6 text-center">D</span>
-            <span className="text-[10px] font-mono text-text-muted/20">/</span>
+            <span className="text-[10px] font-mono text-text-muted/35">/</span>
             <span className="text-[9px] font-mono text-text-muted/40 w-6 text-center">A</span>
             {isDota && <span className="text-[9px] font-mono text-text-muted/40 w-12 text-right">NW</span>}
             {isCs2 && <span className="text-[9px] font-mono text-yellow-500/40 w-8 text-right">HS</span>}
             {isCs2 && completedRounds > 0 && <span className="text-[9px] font-mono text-text-muted/40 w-10 text-right" title={`ADR = damage / ${completedRounds} rounds`}>ADR</span>}
-            {isCs2 && <span className="text-[9px] font-mono text-text-muted/30 w-14 text-right">DMG</span>}
+            {isCs2 && <span className="text-[9px] font-mono text-text-muted/45 w-14 text-right">DMG</span>}
             {isCs2 && <span className="text-[9px] font-mono text-green-500/40 w-8 text-right">HP</span>}
           </div>
 
@@ -659,7 +663,7 @@ function WinRateSparkline({ winRates, accent, teamAName, teamBName }: {
         <span className="text-[11px] font-mono font-bold" style={{ color: pct >= 50 ? accent : '#888' }}>{pct}%</span>
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-12" preserveAspectRatio="none">
-        <line x1="0" y1={H / 2} x2={W} y2={H / 2} stroke="rgba(255,255,255,0.08)" strokeWidth="1" strokeDasharray="4 4" />
+        <line x1="0" y1={H / 2} x2={W} y2={H / 2} stroke="rgba(var(--surface-tint-rgb),0.08)" strokeWidth="1" strokeDasharray="4 4" />
         <path d={`${pathD} L ${lastX.toFixed(1)},${H} L 0,${H} Z`} fill={`${accent}22`} />
         <path d={pathD} fill="none" stroke={accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         <circle cx={lastX.toFixed(1)} cy={lastY.toFixed(1)} r="3" fill={accent} />
@@ -709,15 +713,15 @@ function SeriesTimeline({ live, teamAName, teamBName, accent }: {
       <div className="relative overflow-hidden" style={{ width: '100%', height: H }}>
         <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: H }} preserveAspectRatio="none">
           {/* Axis */}
-          <line x1={0} y1={H/2} x2={W} y2={H/2} stroke="rgba(255,255,255,0.1)" strokeWidth={1} />
+          <line x1={0} y1={H/2} x2={W} y2={H/2} stroke="rgba(var(--surface-tint-rgb),0.1)" strokeWidth={1} />
           {/* Minute ticks */}
           {Array.from({ length: Math.floor(maxT/60) + 1 }, (_, m) => {
             const x = pct(m * 60) * W / 100
             return (
               <g key={m}>
-                <line x1={x} y1={H/2 - 3} x2={x} y2={H/2 + 3} stroke="rgba(255,255,255,0.15)" />
+                <line x1={x} y1={H/2 - 3} x2={x} y2={H/2 + 3} stroke="rgba(var(--surface-tint-rgb),0.15)" />
                 {m % 5 === 0 && (
-                  <text x={x} y={H - 2} fontSize={7} fill="rgba(255,255,255,0.3)" textAnchor="middle" fontFamily="monospace">
+                  <text x={x} y={H - 2} fontSize={7} fill="rgba(var(--surface-tint-rgb),0.3)" textAnchor="middle" fontFamily="monospace">
                     {m}m
                   </text>
                 )}
@@ -842,7 +846,7 @@ function DotaLiveSection({ live, teamAName, teamBName, accent }: {
               <span className="text-[10px] font-mono tabular-nums shrink-0 w-12" style={{ color: DOTA_RADIANT }}>
                 {fmtK(radNW)}
               </span>
-              <div className="flex-1 h-2 rounded-full overflow-hidden flex" style={{ background: 'rgba(255,255,255,0.04)' }}>
+              <div className="flex-1 h-2 rounded-full overflow-hidden flex" style={{ background: 'rgba(var(--surface-tint-rgb), 0.04)' }}>
                 <div className="h-full transition-all duration-500" style={{ width: `${radPct}%`, background: DOTA_RADIANT }} />
                 <div className="h-full transition-all duration-500" style={{ width: `${100 - radPct}%`, background: DOTA_DIRE }} />
               </div>
@@ -918,20 +922,20 @@ function DotaLiveSection({ live, teamAName, teamBName, accent }: {
                 <div key={side} className="flex-1 bg-bg-elevated/50 rounded px-3 py-2">
                   <p className="text-[8px] font-mono text-text-muted/40 mb-1.5 truncate">{name}</p>
                   <div className="flex items-center gap-1.5 mb-0.5">
-                    <span className="text-[8px] font-mono text-text-muted/30 w-3">T</span>
+                    <span className="text-[8px] font-mono text-text-muted/45 w-3">T</span>
                     <div className="flex gap-0.5">
                       {towers.map((alive, ti) => (
                         <div key={ti} className="w-2.5 h-3.5 rounded-sm"
-                          style={{ background: alive ? '#4ade80' : 'rgba(255,255,255,0.07)' }} />
+                          style={{ background: alive ? '#4ade80' : 'rgba(var(--surface-tint-rgb),0.07)' }} />
                       ))}
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[8px] font-mono text-text-muted/30 w-3">B</span>
+                    <span className="text-[8px] font-mono text-text-muted/45 w-3">B</span>
                     <div className="flex gap-0.5">
                       {barracks.map((alive, bi) => (
                         <div key={bi} className="w-2.5 h-2.5 rounded-sm"
-                          style={{ background: alive ? '#a78bfa' : 'rgba(255,255,255,0.07)' }} />
+                          style={{ background: alive ? '#a78bfa' : 'rgba(var(--surface-tint-rgb),0.07)' }} />
                       ))}
                     </div>
                   </div>
@@ -992,7 +996,7 @@ function DotaLiveSection({ live, teamAName, teamBName, accent }: {
                         const lvlLead = maxLVL > 0 && p.level === maxLVL
                         return (
                           <details key={pi} className="group border-t border-bg-border/30 first:border-t-0">
-                            <summary className="grid items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-white/[0.02] transition-colors list-none"
+                            <summary className="grid items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-text-primary/[0.02] transition-colors list-none"
                               style={{ gridTemplateColumns: '32px minmax(0,1fr) 40px 56px 48px 44px 28px' }}>
                               <HeroPortrait heroImg={p.heroImg} heroName={p.heroName} size={32} sideColor={color} />
                               <span className="text-[11px] font-mono text-text-secondary truncate">{p.name ?? `Player ${pi + 1}`}</span>
@@ -1023,7 +1027,7 @@ function DotaLiveSection({ live, teamAName, teamBName, accent }: {
                                   <div key={ii} className="shrink-0 flex flex-col items-center gap-0.5" title={`${it.name ?? it.itemId} @ ${fmtClock(it.time)}`}>
                                     {it.img ? (
                                       <img src={it.img} alt={it.name ?? ''} className="w-5 h-5 rounded"
-                                        style={{ border: '1px solid rgba(255,255,255,0.06)' }} />
+                                        style={{ border: '1px solid rgba(var(--surface-tint-rgb),0.06)' }} />
                                     ) : (
                                       <div className="w-5 h-5 rounded bg-bg-elevated/50 border border-white/5" />
                                     )}
@@ -1102,9 +1106,9 @@ function StreamPlayer({ urls }: { urls: string[] }) {
             <button key={s.url} onClick={() => setIdx(i)}
               className="text-[10px] font-mono font-bold px-2 py-0.5 rounded transition-colors"
               style={{
-                background: i === idx ? 'rgba(145,70,255,0.18)' : 'rgba(255,255,255,0.04)',
+                background: i === idx ? 'rgba(145,70,255,0.18)' : 'rgba(var(--surface-tint-rgb),0.04)',
                 color: i === idx ? '#b388ff' : 'rgb(var(--text-muted))',
-                border: `1px solid ${i === idx ? 'rgba(145,70,255,0.35)' : 'rgba(255,255,255,0.08)'}`,
+                border: `1px solid ${i === idx ? 'rgba(145,70,255,0.35)' : 'rgba(var(--surface-tint-rgb),0.08)'}`,
               }}>
               {s.kind === 'twitch' ? 'Twitch' : 'YouTube'} · {s.id.slice(0, 14)}
             </button>
@@ -1153,7 +1157,7 @@ function RecentFormStrip({ matches, accent }: { matches: EsportsRecentMatch[]; a
       {matches.slice(0, 5).map(m => {
         const isW = m.outcome === 'W'
         const isL = m.outcome === 'L'
-        const bg  = isW ? accent : isL ? 'rgba(255,77,77,0.4)' : 'rgba(255,255,255,0.08)'
+        const bg  = isW ? accent : isL ? 'rgba(255,77,77,0.4)' : 'rgba(var(--surface-tint-rgb),0.08)'
         const label = m.outcome ?? '?'
         const score = m.scoreSelf != null && m.scoreOpp != null ? ` ${m.scoreSelf}:${m.scoreOpp}` : ''
         const title = `${m.outcome ?? 'TBD'} vs ${m.opponent?.name ?? '?'}${score} · ${m.tournament ?? ''} · ${fmtDate(m.startsAt)}`
@@ -1173,7 +1177,7 @@ function RecentFormStrip({ matches, accent }: { matches: EsportsRecentMatch[]; a
 function RecentMatchRow({ m }: { m: EsportsRecentMatch }) {
   const color = m.outcome === 'W' ? '#4ade80' : m.outcome === 'L' ? '#f87171' : '#888'
   return (
-    <div className="flex items-center gap-2 px-2 py-1 rounded hover:bg-white/[0.02] transition-colors">
+    <div className="flex items-center gap-2 px-2 py-1 rounded hover:bg-text-primary/[0.02] transition-colors">
       <span className="text-[10px] font-mono font-bold w-4 text-center" style={{ color }}>
         {m.outcome ?? '—'}
       </span>
@@ -1190,7 +1194,7 @@ function RecentMatchRow({ m }: { m: EsportsRecentMatch }) {
       )}
       <span className="text-[9px] font-mono text-text-muted/40 shrink-0 truncate max-w-[80px]"
         title={m.tournament ?? ''}>{m.tournament ?? ''}</span>
-      <span className="text-[9px] font-mono text-text-muted/30 shrink-0 tabular-nums w-12 text-right">
+      <span className="text-[9px] font-mono text-text-muted/45 shrink-0 tabular-nums w-12 text-right">
         {fmtDate(m.startsAt)}
       </span>
     </div>
@@ -1368,6 +1372,9 @@ export default function DotaMatchScreen({ seriesId, initialData }: { seriesId: s
 
   const isLive     = match?.status === 'live'
   const isFinished = match?.status === 'finished'
+  const { lang } = useLang()
+  const t = useT(lang)
+
   const isDota     = true
   const isCs2      = false
 
@@ -1581,7 +1588,7 @@ export default function DotaMatchScreen({ seriesId, initialData }: { seriesId: s
             </span>
           )}
           {isRefreshing && (
-            <svg className="w-3 h-3 animate-spin text-text-muted/30 ml-auto shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg className="w-3 h-3 animate-spin text-text-muted/45 ml-auto shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 12a9 9 0 11-6.219-8.56"/>
             </svg>
           )}
@@ -1626,7 +1633,7 @@ export default function DotaMatchScreen({ seriesId, initialData }: { seriesId: s
         if (empty) return (
           <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3">
             <p className="text-[11px] font-mono text-amber-300/90">
-              Детали матча (составы, форма, потоки) недоступны — ограничение GRID dev-ключа.
+              {t('esports.grid_dev_limit')}
             </p>
           </div>
         )

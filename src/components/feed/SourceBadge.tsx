@@ -68,7 +68,7 @@ const SOURCE_CONFIG: Record<string, { label: string; bg: string; color: string; 
   },
   user_search: {
     label: 'Mine',
-    bg: 'rgba(255, 255, 255, 0.06)',
+    bg: 'rgba(var(--surface-tint-rgb), 0.06)',
     color: 'var(--text-muted)',
     icon: (
       <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">

@@ -38,6 +38,8 @@ const publicEnv = {
 
 const nextConfig: NextConfig = {
   env: publicEnv as unknown as Record<string, string>,
+  poweredByHeader: false,
+  productionBrowserSourceMaps: false,
   experimental: {
     optimizePackageImports: ['lucide-react'],
   },

@@ -5,6 +5,9 @@ import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { sportApi } from '../lib/api'
 import type { PlayerProfile, PlayerStats } from '../types/index'
+import { useLang } from '../contexts/LanguageContext'
+import { useT } from '../lib/i18n'
+import type { TranslationKey } from '../lib/i18n'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function abbr(name: string) {
@@ -38,24 +41,24 @@ function nationalityFlag(nat: string): string {
   return map[nat] ?? ''
 }
 
-function translatePosition(pos: string) {
-  const map: Record<string, string> = {
-    Goalkeeper: 'Вратарь', Defender: 'Защитник',
-    Midfielder: 'Полузащитник', Attacker: 'Нападающий', Forward: 'Нападающий',
-  }
-  return map[pos] ?? pos
+const POS_KEY: Record<string, TranslationKey> = {
+  Goalkeeper: 'team.pos.goalkeeper',
+  Defender:   'team.pos.defender',
+  Midfielder: 'team.pos.midfielder',
+  Attacker:   'team.pos.forward',
+  Forward:    'team.pos.forward',
 }
 
 // ─── Stat row ─────────────────────────────────────────────────────────────────
 function StatRow({ label, value, sub, accent }: { label: string; value: string | number; sub?: string; accent?: string }) {
   return (
     <div className="flex items-center justify-between py-2.5 border-b border-bg-border/30 last:border-0">
-      <span className="text-[13px] text-[#bbb]">{label}</span>
+      <span className="text-[13px] text-text-secondary">{label}</span>
       <div className="flex items-baseline gap-1.5">
-        <span className="text-[15px] font-mono font-bold" style={{ color: accent ?? 'rgba(255,255,255,0.9)' }}>
+        <span className="text-[15px] font-mono font-bold" style={{ color: accent ?? 'rgba(var(--surface-tint-rgb),0.9)' }}>
           {value}
         </span>
-        {sub && <span className="text-[10px] font-mono text-[#888]">{sub}</span>}
+        {sub && <span className="text-[10px] font-mono text-text-muted">{sub}</span>}
       </div>
     </div>
   )
@@ -63,6 +66,8 @@ function StatRow({ label, value, sub, accent }: { label: string; value: string |
 
 // ─── Rating ring ──────────────────────────────────────────────────────────────
 function RatingRing({ rating, accent, size = 72 }: { rating: string | null; accent: string; size?: number }) {
+  const { lang } = useLang()
+  const t = useT(lang)
   if (!rating) return null
   const val = parseFloat(rating)
   const color = val >= 7.5 ? '#61DF6E' : val >= 6.5 ? accent : '#E55E5B'
@@ -72,7 +77,7 @@ function RatingRing({ rating, accent, size = 72 }: { rating: string | null; acce
   return (
     <div className="flex flex-col items-center gap-1">
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={stroke} />
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(var(--surface-tint-rgb),0.08)" strokeWidth={stroke} />
         <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={stroke}
           strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
           transform={`rotate(-90 ${size/2} ${size/2})`} />
@@ -81,7 +86,7 @@ function RatingRing({ rating, accent, size = 72 }: { rating: string | null; acce
           {rating}
         </text>
       </svg>
-      <span className="text-[9px] font-mono uppercase tracking-widest text-[#888]">Рейтинг</span>
+      <span className="text-[9px] font-mono uppercase tracking-widest text-text-muted">{t('player.rating')}</span>
     </div>
   )
 }
@@ -93,7 +98,7 @@ function PlayerPhoto({ photo, name, accent, size = 96 }: { photo: string | null;
     // eslint-disable-next-line @next/next/no-img-element
     <img src={photo} alt={name} loading="eager" onError={() => setErr(true)}
       className="rounded-2xl object-cover shrink-0 border-2"
-      style={{ width: size, height: size, borderColor: `${accent}30` }} />
+      style={{ width: size, height: size, borderColor: `color-mix(in srgb, ${accent} 19%, transparent)` }} />
   )
   const COLORS = ['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899']
   const color = COLORS[name.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % COLORS.length]
@@ -112,23 +117,25 @@ function ProfileSidebar({ player, mainStat, accent, sport }: {
   accent: string
   sport: string
 }) {
+  const { lang } = useLang()
+  const t = useT(lang)
   const position = mainStat?.games.position ?? ''
   const flag = player.nationality ? nationalityFlag(player.nationality) : ''
 
   return (
     <div className="flex flex-col gap-4">
       {/* Bio card */}
-      <div className="rounded-xl border bg-bg-surface overflow-hidden" style={{ borderColor: `${accent}25` }}>
+      <div className="rounded-xl border bg-bg-surface overflow-hidden" style={{ borderColor: `color-mix(in srgb, ${accent} 15%, transparent)` }}>
         {/* Photo + name */}
         <div className="flex flex-col items-center gap-3 px-5 py-6 border-b border-bg-border/50"
-          style={{ background: `${accent}06` }}>
+          style={{ background: `color-mix(in srgb, ${accent} 4%, transparent)` }}>
           <PlayerPhoto photo={player.photo} name={player.name} accent={accent} size={96} />
           <div className="flex flex-col items-center gap-2 text-center">
             <h1 className="text-[18px] font-bold text-text-primary leading-tight">{player.name}</h1>
             {position && (
               <span className="px-2.5 py-0.5 rounded border text-[10px] font-bold uppercase tracking-wide"
-                style={{ borderColor: `${accent}40`, color: accent, background: `${accent}10` }}>
-                {translatePosition(position)}
+                style={{ borderColor: `color-mix(in srgb, ${accent} 25%, transparent)`, color: accent, background: `color-mix(in srgb, ${accent} 6%, transparent)` }}>
+                {POS_KEY[position] ? t(POS_KEY[position]) : position}
               </span>
             )}
             {mainStat?.team && (
@@ -139,7 +146,7 @@ function ProfileSidebar({ player, mainStat, accent, sport }: {
                   <img src={mainStat.team.logo} alt="" loading="lazy" className="w-4 h-4 object-contain" />
                 )}
                 <span className="font-medium">{mainStat.team.name}</span>
-                <svg className="w-3 h-3 text-text-muted/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+                <svg className="w-3 h-3 text-text-muted/45" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
               </Link>
             )}
           </div>
@@ -149,40 +156,40 @@ function ProfileSidebar({ player, mainStat, accent, sport }: {
         <div className="flex flex-col divide-y divide-bg-border/20 px-4 py-1">
           {player.age && (
             <div className="flex justify-between items-center py-2.5">
-              <span className="text-[12px] text-[#888]">Возраст</span>
-              <span className="text-[13px] font-mono font-semibold text-white">{player.age} лет</span>
+              <span className="text-[12px] text-text-muted">{t('player.age_field')}</span>
+              <span className="text-[13px] font-mono font-semibold text-text-primary">{player.age} {t('player.age_label')}</span>
             </div>
           )}
           {player.nationality && (
             <div className="flex justify-between items-center py-2.5">
-              <span className="text-[12px] text-[#888]">Национальность</span>
-              <span className="text-[13px] font-mono font-semibold text-white">{flag && `${flag} `}{player.nationality}</span>
+              <span className="text-[12px] text-text-muted">{t('player.nationality')}</span>
+              <span className="text-[13px] font-mono font-semibold text-text-primary">{flag && `${flag} `}{player.nationality}</span>
             </div>
           )}
           {player.height && (
             <div className="flex justify-between items-center py-2.5">
-              <span className="text-[12px] text-[#888]">Рост</span>
-              <span className="text-[13px] font-mono font-semibold text-white">{player.height}</span>
+              <span className="text-[12px] text-text-muted">{t('player.height')}</span>
+              <span className="text-[13px] font-mono font-semibold text-text-primary">{player.height}</span>
             </div>
           )}
           {player.weight && (
             <div className="flex justify-between items-center py-2.5">
-              <span className="text-[12px] text-[#888]">Вес</span>
-              <span className="text-[13px] font-mono font-semibold text-white">{player.weight}</span>
+              <span className="text-[12px] text-text-muted">{t('player.weight')}</span>
+              <span className="text-[13px] font-mono font-semibold text-text-primary">{player.weight}</span>
             </div>
           )}
           {player.birth_date && (
             <div className="flex justify-between items-center py-2.5">
-              <span className="text-[12px] text-[#888]">Дата рождения</span>
-              <span className="text-[12px] font-mono text-white">
-                {new Date(player.birth_date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })}
+              <span className="text-[12px] text-text-muted">{t('player.birth_date')}</span>
+              <span className="text-[12px] font-mono text-text-primary">
+                {new Date(player.birth_date).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
               </span>
             </div>
           )}
           {player.injured && (
             <div className="flex justify-between items-center py-2.5">
-              <span className="text-[12px] text-[#888]">Статус</span>
-              <span className="text-[12px] font-mono font-bold text-red-400">Травмирован</span>
+              <span className="text-[12px] text-text-muted">{t('player.status')}</span>
+              <span className="text-[12px] font-mono font-bold text-red-400">{t('player.injured')}</span>
             </div>
           )}
         </div>
@@ -192,8 +199,8 @@ function ProfileSidebar({ player, mainStat, accent, sport }: {
       {mainStat?.games.rating && (
         <div className="rounded-xl border border-bg-border bg-bg-surface px-4 py-5 flex flex-col items-center gap-1">
           <RatingRing rating={mainStat.games.rating} accent={accent} size={80} />
-          <p className="text-[10px] font-mono text-[#888] text-center mt-1">
-            Средний рейтинг · {mainStat.league.name}
+          <p className="text-[10px] font-mono text-text-muted text-center mt-1">
+            {t('player.avg_rating')} · {mainStat.league.name}
           </p>
         </div>
       )}
@@ -202,23 +209,23 @@ function ProfileSidebar({ player, mainStat, accent, sport }: {
       {mainStat && (
         <div className="rounded-xl border border-bg-border bg-bg-surface overflow-hidden">
           <div className="px-4 py-3 border-b border-bg-border">
-            <span className="text-[11px] font-mono font-bold tracking-[0.12em] uppercase text-[#aaa]">
-              Сезон {mainStat.season}/{String((mainStat.season ?? 0) + 1).slice(-2)}
+            <span className="text-[11px] font-mono font-bold tracking-[0.12em] uppercase text-text-secondary">
+              {t('sport.season_label')} {mainStat.season}/{String((mainStat.season ?? 0) + 1).slice(-2)}
             </span>
           </div>
           <div className="grid grid-cols-2 divide-x divide-y divide-bg-border/50">
             {[
-              { label: 'Матчей',   value: mainStat.games.appearances ?? '—' },
-              { label: 'Минут',    value: mainStat.games.minutes ?? '—' },
-              { label: 'Голов',    value: mainStat.goals.total ?? '—', accent },
-              { label: 'Ассистов', value: mainStat.goals.assists ?? '—', accent },
+              { label: t('player.games'),   value: mainStat.games.appearances ?? '—' },
+              { label: t('player.minutes'), value: mainStat.games.minutes ?? '—' },
+              { label: t('player.goals'),   value: mainStat.goals.total ?? '—', accent },
+              { label: t('player.assists'), value: mainStat.goals.assists ?? '—', accent },
             ].map(s => (
               <div key={s.label} className="flex flex-col items-center py-3">
                 <span className="text-[20px] font-mono font-black leading-none"
-                  style={{ color: s.accent ?? 'rgba(255,255,255,0.8)' }}>
+                  style={{ color: s.accent ?? 'rgba(var(--surface-tint-rgb),0.8)' }}>
                   {s.value}
                 </span>
-                <span className="text-[9px] font-mono uppercase tracking-widest text-[#888] mt-1">{s.label}</span>
+                <span className="text-[9px] font-mono uppercase tracking-widest text-text-muted mt-1">{s.label}</span>
               </div>
             ))}
           </div>
@@ -230,6 +237,8 @@ function ProfileSidebar({ player, mainStat, accent, sport }: {
 
 // ─── Stats block for one league season ────────────────────────────────────────
 function SeasonBlock({ s, accent }: { s: PlayerStats; accent: string }) {
+  const { lang } = useLang()
+  const t = useT(lang)
   const isGK  = s.games.position === 'Goalkeeper'
   const apps  = s.games.appearances ?? 0
   const mins  = s.games.minutes ?? 0
@@ -246,7 +255,7 @@ function SeasonBlock({ s, accent }: { s: PlayerStats; accent: string }) {
         )}
         <div className="flex flex-col min-w-0 flex-1">
           <span className="text-[13px] font-semibold truncate">{s.league.name}</span>
-          <span className="text-[10px] font-mono text-[#888]">{s.league.country} · {s.team.name}</span>
+          <span className="text-[10px] font-mono text-text-muted">{s.league.country} · {s.team.name}</span>
         </div>
         <RatingRing rating={s.games.rating} accent={accent} size={52} />
       </div>
@@ -254,16 +263,16 @@ function SeasonBlock({ s, accent }: { s: PlayerStats; accent: string }) {
       {/* Key numbers — horizontal row with dividers */}
       <div className="flex border-b border-bg-border/50">
         {[
-          { label: 'Игры',    value: apps },
-          { label: 'Минуты', value: mins },
+          { label: t('player.games'),   value: apps },
+          { label: t('player.minutes'), value: mins },
           ...(isGK
-            ? [{ label: 'Сейвы', value: s.goals.saves ?? 0 }, { label: 'Пропущено', value: s.goals.conceded ?? 0 }]
-            : [{ label: 'Голы',  value: s.goals.total ?? 0 }, { label: 'Ассисты', value: s.goals.assists ?? 0 }]
+            ? [{ label: t('player.saves'), value: s.goals.saves ?? 0 }, { label: t('player.conceded'), value: s.goals.conceded ?? 0 }]
+            : [{ label: t('player.goals'), value: s.goals.total ?? 0 }, { label: t('player.assists'),  value: s.goals.assists ?? 0 }]
           ),
         ].map(c => (
           <div key={c.label} className="flex-1 flex flex-col items-center py-4 border-r border-bg-border/50 last:border-r-0">
             <span className="text-[22px] font-mono font-black leading-none" style={{ color: accent }}>{c.value ?? 0}</span>
-            <span className="text-[9px] font-mono uppercase tracking-widest text-[#888] mt-1">{c.label}</span>
+            <span className="text-[9px] font-mono uppercase tracking-widest text-text-muted mt-1 text-center">{c.label}</span>
           </div>
         ))}
       </div>
@@ -272,31 +281,31 @@ function SeasonBlock({ s, accent }: { s: PlayerStats; accent: string }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-0 divide-y sm:divide-y-0 sm:divide-x divide-bg-border/30">
         <div className="px-4 py-1">
           {!isGK && <>
-            <StatRow label="Удары" value={s.shots.total} sub={`${s.shots.on} в цель`} />
-            <StatRow label="Пасы" value={s.passes.total} sub={s.passes.accuracy ? `${s.passes.accuracy}% точность` : undefined} />
-            <StatRow label="Ключевые пасы" value={s.passes.key} accent={accent} />
+            <StatRow label={t('player.shots')} value={s.shots.total} sub={`${s.shots.on} ${t('player.on_target')}`} />
+            <StatRow label={t('player.passes')} value={s.passes.total} sub={s.passes.accuracy ? `${s.passes.accuracy}% ${t('player.accuracy')}` : undefined} />
+            <StatRow label={t('player.key_passes')} value={s.passes.key} accent={accent} />
             {s.dribbles.attempts > 0 && (
-              <StatRow label="Дриблинг" value={`${dribPct}%`} sub={`${s.dribbles.success}/${s.dribbles.attempts}`} />
+              <StatRow label={t('player.dribbles')} value={`${dribPct}%`} sub={`${s.dribbles.success}/${s.dribbles.attempts}`} />
             )}
           </>}
           {isGK && <>
-            <StatRow label="Выходы на перехват" value={s.tackles.total} />
-            <StatRow label="Блоки" value={s.tackles.blocks} />
+            <StatRow label={t('player.intercepts')} value={s.tackles.total} />
+            <StatRow label={t('player.blocks')} value={s.tackles.blocks} />
           </>}
         </div>
         <div className="px-4 py-1">
           {!isGK && <>
-            <StatRow label="Единоборства" value={`${duelPct}%`} sub={`${s.duels.won}/${s.duels.total}`} />
-            {s.tackles.interceptions > 0 && <StatRow label="Перехваты" value={s.tackles.interceptions} />}
-            {s.tackles.blocks > 0 && <StatRow label="Блоки" value={s.tackles.blocks} />}
-            <StatRow label="Фолы сов./зар." value={`${s.fouls.committed} / ${s.fouls.drawn}`} />
+            <StatRow label={t('player.duels')} value={`${duelPct}%`} sub={`${s.duels.won}/${s.duels.total}`} />
+            {s.tackles.interceptions > 0 && <StatRow label={t('player.interceptions')} value={s.tackles.interceptions} />}
+            {s.tackles.blocks > 0 && <StatRow label={t('player.blocks')} value={s.tackles.blocks} />}
+            <StatRow label={t('player.fouls')} value={`${s.fouls.committed} / ${s.fouls.drawn}`} />
             {s.penalty.scored + s.penalty.missed > 0 && (
-              <StatRow label="Пенальти" value={`${s.penalty.scored}/${s.penalty.scored + s.penalty.missed}`} sub="реализовано" />
+              <StatRow label={t('player.penalties')} value={`${s.penalty.scored}/${s.penalty.scored + s.penalty.missed}`} sub={t('player.scored')} />
             )}
           </>}
           {(s.cards.yellow > 0 || s.cards.red > 0) && (
             <StatRow
-              label={s.cards.red > 0 ? 'Жёлтые / красные' : 'Жёлтые карточки'}
+              label={s.cards.red > 0 ? t('player.yellow_red') : t('player.yellow_cards')}
               value={s.cards.red > 0 ? `${s.cards.yellow} / ${s.cards.red}` : s.cards.yellow}
               accent={s.cards.red > 0 ? '#ef4444' : s.cards.yellow > 2 ? '#f97316' : undefined}
             />
@@ -328,6 +337,8 @@ export default function PlayerPage({ playerId, initialData }: { playerId: number
   const router   = useRouter()
   const pathname = usePathname()
   const sport    = pathname.split('/')[2] ?? 'football'
+  const { lang } = useLang()
+  const t = useT(lang)
   if (initialData && !getCached<PlayerProfile>(`player:${playerId}`)) {
     setCached(`player:${playerId}`, initialData)
   }
@@ -355,10 +366,10 @@ export default function PlayerPage({ playerId, initialData }: { playerId: number
   const SKIP_KEYWORDS = ['friendly', 'friendlies', 'pre-season', 'preseason', 'super cup', 'supercup', 'club world cup', 'uefa super cup']
 
   const position = player?.statistics[0]?.games.position ?? ''
-  const accent = position === 'Goalkeeper' ? '#4A9EEA'
-    : position === 'Defender'   ? '#61DF6E'
-    : position === 'Midfielder' ? '#e8c032'
-    : '#E55E5B'
+  const accent = position === 'Goalkeeper' ? 'rgb(var(--player-pos-gk))'
+    : position === 'Defender'   ? 'rgb(var(--player-pos-def))'
+    : position === 'Midfielder' ? 'rgb(var(--player-pos-mid))'
+    : 'rgb(var(--player-pos-fwd))'
 
   const filteredStats = player?.statistics.filter(s => {
     const name = (s.league.name ?? '').toLowerCase()
@@ -372,24 +383,24 @@ export default function PlayerPage({ playerId, initialData }: { playerId: number
     <div className="sticky top-[200px] z-20 -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6 py-2.5 flex items-center gap-2 border-b border-bg-border"
       style={{ background: 'rgba(10,10,15,0.92)', backdropFilter: 'blur(12px)' }}>
       <button onClick={handleBack}
-        className="flex items-center gap-1.5 text-[13px] font-mono text-[#888] hover:text-white transition-colors shrink-0">
+        className="flex items-center gap-1.5 text-[13px] font-mono text-text-muted hover:text-text-primary transition-colors shrink-0">
         <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-        Назад
+        {t('sport.back')}
       </button>
       {(mainStat?.team.name || player?.name) && (
         <>
           {mainStat?.team.name && (
             <>
-              <span className="text-text-muted/25 text-[12px]">/</span>
+              <span className="text-text-muted/40 text-[12px]">/</span>
               <Link href={`/sport/${sport}/team/${mainStat.team.id}`}
-                className="text-[12px] font-mono text-[#888] hover:text-text-secondary transition-colors truncate">
+                className="text-[12px] font-mono text-text-muted hover:text-text-secondary transition-colors truncate">
                 {mainStat.team.name}
               </Link>
             </>
           )}
           {player?.name && (
             <>
-              <span className="text-text-muted/25 text-[12px]">/</span>
+              <span className="text-text-muted/40 text-[12px]">/</span>
               <span className="text-[12px] font-mono text-text-primary truncate">{player.name}</span>
             </>
           )}
@@ -409,7 +420,7 @@ export default function PlayerPage({ playerId, initialData }: { playerId: number
     <div className="px-3 sm:px-4 md:px-6">
       <BreadcrumbBar />
       <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <p className="text-sm font-mono text-text-muted">Игрок не найден</p>
+        <p className="text-sm font-mono text-text-muted">{t('sport.player_not_found')}</p>
       </div>
     </div>
   )
@@ -430,11 +441,11 @@ export default function PlayerPage({ playerId, initialData }: { playerId: number
           {stats.length > 0 ? (
             <>
               <div className="flex items-center gap-2 px-1">
-                <span className="text-[10px] font-mono uppercase tracking-widest text-[#888]">
-                  Статистика сезона · {mainStat?.season}/{String((mainStat?.season ?? 0) + 1).slice(-2)}
+                <span className="text-[10px] font-mono uppercase tracking-widest text-text-muted">
+                  {t('player.season_stats')} · {mainStat?.season}/{String((mainStat?.season ?? 0) + 1).slice(-2)}
                 </span>
                 <div className="flex-1 h-px bg-bg-border" />
-                <span className="text-[10px] font-mono text-[#888]">{stats.length} {stats.length === 1 ? 'турнир' : 'турниров'}</span>
+                <span className="text-[10px] font-mono text-text-muted">{stats.length} {stats.length === 1 ? t('player.tournament_1') : t('player.tournament_n')}</span>
               </div>
               {stats.map((s, i) => (
                 <SeasonBlock key={i} s={s} accent={accent} />
@@ -442,8 +453,7 @@ export default function PlayerPage({ playerId, initialData }: { playerId: number
             </>
           ) : (
             <div className="rounded-xl border border-bg-border bg-bg-surface px-4 py-12 flex flex-col items-center gap-2">
-              <p className="text-[13px] font-mono text-text-muted/50">Нет данных за текущий сезон</p>
-              <p className="text-[11px] font-mono text-text-muted/30">Данные обновляются ежедневно</p>
+              <p className="text-[13px] font-mono text-text-muted/50">{t('sport.no_season_data')}</p>
             </div>
           )}
         </div>

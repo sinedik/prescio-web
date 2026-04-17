@@ -174,7 +174,7 @@ export default function DotaMinimap({
                 width: 18, height: 18,
                 background: isDead ? '#333' : color,
                 opacity: isDead ? 0.4 : 0.9,
-                border: `1px solid ${isDead ? '#555' : 'rgba(255,255,255,0.3)'}`,
+                border: `1px solid ${isDead ? '#555' : 'rgba(var(--surface-tint-rgb),0.3)'}`,
               }} />
             )}
             {isDead && (

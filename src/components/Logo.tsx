@@ -1,10 +1,8 @@
-import { useTheme } from '../contexts/ThemeContext'
-
 interface LogoProps {
   size?: number
   showText?: boolean
   textSize?: number
-  /** 'auto' reads from ThemeContext; 'dark' / 'light' forces a specific variant */
+  /** 'auto' uses theme-aware CSS variable; 'dark' / 'light' forces a specific variant */
   theme?: 'auto' | 'dark' | 'light'
   /** Override symbol color (e.g. 'rgb(var(--bg-base))' when placed on a green button) */
   symbolColor?: string
@@ -17,10 +15,11 @@ export default function Logo({
   theme = 'auto',
   symbolColor,
 }: LogoProps) {
-  const { theme: currentTheme } = useTheme()
-  const resolved = theme === 'auto' ? currentTheme : theme
-
-  const color = symbolColor ?? (resolved === 'dark' ? 'rgb(var(--accent))' : 'rgb(var(--text-primary))')
+  // Theme-aware via CSS variable → no useTheme() → SSR-safe (no hydration mismatch)
+  const color = symbolColor
+    ?? (theme === 'dark' ? 'rgb(var(--accent))'
+       : theme === 'light' ? 'rgb(var(--text-primary))'
+       : 'var(--logo-symbol)')
   const accentColor = 'rgb(var(--accent))'
 
   return (

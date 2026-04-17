@@ -6,7 +6,7 @@ interface Props { params: Promise<{ id: string; playerId: string }> }
 export default async function SportPlayerPage({ params }: Props) {
   const { playerId } = await params
   const id = parseInt(playerId)
-  if (isNaN(id)) return <div className="p-8 text-text-muted font-mono">Неверный ID игрока</div>
+  if (isNaN(id)) return <div className="p-8 text-text-muted font-mono">Invalid player ID</div>
   const initialData = await fetchSportPlayerSSR(id)
   return <PlayerPage playerId={id} initialData={initialData ?? undefined} />
 }

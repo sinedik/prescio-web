@@ -5,8 +5,10 @@ import Link from 'next/link'
 import { sportApi } from '../lib/api'
 import { getCached, setCached } from '../lib/clientCache'
 import type { LeaguePageData, SportStanding, SportTopScorer, LeagueFixture } from '../types/index'
+import { useLang } from '../contexts/LanguageContext'
+import { useT } from '../lib/i18n'
 
-const ACCENT = '#e8c032'
+const ACCENT = 'rgb(var(--sport-football-rgb))'
 
 const DESCRIPTION_COLOR: Record<string, string> = {
   'Champions League':  '#3b82f6',
@@ -42,7 +44,7 @@ function TeamLogo({ logo, name, size = 20 }: { logo?: string | null; name: strin
   )
   return (
     <div className="flex items-center justify-center rounded font-bold text-text-muted shrink-0"
-      style={{ width: size, height: size, fontSize: size * 0.36, background: 'rgba(255,255,255,0.06)' }}>
+      style={{ width: size, height: size, fontSize: size * 0.36, background: 'rgba(var(--surface-tint-rgb), 0.06)' }}>
       {abbr(name)}
     </div>
   )
@@ -66,7 +68,7 @@ function Section({ id, title, children }: { id?: string; title: string; children
   return (
     <div id={id} className="rounded-xl border border-bg-border bg-bg-surface overflow-hidden scroll-mt-[84px]">
       <div className="px-4 py-3 border-b border-bg-border">
-        <span className="text-[11px] font-mono font-bold tracking-[0.12em] uppercase text-[#aaa]">{title}</span>
+        <span className="text-[11px] font-mono font-bold tracking-[0.12em] uppercase text-text-secondary">{title}</span>
       </div>
       {children}
     </div>
@@ -75,8 +77,10 @@ function Section({ id, title, children }: { id?: string; title: string; children
 
 // ─── Standings table ──────────────────────────────────────────────────────────
 function StandingsTable({ standings, sport }: { standings: SportStanding[]; sport: string }) {
+  const { lang } = useLang()
+  const t = useT(lang)
   if (!standings.length) return (
-    <div className="px-4 py-8 text-center text-[12px] font-mono text-text-muted/50">Нет данных</div>
+    <div className="px-4 py-8 text-center text-[12px] font-mono text-text-muted/50">{t('common.no_data')}</div>
   )
   let lastDesc: string | null = undefined as unknown as null
   return (
@@ -85,15 +89,15 @@ function StandingsTable({ standings, sport }: { standings: SportStanding[]; spor
         <thead>
           <tr className="border-b border-bg-border/40">
             <th className="text-left pl-4 pr-2 py-2.5 text-[#666] font-medium w-8">#</th>
-            <th className="text-left px-2 py-2.5 text-[#666] font-medium">Команда</th>
-            <th className="text-center px-2 py-2.5 text-[#666] font-medium w-8 hidden sm:table-cell">И</th>
-            <th className="text-center px-2 py-2.5 text-[#666] font-medium w-8">В</th>
-            <th className="text-center px-2 py-2.5 text-[#666] font-medium w-8">Н</th>
-            <th className="text-center px-2 py-2.5 text-[#666] font-medium w-8">П</th>
-            <th className="text-center px-2 py-2.5 text-[#666] font-medium w-14 hidden md:table-cell">Г</th>
-            <th className="text-center px-2 py-2.5 text-[#666] font-medium w-8">РГ</th>
-            <th className="text-center px-2 py-2.5 text-[#666] font-medium w-9 font-bold text-text-muted">О</th>
-            <th className="text-center pr-4 pl-2 py-2.5 text-[#666] font-medium hidden lg:table-cell">Форма</th>
+            <th className="text-left px-2 py-2.5 text-[#666] font-medium">{t('sport.th.team')}</th>
+            <th className="text-center px-2 py-2.5 text-[#666] font-medium w-8 hidden sm:table-cell">{t('sport.th.played')}</th>
+            <th className="text-center px-2 py-2.5 text-[#666] font-medium w-8">{t('sport.th.wins')}</th>
+            <th className="text-center px-2 py-2.5 text-[#666] font-medium w-8">{t('sport.th.draws')}</th>
+            <th className="text-center px-2 py-2.5 text-[#666] font-medium w-8">{t('sport.th.losses')}</th>
+            <th className="text-center px-2 py-2.5 text-[#666] font-medium w-14 hidden md:table-cell">{t('sport.th.goals')}</th>
+            <th className="text-center px-2 py-2.5 text-[#666] font-medium w-8">{t('sport.th.goal_diff')}</th>
+            <th className="text-center px-2 py-2.5 text-[#666] font-medium w-9 font-bold text-text-muted">{t('sport.th.points')}</th>
+            <th className="text-center pr-4 pl-2 py-2.5 text-[#666] font-medium hidden lg:table-cell">{t('sport.th.form')}</th>
           </tr>
         </thead>
         <tbody>
@@ -103,10 +107,10 @@ function StandingsTable({ standings, sport }: { standings: SportStanding[]; spor
             lastDesc = s.description
             return (
               <tr key={s.id}
-                className="border-b border-bg-border/20 hover:bg-white/[0.02] transition-colors"
+                className="border-b border-bg-border/20 hover:bg-text-primary/[0.02] transition-colors"
                 style={color ? { borderLeft: `2px solid ${color}` } : { borderLeft: '2px solid transparent' }}
               >
-                <td className="pl-4 pr-2 py-2.5 text-[#888] tabular-nums">{s.rank}</td>
+                <td className="pl-4 pr-2 py-2.5 text-text-muted tabular-nums">{s.rank}</td>
                 <td className="px-2 py-2.5">
                   <Link href={`/sport/${sport}/team/${s.team_external_id}`}
                     className="flex items-center gap-2 hover:text-text-secondary transition-colors group">
@@ -120,11 +124,11 @@ function StandingsTable({ standings, sport }: { standings: SportStanding[]; spor
                     )}
                   </Link>
                 </td>
-                <td className="text-center px-2 py-2.5 text-[#bbb] tabular-nums hidden sm:table-cell">{s.played}</td>
-                <td className="text-center px-2 py-2.5 text-[#bbb] tabular-nums">{s.wins}</td>
-                <td className="text-center px-2 py-2.5 text-[#bbb] tabular-nums">{s.draws}</td>
-                <td className="text-center px-2 py-2.5 text-[#bbb] tabular-nums">{s.losses}</td>
-                <td className="text-center px-2 py-2.5 text-[#bbb] tabular-nums hidden md:table-cell">
+                <td className="text-center px-2 py-2.5 text-text-secondary tabular-nums hidden sm:table-cell">{s.played}</td>
+                <td className="text-center px-2 py-2.5 text-text-secondary tabular-nums">{s.wins}</td>
+                <td className="text-center px-2 py-2.5 text-text-secondary tabular-nums">{s.draws}</td>
+                <td className="text-center px-2 py-2.5 text-text-secondary tabular-nums">{s.losses}</td>
+                <td className="text-center px-2 py-2.5 text-text-secondary tabular-nums hidden md:table-cell">
                   {s.goals_for}:{s.goals_against}
                 </td>
                 <td className="text-center px-2 py-2.5 tabular-nums"
@@ -146,18 +150,20 @@ function StandingsTable({ standings, sport }: { standings: SportStanding[]; spor
 
 // ─── Top scorers ──────────────────────────────────────────────────────────────
 function TopScorersSection({ scorers, sport }: { scorers: SportTopScorer[]; sport: string }) {
+  const { lang } = useLang()
+  const t = useT(lang)
   if (!scorers.length) return null
   return (
-    <Section id="scorers" title={`Бомбардиры · топ ${scorers.length}`}>
+    <Section id="scorers" title={lang === 'ru' ? `Бомбардиры · топ ${scorers.length}` : `Top ${scorers.length} scorers`}>
       <div className="grid grid-cols-2 divide-x divide-bg-border/30">
         {scorers.map((s, i) => (
           <Link key={i} href={`/sport/${sport}/player/${s.player_id}`}
-            className="flex items-center gap-3 px-4 py-2.5 border-b border-bg-border/20 hover:bg-white/[0.025] transition-colors last:border-0 group">
+            className="flex items-center gap-3 px-4 py-2.5 border-b border-bg-border/20 hover:bg-text-primary/[0.025] transition-colors last:border-0 group">
             <span className="text-[11px] font-mono text-[#666] w-5 shrink-0 tabular-nums">{i + 1}</span>
             <PlayerPhoto photo={s.player_photo} name={s.player_name} />
             <div className="flex flex-col min-w-0 flex-1">
               <span className="text-[12px] font-medium truncate group-hover:underline decoration-dotted underline-offset-2">{s.player_name}</span>
-              <span className="text-[10px] font-mono text-[#888] truncate">{s.team_name}</span>
+              <span className="text-[10px] font-mono text-text-muted truncate">{s.team_name}</span>
             </div>
             <span className="text-[14px] font-mono font-bold shrink-0" style={{ color: ACCENT }}>{s.goals}</span>
           </Link>
@@ -176,7 +182,7 @@ function PlayerPhoto({ photo, name }: { photo?: string | null; name: string }) {
   )
   return (
     <div className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0"
-      style={{ background: 'rgba(255,255,255,0.06)', color: '#888' }}>
+      style={{ background: 'rgba(var(--surface-tint-rgb), 0.06)', color: 'rgb(var(--text-muted))' }}>
       {abbr(name)}
     </div>
   )
@@ -192,7 +198,7 @@ function FixtureRow({ f, sport }: { f: LeagueFixture; sport: string }) {
 
   return (
     <Link href={`/sport/${sport}/${f.id}`}
-      className="flex items-center gap-3 px-4 py-2.5 border-b border-bg-border/20 hover:bg-white/[0.025] transition-colors last:border-0">
+      className="flex items-center gap-3 px-4 py-2.5 border-b border-bg-border/20 hover:bg-text-primary/[0.025] transition-colors last:border-0">
       {/* Date/time */}
       <div className="w-16 shrink-0 text-right">
         {isLive ? (
@@ -201,7 +207,7 @@ function FixtureRow({ f, sport }: { f: LeagueFixture; sport: string }) {
           <span className="text-[10px] font-mono text-[#666]">FT</span>
         ) : (
           <div className="flex flex-col items-end">
-            <span className="text-[10px] font-mono text-[#888]">{dateStr}</span>
+            <span className="text-[10px] font-mono text-text-muted">{dateStr}</span>
             <span className="text-[10px] font-mono text-[#666]">{timeStr}</span>
           </div>
         )}
@@ -216,7 +222,7 @@ function FixtureRow({ f, sport }: { f: LeagueFixture; sport: string }) {
       {/* Score */}
       <div className="w-16 shrink-0 text-center">
         {isFinished || isLive ? (
-          <span className="text-[13px] font-mono font-bold" style={{ color: isLive ? '#e55e5b' : 'rgba(255,255,255,0.85)' }}>
+          <span className="text-[13px] font-mono font-bold" style={{ color: isLive ? '#e55e5b' : 'rgba(var(--surface-tint-rgb),0.85)' }}>
             {f.home_score ?? 0} — {f.away_score ?? 0}
           </span>
         ) : (
@@ -245,22 +251,24 @@ function FixturesSection({ fixtures, sport }: { fixtures: LeagueFixture[]; sport
 
   if (!fixtures.length) return null
 
+  const { lang } = useLang()
+  const t = useT(lang)
   const TABS = [
-    { id: 'upcoming' as const, label: 'Предстоящие', count: upcoming.length },
-    { id: 'live'     as const, label: 'Live',         count: live.length },
-    { id: 'results'  as const, label: 'Результаты',  count: results.length },
+    { id: 'upcoming' as const, label: t('sport.upcoming'), count: upcoming.length },
+    { id: 'live'     as const, label: 'Live',              count: live.length },
+    { id: 'results'  as const, label: t('league.results'), count: results.length },
   ]
   const items = tab === 'live' ? live : tab === 'upcoming' ? upcoming : results
 
   return (
-    <Section id="fixtures" title="Матчи">
+    <Section id="fixtures" title={t('sport.title.matches')}>
       {/* Tab bar */}
       <div className="flex items-center gap-1 px-3 py-2 border-b border-bg-border/30">
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className={`flex items-center gap-1.5 px-3 py-1 rounded text-[11px] font-mono transition-colors
               ${tab === t.id
-                ? 'bg-white/[0.08] text-text-primary'
+                ? 'bg-text-primary/[0.08] text-text-primary'
                 : 'text-text-muted hover:text-text-secondary'
               }`}
           >
@@ -279,7 +287,7 @@ function FixturesSection({ fixtures, sport }: { fixtures: LeagueFixture[]; sport
       <div className="flex flex-col">
         {items.length > 0
           ? items.map(f => <FixtureRow key={f.id} f={f} sport={sport} />)
-          : <div className="px-4 py-8 text-center text-[12px] font-mono text-text-muted/40">Нет матчей</div>
+          : <div className="px-4 py-8 text-center text-[12px] font-mono text-text-muted/40">{t('league.no_matches')}</div>
         }
       </div>
     </Section>
@@ -288,6 +296,8 @@ function FixturesSection({ fixtures, sport }: { fixtures: LeagueFixture[]; sport
 
 // ─── League card (left sidebar) ───────────────────────────────────────────────
 function LeagueCard({ data, sport }: { data: LeaguePageData; sport: string }) {
+  const { lang } = useLang()
+  const t = useT(lang)
   const { meta, standings } = data
   const teamsCount = standings.length
   const totalGoals = standings.reduce((s, t) => s + (t.goals_for ?? 0), 0)
@@ -304,30 +314,30 @@ function LeagueCard({ data, sport }: { data: LeaguePageData; sport: string }) {
             style={{ width: 80, height: 80, objectFit: 'contain' }} />
         ) : (
           <div className="w-20 h-20 rounded-xl flex items-center justify-center text-2xl font-bold"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: ACCENT }}>
+            style={{ background: 'rgba(var(--surface-tint-rgb), 0.04)', border: '1px solid rgba(var(--surface-tint-rgb), 0.08)', color: ACCENT }}>
             {meta.name?.slice(0, 2).toUpperCase() ?? '??'}
           </div>
         )}
         <div className="flex flex-col items-center gap-1 text-center">
-          <span className="text-[15px] font-bold text-text-primary leading-tight">{meta.name ?? 'Лига'}</span>
+          <span className="text-[15px] font-bold text-text-primary leading-tight">{meta.name ?? t('sport.league_default')}</span>
           {meta.flag && (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={meta.flag} alt="" loading="lazy" className="h-3 opacity-60 mt-0.5" />
           )}
-          <span className="text-[11px] font-mono text-[#888]">Сезон {meta.season}/{String(meta.season + 1).slice(-2)}</span>
+          <span className="text-[11px] font-mono text-text-muted">{t('sport.season_label')} {meta.season}/{String(meta.season + 1).slice(-2)}</span>
         </div>
       </div>
 
       {/* Quick stats */}
       <div className="grid grid-cols-3 divide-x divide-bg-border/30 border-b border-bg-border/50">
         {[
-          { label: 'Команды', value: teamsCount || '—' },
-          { label: 'Туров', value: standings[0]?.played ?? '—' },
-          { label: 'Гол/матч', value: avgGoals ?? '—' },
+          { label: t('league.teams'), value: teamsCount || '—' },
+          { label: t('league.rounds'), value: standings[0]?.played ?? '—' },
+          { label: t('league.goals_match'), value: avgGoals ?? '—' },
         ].map(({ label, value }) => (
           <div key={label} className="flex flex-col items-center py-3 gap-0.5">
             <span className="text-[14px] font-mono font-bold text-text-primary">{value}</span>
-            <span className="text-[9px] font-mono text-[#888] uppercase tracking-wide">{label}</span>
+            <span className="text-[9px] font-mono text-text-muted uppercase tracking-wide">{label}</span>
           </div>
         ))}
       </div>
@@ -335,13 +345,13 @@ function LeagueCard({ data, sport }: { data: LeaguePageData; sport: string }) {
       {/* Leader */}
       {leader && (
         <div className="px-4 py-3 border-b border-bg-border/30">
-          <p className="text-[9px] font-mono text-[#888] uppercase tracking-widest mb-2">Лидер</p>
+          <p className="text-[9px] font-mono text-text-muted uppercase tracking-widest mb-2">{t('league.leader')}</p>
           <Link href={`/sport/${sport}/team/${leader.team_external_id}`}
             className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
             <TeamLogo logo={leader.team_logo} name={leader.team_name} size={24} />
             <div className="flex flex-col min-w-0 flex-1">
               <span className="text-[12px] font-medium truncate">{leader.team_name}</span>
-              <span className="text-[10px] font-mono text-[#888]">{leader.points} очков</span>
+              <span className="text-[10px] font-mono text-text-muted">{leader.points} {t('league.points_label')}</span>
             </div>
             <FormDots form={leader.form} />
           </Link>
@@ -351,12 +361,12 @@ function LeagueCard({ data, sport }: { data: LeaguePageData; sport: string }) {
       {/* Top 5 standings preview */}
       {standings.length > 0 && (
         <div className="px-3 py-2">
-          <p className="text-[9px] font-mono text-[#888] uppercase tracking-widest mb-1.5 px-1">Топ-5</p>
+          <p className="text-[9px] font-mono text-text-muted uppercase tracking-widest mb-1.5 px-1">{t('league.top5')}</p>
           {standings.slice(0, 5).map(s => {
             const color = descriptionColor(s.description)
             return (
               <Link key={s.id} href={`/sport/${sport}/team/${s.team_external_id}`}
-                className="flex items-center gap-2 px-1 py-1.5 rounded hover:bg-white/[0.03] transition-colors">
+                className="flex items-center gap-2 px-1 py-1.5 rounded hover:bg-text-primary/[0.03] transition-colors">
                 <span className="text-[10px] font-mono text-[#666] w-4 tabular-nums">{s.rank}</span>
                 {color && <div className="w-1 h-3.5 rounded-full shrink-0" style={{ background: color }} />}
                 <TeamLogo logo={s.team_logo} name={s.team_name} size={16} />
@@ -392,6 +402,8 @@ interface Props {
 
 export default function LeaguePage({ leagueId, sport, initialData }: Props & { initialData?: LeaguePageData }) {
   const router = useRouter()
+  const { lang } = useLang()
+  const t = useT(lang)
   const cacheKey = `league:${leagueId}:${sport}`
   if (initialData && !getCached<LeaguePageData>(cacheKey)) {
     setCached(cacheKey, initialData)
@@ -418,16 +430,16 @@ export default function LeaguePage({ leagueId, sport, initialData }: Props & { i
 
   const BreadcrumbBar = () => (
     <div className="sticky top-[200px] z-20 -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6 py-2.5 flex items-center gap-2 border-b border-bg-border"
-      style={{ background: 'rgba(8,8,8,0.85)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}>
+      style={{ background: 'rgba(var(--bg-base-rgb), 0.85)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}>
       <button onClick={() => router.push(`/sport/${sport}`)}
         className="flex items-center gap-1.5 text-[12px] font-mono text-text-muted/60 hover:text-text-secondary transition-colors shrink-0">
         <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-        Назад
+        {t('sport.back')}
       </button>
       {data?.meta.name && (
         <>
-          <span className="text-text-muted/25 text-[12px]">/</span>
-          <span className="text-[12px] font-mono text-[#888] truncate">{data.meta.name}</span>
+          <span className="text-text-muted/40 text-[12px]">/</span>
+          <span className="text-[12px] font-mono text-text-muted truncate">{data.meta.name}</span>
         </>
       )}
     </div>
@@ -444,7 +456,7 @@ export default function LeaguePage({ leagueId, sport, initialData }: Props & { i
     <div className="px-3 sm:px-4 md:px-6">
       <BreadcrumbBar />
       <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <p className="text-sm font-mono text-text-muted">Лига не найдена</p>
+        <p className="text-sm font-mono text-text-muted">{t('sport.league_not_found')}</p>
       </div>
     </div>
   )
@@ -463,7 +475,7 @@ export default function LeaguePage({ leagueId, sport, initialData }: Props & { i
         {/* ── RIGHT: main content ──────────────────────────────────────────── */}
         <div className="flex flex-col gap-4 min-w-0">
 
-          <Section id="standings" title={`Таблица · ${data.meta.name ?? 'Лига'}`}>
+          <Section id="standings" title={`${t('sport.title.standings')} · ${data.meta.name ?? ''}`}>
             <StandingsTable standings={data.standings} sport={sport} />
           </Section>
 

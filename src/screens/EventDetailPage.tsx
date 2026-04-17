@@ -605,7 +605,7 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
                             <span className="text-[10px] font-mono text-text-muted">
                               fair <span className="text-text-secondary font-bold">{a!.fair_prob}%</span>
                             </span>
-                            <span className="text-text-muted/30 text-[10px]">·</span>
+                            <span className="text-text-muted/45 text-[10px]">·</span>
                             <span className="text-[10px] font-mono text-text-muted">
                               kelly <span className="text-text-secondary font-bold">{a!.kelly_fraction?.toFixed(1)}%</span>
                             </span>
