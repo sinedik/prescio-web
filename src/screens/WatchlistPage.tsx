@@ -6,6 +6,8 @@ import { usePolling } from '../hooks/usePolling'
 import { api } from '../lib/api'
 import { removeFromWatchlistAction } from '../actions/watchlist'
 import { useAuthContext } from '../contexts/AuthContext'
+import { useLang } from '../contexts/LanguageContext'
+import { useT } from '../lib/i18n'
 
 type WatchlistTab = 'events' | 'markets'
 
@@ -32,6 +34,8 @@ function formatUpdated(dateStr: string): string {
 
 function EmptyState({ tab }: { tab: WatchlistTab }) {
   const router = useRouter()
+  const { lang } = useLang()
+  const tr = useT(lang)
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
       <div className="w-10 h-10 rounded-xl bg-bg-surface border border-bg-border flex items-center justify-center mb-4">
@@ -41,18 +45,16 @@ function EmptyState({ tab }: { tab: WatchlistTab }) {
         </svg>
       </div>
       <p className="text-sm font-mono text-text-secondary mb-1">
-        No {tab} in watchlist yet.
+        {tab === 'events' ? tr('watchlist.empty_events') : tr('watchlist.empty_markets')}
       </p>
       <p className="text-xs font-mono text-text-muted mb-5">
-        {tab === 'events'
-          ? 'Browse events and click Watch to add them.'
-          : 'Open a market and click Watch to add it.'}
+        {tab === 'events' ? tr('watchlist.browse_feed') : tr('watchlist.open_market')}
       </p>
       <button
         onClick={() => router.push('/markets')}
         className="px-4 py-2 bg-accent/10 border border-accent/30 text-accent text-xs font-mono font-bold rounded hover:bg-accent/20 transition-colors"
       >
-        Browse Markets
+        {tr('watchlist.browse_markets')}
       </button>
     </div>
   )
@@ -61,6 +63,8 @@ function EmptyState({ tab }: { tab: WatchlistTab }) {
 export default function WatchlistPage() {
   usePageTitle('Watchlist')
   const router = useRouter()
+  const { lang } = useLang()
+  const tr = useT(lang)
   const { isAlpha } = useAuthContext()
   const [tab, setTab] = useState<WatchlistTab>('events')
   const [removing, setRemoving] = useState<string | null>(null)
@@ -90,7 +94,7 @@ export default function WatchlistPage() {
       await removeFromWatchlistAction(item.watchlist_id)
     } catch {
       setRemovedIds((prev) => { const next = new Set(prev); next.delete(item.id); return next })
-      setRemoveError('Failed to remove from watchlist')
+      setRemoveError(tr('watchlist.remove_error'))
     } finally {
       setRemoving(null)
     }
@@ -101,7 +105,7 @@ export default function WatchlistPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-lg font-mono font-bold text-text-primary tracking-wider">WATCHLIST</h1>
+          <h1 className="text-lg font-mono font-bold text-text-primary tracking-wider">{tr('watchlist.title')}</h1>
           {updatedLabel && (
             <p className="text-[10px] font-mono text-text-muted mt-0.5">{updatedLabel}</p>
           )}
@@ -206,7 +210,7 @@ export default function WatchlistPage() {
                   onClick={(e) => { e.stopPropagation(); handleRemove(item) }}
                   disabled={removing === item.id}
                   className="text-text-muted/50 hover:text-danger transition-colors disabled:opacity-30"
-                  title="Remove"
+                  title={tr('watchlist.remove_title')}
                 >
                   <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M18 6L6 18M6 6l12 12" />

@@ -3,8 +3,12 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '../lib/supabase/client'
 import Logo from '../components/Logo'
+import { useLang } from '../contexts/LanguageContext'
+import { useT } from '../lib/i18n'
 
 export default function ForgotPasswordPage() {
+  const { lang } = useLang()
+  const tr = useT(lang)
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -21,7 +25,7 @@ export default function ForgotPasswordPage() {
       if (error) throw error
       setSent(true)
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to send reset link')
+      setError(err instanceof Error ? err.message : tr('forgot.error_default'))
     } finally {
       setLoading(false)
     }
@@ -34,26 +38,24 @@ export default function ForgotPasswordPage() {
           <Logo size={26} textSize={18} />
         </div>
 
-        <h1 className="text-lg font-mono font-bold text-text-primary mb-1">Reset password</h1>
-        <p className="text-xs font-mono text-text-muted mb-6">
-          Enter your email and we'll send a reset link.
-        </p>
+        <h1 className="text-lg font-mono font-bold text-text-primary mb-1">{tr('forgot.title')}</h1>
+        <p className="text-xs font-mono text-text-muted mb-6">{tr('forgot.desc')}</p>
 
         {sent ? (
           <div className="bg-accent/5 border border-accent/20 rounded-lg p-4 text-center">
-            <p className="text-sm font-mono text-accent mb-2">Reset link sent</p>
-            <p className="text-xs font-mono text-text-muted mb-4">Check your email inbox.</p>
+            <p className="text-sm font-mono text-accent mb-2">{tr('forgot.sent_title')}</p>
+            <p className="text-xs font-mono text-text-muted mb-4">{tr('forgot.sent_desc')}</p>
             <Link
               href="/auth"
               className="text-xs font-mono text-text-secondary hover:text-text-primary transition-colors"
             >
-              ← Back to sign in
+              {tr('forgot.back')}
             </Link>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div>
-              <label className="block text-[10px] font-mono text-text-muted tracking-wider mb-1.5">EMAIL</label>
+              <label className="block text-[10px] font-mono text-text-muted tracking-wider mb-1.5">{tr('auth.email_label')}</label>
               <input
                 type="email"
                 value={email}
@@ -78,14 +80,14 @@ export default function ForgotPasswordPage() {
               className="w-full py-2.5 bg-accent text-bg-base text-sm font-mono font-bold rounded
                 hover:bg-accent/90 transition-colors disabled:opacity-50"
             >
-              {loading ? 'SENDING...' : 'SEND RESET LINK'}
+              {loading ? tr('forgot.sending') : tr('forgot.send_btn')}
             </button>
 
             <Link
               href="/auth"
               className="text-center text-[10px] font-mono text-text-muted hover:text-text-secondary transition-colors"
             >
-              ← Back to sign in
+              {tr('forgot.back')}
             </Link>
           </form>
         )}

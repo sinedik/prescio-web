@@ -2,8 +2,12 @@
 import { useEffect, useState } from 'react'
 import { searchApi } from '../lib/api'
 import type { UserSearch } from '../types/index'
+import { useLang } from '../contexts/LanguageContext'
+import { useT } from '../lib/i18n'
 
 export function SearchHistoryScreen() {
+  const { lang } = useLang()
+  const tr = useT(lang)
   const [searches, setSearches] = useState<UserSearch[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -21,7 +25,7 @@ export function SearchHistoryScreen() {
 
   if (!searches.length) return (
     <div className="py-12 text-center px-4">
-      <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>No searches yet. Use AI Search to research events.</p>
+      <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{tr('search.no_history')}</p>
     </div>
   )
 
@@ -33,10 +37,10 @@ export function SearchHistoryScreen() {
             <p style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500 }}>{s.query}</p>
             <div className="flex items-center gap-1.5 flex-shrink-0">
               {s.analysis_queued && (
-                <span style={{ fontSize: '9px', color: 'var(--accent)', fontWeight: 700, textTransform: 'uppercase' }}>analyzed</span>
+                <span style={{ fontSize: '9px', color: 'var(--accent)', fontWeight: 700, textTransform: 'uppercase' }}>{tr('search.analyzed_label')}</span>
               )}
               {s.unified_event_id && (
-                <a href={`/events/${s.unified_event_id}`} style={{ fontSize: '10px', color: 'var(--accent)' }}>view →</a>
+                <a href={`/events/${s.unified_event_id}`} style={{ fontSize: '10px', color: 'var(--accent)' }}>{tr('search.view_link')}</a>
               )}
             </div>
           </div>

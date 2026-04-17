@@ -1,7 +1,10 @@
+'use client'
 import { useState } from 'react'
 import { usePaddle } from '../hooks/usePaddle'
 import { useAuthContext } from '../contexts/AuthContext'
 import { activateProAction } from '../actions/paddle'
+import { useLang } from '../contexts/LanguageContext'
+import { useT } from '../lib/i18n'
 
 interface Props {
   onClose: () => void
@@ -10,25 +13,12 @@ interface Props {
   analysesLimit?: number
 }
 
-const PRO_FEATURES = [
-  'Full thesis & crowd bias',
-  'AI Search across all markets',
-  'Unlimited analyses per day',
-  'Event context & timeline',
-]
-
-const ALPHA_FEATURES = [
-  'Edge score on every market',
-  'Kelly-optimal position size',
-  'Entry/exit timing signals',
-  'Instant alerts when edge found',
-  'AI accuracy track record',
-]
-
 export default function PaywallModal({ onClose, variant = 'pro', analysesToday = 0, analysesLimit = 3 }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { user, refreshProfile } = useAuthContext()
+  const { lang } = useLang()
+  const tr = useT(lang)
   const { openCheckout } = usePaddle(async (transactionId) => {
     try {
       await activateProAction(transactionId)
@@ -42,19 +32,21 @@ export default function PaywallModal({ onClose, variant = 'pro', analysesToday =
   const isAlpha = variant === 'alpha'
   const limitReached = !isAlpha && analysesToday >= analysesLimit
 
-  const heading = isAlpha ? 'Unlock Edge Signals' : 'Unlock AI Analysis'
+  const heading = isAlpha ? tr('paywall.unlock_edge') : tr('paywall.unlock_ai')
   const subtext = isAlpha
-    ? 'Full edge signals and Kelly sizing on every market.'
+    ? tr('paywall.edge_desc')
     : limitReached
-      ? 'Come back tomorrow or upgrade for unlimited access.'
-      : 'See what the market is missing.'
+      ? tr('paywall.limit_desc')
+      : tr('paywall.see_what')
   const price = isAlpha ? '$39.99/mo' : '$14.99/mo'
-  const ctaLabel = isAlpha ? 'Upgrade to Alpha' : 'Upgrade to Pro'
-  const features = isAlpha ? ALPHA_FEATURES : PRO_FEATURES
+  const ctaLabel = isAlpha ? tr('paywall.cta') : tr('paywall.pro_cta').replace(' — $15/mo', '')
+  const featureKeys = isAlpha
+    ? (['paywall.f_alpha_1', 'paywall.f_alpha_2', 'paywall.f_alpha_3', 'paywall.f_alpha_4', 'paywall.f_alpha_5'] as const)
+    : (['paywall.f_pro_1', 'paywall.f_pro_2', 'paywall.f_pro_3', 'paywall.f_pro_4'] as const)
+
   const accentCls = isAlpha
     ? 'text-[color:rgb(34_197_94)] border-[rgb(34_197_94/0.3)] bg-[rgb(34_197_94/0.08)]'
     : 'text-accent border-accent/30 bg-accent/10'
-  const dotCls = isAlpha ? 'bg-[rgb(34_197_94)]' : 'bg-accent'
 
   async function handleUpgrade() {
     setLoading(true)
@@ -63,7 +55,7 @@ export default function PaywallModal({ onClose, variant = 'pro', analysesToday =
       await openCheckout(user?.email, variant)
       setLoading(false)
     } catch {
-      setError('Failed to start checkout. Please try again.')
+      setError(tr('paywall.checkout_error'))
       setLoading(false)
     }
   }
@@ -79,17 +71,12 @@ export default function PaywallModal({ onClose, variant = 'pro', analysesToday =
         <div className="flex items-start justify-between mb-4">
           <div>
             <p className="text-[10px] font-mono text-text-muted tracking-wider mb-1">
-              {isAlpha ? 'UPGRADE TO ALPHA' : 'UPGRADE TO PRO'}
+              {isAlpha ? tr('paywall.upgrade_to_alpha') : tr('paywall.upgrade_to_pro')}
             </p>
-            <h2 className="text-lg font-mono font-bold text-text-primary leading-tight">
-              {heading}
-            </h2>
+            <h2 className="text-lg font-mono font-bold text-text-primary leading-tight">{heading}</h2>
             <p className="text-xs font-mono text-text-muted mt-1">{subtext}</p>
           </div>
-          <button
-            onClick={onClose}
-            className="text-text-muted hover:text-text-secondary transition-colors mt-0.5"
-          >
+          <button onClick={onClose} className="text-text-muted hover:text-text-secondary transition-colors mt-0.5">
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
@@ -98,8 +85,8 @@ export default function PaywallModal({ onClose, variant = 'pro', analysesToday =
 
         {/* Features */}
         <div className="flex flex-col gap-2 mb-5">
-          {features.map((f) => (
-            <div key={f} className="flex items-center gap-2.5">
+          {featureKeys.map((key) => (
+            <div key={key} className="flex items-center gap-2.5">
               <div className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${accentCls}`}>
                 {isAlpha ? (
                   <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor">
@@ -111,7 +98,7 @@ export default function PaywallModal({ onClose, variant = 'pro', analysesToday =
                   </svg>
                 )}
               </div>
-              <span className="text-sm font-mono text-text-secondary">{f}</span>
+              <span className="text-sm font-mono text-text-secondary">{tr(key)}</span>
             </div>
           ))}
         </div>
@@ -132,18 +119,15 @@ export default function PaywallModal({ onClose, variant = 'pro', analysesToday =
               : 'bg-accent hover:bg-accent/90'
           }`}
         >
-          {loading ? 'LOADING...' : `${ctaLabel} — ${price} · Cancel anytime`}
+          {loading ? tr('paywall.loading') : `${ctaLabel} — ${price} · ${tr('paywall.cancel_any')}`}
         </button>
 
         {!isAlpha && (
           <button
-            onClick={() => {
-              onClose()
-              // trigger alpha modal from parent if needed
-            }}
+            onClick={onClose}
             className="w-full py-1.5 text-[10px] font-mono text-text-muted hover:text-text-secondary transition-colors"
           >
-            Already on Pro? Upgrade to Alpha →
+            {tr('paywall.already_pro')}
           </button>
         )}
 
@@ -151,7 +135,7 @@ export default function PaywallModal({ onClose, variant = 'pro', analysesToday =
           onClick={onClose}
           className="w-full py-2 text-xs font-mono text-text-muted hover:text-text-secondary transition-colors"
         >
-          Maybe later
+          {tr('paywall.maybe_later')}
         </button>
       </div>
     </div>

@@ -5,35 +5,8 @@ import Link from 'next/link'
 import Logo from './Logo'
 import { api } from '../lib/api'
 import { useAuthContext } from '../contexts/AuthContext'
-
-type FooterLink = { label: string; to?: string; href?: string }
-
-function buildFooterLinks(isAuthed: boolean): Record<string, FooterLink[]> {
-  return {
-    PRODUCT: [
-      { label: 'Markets',   to: '/markets' },
-      { label: 'Sport',     to: '/sport/football' },
-      { label: 'Esports',   to: '/cybersport/cs2' },
-      ...(isAuthed
-        ? [
-            { label: 'Watchlist', to: '/watchlist' },
-          ]
-        : []),
-      { label: 'Pricing',   to: '/pricing' },
-    ],
-    COMPANY: [
-      { label: 'About',             to: '/' },
-      { label: 'Privacy Policy',    to: '/privacy' },
-      { label: 'Terms of Service',  to: '/terms' },
-    ],
-    INTELLIGENCE: [
-      { label: 'Polymarket', href: 'https://polymarket.com' },
-      { label: 'Kalshi',     href: 'https://kalshi.com' },
-      { label: 'Metaculus',  href: 'https://metaculus.com' },
-      { label: 'ISW Reports', href: 'https://understandingwar.org' },
-    ],
-  }
-}
+import { useLang } from '../contexts/LanguageContext'
+import { useT } from '../lib/i18n'
 
 function useNextScanMins() {
   const cycleMs = 120 * 60 * 1000
@@ -49,7 +22,8 @@ export default function AppFooter() {
   const nextScan = useNextScanMins()
   const [analysesCount, setAnalysesCount] = useState<number | null>(null)
   const { user } = useAuthContext()
-  const footerLinks = useMemo(() => buildFooterLinks(!!user), [user])
+  const { lang } = useLang()
+  const tr = useT(lang)
 
   useEffect(() => {
     api.getAccuracy()
@@ -57,15 +31,34 @@ export default function AppFooter() {
       .catch(() => {})
   }, [])
 
+  const footerLinks = useMemo(() => ({
+    [tr('footer.product')]: [
+      { label: tr('footer.markets'),   to: '/markets' },
+      { label: tr('footer.sport'),     to: '/sport/football' },
+      { label: tr('footer.esports'),   to: '/cybersport/cs2' },
+      ...(user
+        ? [{ label: tr('footer.watchlist'), to: '/watchlist' }]
+        : []),
+      { label: tr('footer.pricing'),   to: '/pricing' },
+    ],
+    [tr('footer.company')]: [
+      { label: tr('footer.about'),     to: '/' },
+      { label: tr('footer.privacy'),   to: '/privacy' },
+      { label: tr('footer.terms'),     to: '/terms' },
+    ],
+    [tr('footer.intelligence')]: [
+      { label: 'Polymarket', href: 'https://polymarket.com' },
+      { label: 'Kalshi',     href: 'https://kalshi.com' },
+      { label: 'Metaculus',  href: 'https://metaculus.com' },
+      { label: 'ISW Reports', href: 'https://understandingwar.org' },
+    ],
+  }), [lang, user])
+
   return (
     <footer
       className="border-t"
-      style={{
-        background: 'rgb(var(--bg-surface))',
-        borderColor: 'rgb(var(--bg-border))',
-      }}
+      style={{ background: 'rgb(var(--bg-surface))', borderColor: 'rgb(var(--bg-border))' }}
     >
-      {/* Main grid */}
       <div
         className="mx-auto grid gap-10"
         style={{
@@ -74,13 +67,11 @@ export default function AppFooter() {
           gridTemplateColumns: 'repeat(auto-fit, minmax(min(220px, 100%), 1fr))',
         }}
       >
-        {/* Brand column */}
         <div className="flex flex-col gap-4">
           <Logo size={28} textSize={15} />
           <p className="font-mono text-xs leading-relaxed" style={{ color: 'rgb(var(--text-muted))' }}>
-            AI-powered intelligence for prediction<br />markets, sports, esports, and crypto.
+            {tr('footer.tagline')}
           </p>
-          {/* Platform badges */}
           <div className="flex flex-wrap gap-1.5 mt-1">
             {[
               { label: 'POLYMARKET', color: 'rgb(var(--poly))' },
@@ -98,13 +89,9 @@ export default function AppFooter() {
           </div>
         </div>
 
-        {/* Link columns */}
-        {(Object.entries(footerLinks) as [string, FooterLink[]][]).map(([section, links]) => (
+        {(Object.entries(footerLinks) as [string, { label: string; to?: string; href?: string }[]][]).map(([section, links]) => (
           <div key={section} className="flex flex-col gap-3">
-            <span
-              className="text-[10px] font-mono font-bold tracking-widest"
-              style={{ color: 'rgb(var(--text-secondary))' }}
-            >
+            <span className="text-[10px] font-mono font-bold tracking-widest" style={{ color: 'rgb(var(--text-secondary))' }}>
               {section}
             </span>
             {links.map(({ label, to, href }) =>
@@ -138,28 +125,23 @@ export default function AppFooter() {
         ))}
       </div>
 
-      {/* Bottom bar */}
-      <div
-        className="border-t"
-        style={{ borderColor: 'rgb(var(--bg-border))' }}
-      >
+      <div className="border-t" style={{ borderColor: 'rgb(var(--bg-border))' }}>
         <div
           className="mx-auto flex flex-wrap items-center justify-between gap-3"
           style={{ maxWidth: '1100px', padding: '14px clamp(16px, 4vw, 48px)' }}
         >
           <span className="text-[10px] font-mono" style={{ color: 'rgb(var(--text-muted))' }}>
-            © 2026 Prescio. All rights reserved.
+            {tr('footer.copyright')}
           </span>
-
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
               <span className="text-[10px] font-mono" style={{ color: 'rgb(var(--text-muted))' }}>
-                {analysesCount ?? '—'} analyses today
+                {analysesCount ?? '—'} {tr('footer.analyses_today')}
               </span>
             </div>
             <span className="text-[10px] font-mono" style={{ color: 'rgb(var(--text-muted))' }}>
-              Next scan ~{nextScan} min
+              {tr('footer.next_scan')} ~{nextScan} {tr('footer.min')}
             </span>
           </div>
         </div>

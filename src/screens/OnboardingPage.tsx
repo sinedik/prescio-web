@@ -7,21 +7,21 @@ import Logo from '../components/Logo'
 import { CATEGORIES } from '../lib/categories'
 import { IconSprout, IconTrendUp, IconStar } from '../components/icons'
 import type { TopCategory } from '../types/index'
+import { useLang } from '../contexts/LanguageContext'
+import { useT } from '../lib/i18n'
 
 interface SelectedInterest { category: TopCategory; subcategory?: string }
 
 export default function OnboardingPage() {
   const router = useRouter()
+  const { lang } = useLang()
+  const tr = useT(lang)
   const { user, profile, refreshProfile } = useAuthContext()
   const [step, setStep] = useState(0)
 
-  // Step 0 — interests
   const [selectedCategories, setSelectedCategories] = useState<TopCategory[]>([])
   const [selectedSubs, setSelectedSubs] = useState<Record<string, string[]>>({})
-
-  // Step 1 — use case
   const [experience, setExperience] = useState('')
-
   const [saving, setSaving] = useState(false)
 
   useLayoutEffect(() => {
@@ -31,7 +31,7 @@ export default function OnboardingPage() {
   if (profile?.onboarding_done) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'rgb(var(--bg-base))' }}>
-        <span className="text-text-muted font-mono text-sm animate-pulse">LOADING...</span>
+        <span className="text-text-muted font-mono text-sm animate-pulse">{tr('common.loading')}</span>
       </div>
     )
   }
@@ -48,9 +48,7 @@ export default function OnboardingPage() {
     setSaving(true)
     const interests: SelectedInterest[] = selectedCategories.flatMap(cat => {
       const subs = selectedSubs[cat]
-      if (subs && subs.length > 0) {
-        return subs.map(sub => ({ category: cat, subcategory: sub }))
-      }
+      if (subs && subs.length > 0) return subs.map(sub => ({ category: cat, subcategory: sub }))
       return [{ category: cat }]
     })
     try {
@@ -58,7 +56,7 @@ export default function OnboardingPage() {
         interests: interests.length > 0 ? interests : undefined,
         experience: experience || undefined,
       })
-    } catch { /* ignore — optional */ }
+    } catch { /* ignore */ }
     await refreshProfile()
     router.replace('/markets')
   }
@@ -82,18 +80,16 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen bg-bg-base flex flex-col">
-      {/* Top bar */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-bg-border">
         <Logo size={22} textSize={14} />
         <button
           onClick={skip}
           className="text-xs font-mono text-text-muted hover:text-text-secondary transition-colors"
         >
-          Skip
+          {tr('onboarding.skip')}
         </button>
       </div>
 
-      {/* Progress — 3 steps */}
       <div className="flex justify-center gap-2 pt-6">
         {[0, 1, 2].map((i) => (
           <div
@@ -105,7 +101,6 @@ export default function OnboardingPage() {
         ))}
       </div>
 
-      {/* Content */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-8 max-w-2xl mx-auto w-full">
         {step === 0 && (
           <StepInterests
@@ -125,17 +120,12 @@ export default function OnboardingPage() {
           />
         )}
         {step === 2 && (
-          <StepReady
-            onFinish={finish}
-            saving={saving}
-          />
+          <StepReady onFinish={finish} saving={saving} />
         )}
       </div>
     </div>
   )
 }
-
-// ── Step 0 — What markets interest you? ─────────────────────────────────────
 
 function StepInterests({
   selectedCategories,
@@ -152,11 +142,13 @@ function StepInterests({
   onNext: () => void
   onSkip: () => void
 }) {
+  const { lang } = useLang()
+  const tr = useT(lang)
   return (
     <div className="w-full animate-fade-in">
-      <p className="text-[10px] font-mono text-accent tracking-widest mb-2">STEP 1 OF 3</p>
-      <h1 className="text-2xl font-mono font-bold text-text-primary mb-2">What markets interest you?</h1>
-      <p className="text-sm font-mono text-text-muted mb-6">We'll prioritize relevant signals for you.</p>
+      <p className="text-[10px] font-mono text-accent tracking-widest mb-2">{tr('onboarding.step1')}</p>
+      <h1 className="text-2xl font-mono font-bold text-text-primary mb-2">{tr('onboarding.step1.title')}</h1>
+      <p className="text-sm font-mono text-text-muted mb-6">{tr('onboarding.step1.desc')}</p>
 
       <div className="flex flex-col gap-3 mb-8">
         {CATEGORIES.map((cat) => {
@@ -203,26 +195,18 @@ function StepInterests({
           onClick={onNext}
           className="w-full py-3 bg-accent text-bg-base text-sm font-mono font-bold rounded-lg hover:bg-accent/90 transition-colors"
         >
-          Continue →
+          {tr('onboarding.continue')}
         </button>
         <button
           onClick={onSkip}
           className="w-full py-2 text-xs font-mono text-text-muted hover:text-text-secondary transition-colors"
         >
-          Skip for now
+          {tr('onboarding.skip_for_now')}
         </button>
       </div>
     </div>
   )
 }
-
-// ── Step 1 — How do you use prediction markets? ──────────────────────────────
-
-const EXPERIENCE_OPTIONS: { id: string; icon: React.ReactNode; label: string; desc: string }[] = [
-  { id: 'beginner',    icon: <IconSprout size={20} />,   label: 'Beginner',    desc: 'New to prediction markets' },
-  { id: 'experienced', icon: <IconTrendUp size={20} />,  label: 'Experienced', desc: "I've traded before" },
-  { id: 'pro',         icon: <IconStar size={20} />,     label: 'Pro',         desc: 'Full-time trader' },
-]
 
 function StepUseCase({
   experience,
@@ -233,14 +217,23 @@ function StepUseCase({
   setExperience: (v: string) => void
   onNext: () => void
 }) {
+  const { lang } = useLang()
+  const tr = useT(lang)
+
+  const options = [
+    { id: 'beginner',    icon: <IconSprout size={20} />,  labelKey: 'onboarding.exp.beginner' as const,    descKey: 'onboarding.exp.beginner_desc' as const },
+    { id: 'experienced', icon: <IconTrendUp size={20} />, labelKey: 'onboarding.exp.experienced' as const, descKey: 'onboarding.exp.experienced_desc' as const },
+    { id: 'pro',         icon: <IconStar size={20} />,    labelKey: 'onboarding.exp.pro' as const,         descKey: 'onboarding.exp.pro_desc' as const },
+  ]
+
   return (
     <div className="w-full animate-fade-in">
-      <p className="text-[10px] font-mono text-accent tracking-widest mb-2">STEP 2 OF 3</p>
-      <h1 className="text-2xl font-mono font-bold text-text-primary mb-2">How do you use prediction markets?</h1>
-      <p className="text-sm font-mono text-text-muted mb-8">Help us tailor your analysis depth.</p>
+      <p className="text-[10px] font-mono text-accent tracking-widest mb-2">{tr('onboarding.step2')}</p>
+      <h1 className="text-2xl font-mono font-bold text-text-primary mb-2">{tr('onboarding.step2.title')}</h1>
+      <p className="text-sm font-mono text-text-muted mb-8">{tr('onboarding.step2.desc')}</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
-        {EXPERIENCE_OPTIONS.map((opt) => (
+        {options.map((opt) => (
           <button
             key={opt.id}
             type="button"
@@ -252,8 +245,8 @@ function StepUseCase({
             }`}
           >
             <span className="flex items-center justify-center">{opt.icon}</span>
-            <span className="text-xs font-mono font-bold">{opt.label}</span>
-            <span className="text-[9px] font-mono text-text-muted leading-tight">{opt.desc}</span>
+            <span className="text-xs font-mono font-bold">{tr(opt.labelKey)}</span>
+            <span className="text-[9px] font-mono text-text-muted leading-tight">{tr(opt.descKey)}</span>
           </button>
         ))}
       </div>
@@ -262,34 +255,35 @@ function StepUseCase({
         onClick={onNext}
         className="w-full py-3 bg-accent text-bg-base text-sm font-mono font-bold rounded-lg hover:bg-accent/90 transition-colors"
       >
-        Continue →
+        {tr('onboarding.continue')}
       </button>
     </div>
   )
 }
 
-// ── Step 2 — You're all set! ─────────────────────────────────────────────────
-
 function StepReady({ onFinish, saving }: { onFinish: () => void; saving: boolean }) {
+  const { lang } = useLang()
+  const tr = useT(lang)
+
+  const steps = [
+    { icon: '⬡', titleKey: 'onboarding.scan_title' as const,   descKey: 'onboarding.scan_desc' as const },
+    { icon: '⬢', titleKey: 'onboarding.signal_title' as const, descKey: 'onboarding.signal_desc' as const },
+    { icon: '◈', titleKey: 'onboarding.act_title' as const,    descKey: 'onboarding.act_desc' as const },
+  ]
+
   return (
     <div className="w-full animate-fade-in text-center">
-      <p className="text-[10px] font-mono text-accent tracking-widest mb-2">STEP 3 OF 3</p>
+      <p className="text-[10px] font-mono text-accent tracking-widest mb-2">{tr('onboarding.step3')}</p>
       <div className="text-4xl font-mono font-bold text-accent mb-4">◈</div>
-      <h1 className="text-2xl font-mono font-bold text-text-primary mb-3">You're all set.</h1>
-      <p className="text-sm font-mono text-text-muted mb-10 max-w-sm mx-auto">
-        Prescio is scanning markets right now. Your first edge signals are waiting.
-      </p>
+      <h1 className="text-2xl font-mono font-bold text-text-primary mb-3">{tr('onboarding.step3.title')}</h1>
+      <p className="text-sm font-mono text-text-muted mb-10 max-w-sm mx-auto">{tr('onboarding.step3.desc')}</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-10 text-left">
-        {[
-          { icon: '⬡', title: 'Scan', desc: 'Markets scanned every 2h' },
-          { icon: '⬢', title: 'Signal', desc: 'Edge scores for every event' },
-          { icon: '◈', title: 'Act', desc: 'You see the edge first' },
-        ].map((s, i) => (
-          <div key={i} className="bg-bg-surface border border-bg-border rounded-xl p-4">
+        {steps.map((s) => (
+          <div key={s.titleKey} className="bg-bg-surface border border-bg-border rounded-xl p-4">
             <div className="text-xl font-mono text-accent mb-2">{s.icon}</div>
-            <p className="text-[10px] font-mono font-bold text-text-primary tracking-wider mb-1 uppercase">{s.title}</p>
-            <p className="text-[11px] font-mono text-text-muted">{s.desc}</p>
+            <p className="text-[10px] font-mono font-bold text-text-primary tracking-wider mb-1 uppercase">{tr(s.titleKey)}</p>
+            <p className="text-[11px] font-mono text-text-muted">{tr(s.descKey)}</p>
           </div>
         ))}
       </div>
@@ -299,7 +293,7 @@ function StepReady({ onFinish, saving }: { onFinish: () => void; saving: boolean
         disabled={saving}
         className="w-full py-3 bg-accent text-bg-base text-sm font-mono font-bold rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-50"
       >
-        {saving ? 'SAVING...' : 'Take me to the markets →'}
+        {saving ? tr('onboarding.saving') : tr('onboarding.start')}
       </button>
     </div>
   )
