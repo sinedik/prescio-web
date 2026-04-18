@@ -24,14 +24,12 @@ function MatchSkeleton() {
 export default function CybersportMatchOnly({
   game, matchId, initialData,
 }: { game: Game; matchId: string; initialData?: EsportsMatchDetail }) {
-  const { setHideHero, setLeagues, setLiveCount, setTotalCount } = useLiveLayout()
+  const { setLeagues, setLiveCount, setTotalCount } = useLiveLayout()
 
   useEffect(() => {
-    setHideHero(true)
     setLeagues([])
     setLiveCount(0)
     setTotalCount(0)
-    return () => { setHideHero(false) }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (

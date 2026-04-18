@@ -257,7 +257,7 @@ function LiveLayoutInner({ children }: { children: React.ReactNode }) {
           )}
 
           <div className="max-w-[1280px] mx-auto w-full pt-3 sm:pt-4">
-            {!hideHero && !pathname.includes('/team/') && (
+            {!hideHero && (
               <div style={{ position: 'sticky', top: 12, zIndex: 20 }}>
                 <div className="px-3 sm:px-4 md:px-6">
                   <LiveHero discipline={discipline} />

@@ -477,7 +477,7 @@ export default function TeamPage({ teamId, initialData }: { teamId: number; init
 
   // ── Breadcrumb bar ──────────────────────────────────────────────────────────
   const BreadcrumbBar = () => (
-    <div className="sport-sticky-header sticky z-20 -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6 py-2.5 flex items-center gap-2 border-b border-bg-border"
+    <div className="sport-sticky-header sticky z-20 py-2.5 flex items-center gap-2 border-b border-bg-border"
       style={{ background: 'rgba(var(--bg-base-rgb), 0.92)', backdropFilter: 'blur(12px)' }}>
       <button onClick={handleBack}
         className="flex items-center gap-1.5 text-[13px] font-mono text-text-muted hover:text-text-primary transition-colors shrink-0">

@@ -11,6 +11,8 @@ import { useAuthContext } from '../contexts/AuthContext'
 const PaywallModal = dynamic(() => import('../components/PaywallModal'), { ssr: false })
 import AnalysisLoader from '../AnalysisLoader'
 import { markAnalyzing, clearAnalyzing, isAnalyzing, markAnalyzed } from '../lib/activeAnalyses'
+import { useLang } from '../contexts/LanguageContext'
+import { useT } from '../lib/i18n'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -116,6 +118,8 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
   const [analyzeError, setAnalyzeError] = useState<string | null>(null)
   const [localAnalysis, setLocalAnalysis] = useState<Pick<EventDetail, 'ai_summary' | 'sentiment' | 'uncertainty_level'> | null>(null)
   const prevIsAlpha = useRef(isAlpha)
+  const { lang } = useLang()
+  const t = useT(lang)
 
   const { data: event, loading } = usePolling<EventDetail>(
     () => api.getEvent(id!) as Promise<EventDetail>,
@@ -511,7 +515,7 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
       ) : isPro && !aiSummary ? (
         <div className="bg-bg-surface border border-bg-border rounded-xl p-5 mb-6">
           <p className="text-[10px] font-mono font-bold text-text-muted tracking-widest mb-2">AI ANALYSIS</p>
-          <p className="text-xs font-mono text-text-muted mb-4">No analysis yet.</p>
+          <p className="text-xs font-mono text-text-muted mb-4">{t('markets.no_analysis')}</p>
           {analyzeError && (
             <p className="text-xs font-mono text-danger mb-3">{analyzeError}</p>
           )}

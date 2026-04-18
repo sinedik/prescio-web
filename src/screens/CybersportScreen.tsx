@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useMemo, useEffect, memo } from 'react'
+import { useState, useMemo, useEffect, memo } from 'react'
 import { flushSync } from 'react-dom'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
@@ -13,6 +13,11 @@ import { useLiveLayout } from '../contexts/LiveLayoutContext'
 import { useLang } from '../contexts/LanguageContext'
 import { useT } from '../lib/i18n'
 import PrescioLoader from '../components/PrescioLoader'
+import { Pagination } from '../components/live/Pagination'
+import { GroupDivider } from '../components/live/GroupDivider'
+import { ActiveFilterBanner } from '../components/live/ActiveFilterBanner'
+import { scrollLiveContentToTop } from '../components/live/scrollLiveContent'
+import { useLoaderMinHold } from '../components/live/useLoaderMinHold'
 
 const CS2MatchScreen  = dynamic(() => import('./CS2MatchScreen'),  { loading: () => <MatchSkeleton /> })
 const DotaMatchScreen = dynamic(() => import('./DotaMatchScreen'), { loading: () => <MatchSkeleton /> })
@@ -53,20 +58,21 @@ function abbr(name: string, max = 16) {
   return name.length > max ? name.slice(0, max - 1) + '…' : name
 }
 
-function formatTime(iso: string) {
+function formatTime(iso: string, lang: 'en' | 'ru', tomorrowLabel: string) {
   const d = new Date(iso)
   const now = new Date()
-  const hm = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+  const locale = lang === 'ru' ? 'ru-RU' : 'en-US'
+  const hm = d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
   const sameDay = d.toDateString() === now.toDateString()
   const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1)
   const isTomorrow = d.toDateString() === tomorrow.toDateString()
   if (sameDay)    return hm
-  if (isTomorrow) return `Tmrw ${hm}`
+  if (isTomorrow) return `${tomorrowLabel} ${hm}`
   const diffH = (d.getTime() - now.getTime()) / 3_600_000
   if (Math.abs(diffH) < 24 * 7) {
-    return d.toLocaleDateString('en-US', { weekday: 'short' }) + ' ' + hm
+    return d.toLocaleDateString(locale, { weekday: 'short' }) + ' ' + hm
   }
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  return d.toLocaleDateString(locale, { month: 'short', day: 'numeric' })
 }
 
 function statusRank(s: EsportsMatch['status']): number {
@@ -124,78 +130,13 @@ function totalMatches(groups: TournamentGroup[]) {
   return groups.reduce((s, g) => s + g.matches.length, 0)
 }
 
-function Pagination({ current, total, totalEvents, pageStart, pageEnd, onChange, accent }: {
-  current: number; total: number; totalEvents: number; pageStart: number; pageEnd: number
-  onChange: (p: number) => void; accent: string
-}) {
-  const { lang } = useLang()
-  if (total <= 1) return null
-  const pages: (number | '...')[] = []
-  if (total <= 7) {
-    for (let i = 1; i <= total; i++) pages.push(i)
-  } else {
-    pages.push(1)
-    if (current > 3) pages.push('...')
-    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) pages.push(i)
-    if (current < total - 2) pages.push('...')
-    pages.push(total)
-  }
-  return (
-    <div className="flex flex-col items-center gap-2 pt-4 pb-2">
-      <span className="text-[10px] font-mono text-text-muted">
-        {lang === 'ru' ? `Матчи ${pageStart}–${pageEnd} из ${totalEvents}` : `Matches ${pageStart}–${pageEnd} of ${totalEvents}`}
-      </span>
-      <div className="flex items-center gap-1">
-        <button onClick={() => onChange(current - 1)} disabled={current === 1}
-          className="w-8 h-8 flex items-center justify-center rounded text-text-muted hover:text-text-primary transition-colors disabled:opacity-25 disabled:cursor-not-allowed">
-          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
-        </button>
-        {pages.map((p, i) =>
-          p === '...' ? (
-            <span key={`e${i}`} className="w-8 h-8 flex items-center justify-center text-[10px] font-mono text-text-muted/40">···</span>
-          ) : (
-            <button key={p} onClick={() => onChange(p as number)}
-              className="w-8 h-8 flex items-center justify-center rounded text-[11px] font-mono transition-all"
-              style={p === current
-                ? { background: `color-mix(in srgb, ${accent} 10%, transparent)`, color: accent, border: `1px solid color-mix(in srgb, ${accent} 27%, transparent)` }
-                : { color: 'rgb(var(--text-muted))', border: '1px solid transparent' }
-              }>{p}</button>
-          )
-        )}
-        <button onClick={() => onChange(current + 1)} disabled={current === total}
-          className="w-8 h-8 flex items-center justify-center rounded text-text-muted hover:text-text-primary transition-colors disabled:opacity-25 disabled:cursor-not-allowed">
-          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
-        </button>
-      </div>
-    </div>
-  )
-}
-
-// ─── TournamentDivider ────────────────────────────────────────────────────────
-function TournamentDivider({ name, count, liveCount, first }: {
-  name: string; count: number; liveCount: number; first?: boolean
-}) {
-  return (
-    <div className={`flex items-center gap-2.5 px-3.5 rounded-lg overflow-hidden ${first ? 'mt-0' : 'mt-5'} mb-1.5`}
-      style={{ minHeight: 40, background: 'rgba(var(--surface-tint-rgb), 0.05)', borderLeft: '3px solid rgba(var(--surface-tint-rgb), 0.08)' }}>
-      <span className="text-[13px] font-semibold text-text-primary truncate flex-1">{name}</span>
-      {liveCount > 0 && (
-        <span className="flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0"
-          style={{ background: 'rgba(255,50,50,0.12)', color: '#ff5252', border: '1px solid rgba(255,50,50,0.25)' }}>
-          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-          {liveCount}
-        </span>
-      )}
-      <span className="text-[10px] font-mono text-text-muted shrink-0 min-w-[18px] text-right">{count}</span>
-    </div>
-  )
-}
-
 // ─── EsportsRow ───────────────────────────────────────────────────────────────
-const EsportsRow = memo(function EsportsRow({ match, accent, href }: {
+const EsportsRow = memo(function EsportsRow({ match, accent, href, lang, tomorrowLabel }: {
   match: EsportsMatch
   accent: string
   href: string
+  lang: 'en' | 'ru'
+  tomorrowLabel: string
 }) {
   const router = useRouter()
   const isLive     = match.status === 'live'
@@ -236,7 +177,7 @@ const EsportsRow = memo(function EsportsRow({ match, accent, href }: {
         ) : isFinished ? (
           <span className="text-[9px] font-mono text-text-muted">FIN</span>
         ) : (
-          <p className="text-[9px] font-mono text-text-muted">{formatTime(match.startsAt)}</p>
+          <p className="text-[9px] font-mono text-text-muted">{formatTime(match.startsAt, lang, tomorrowLabel)}</p>
         )}
       </div>
 
@@ -279,11 +220,13 @@ const EsportsRow = memo(function EsportsRow({ match, accent, href }: {
 // ─── Main screen ──────────────────────────────────────────────────────────────
 export default function CybersportScreen({ initialGame = 'cs2', matchId, initialMatches, initialMatchData }: { initialGame?: Game; matchId?: string; initialMatches?: EsportsMatch[]; initialMatchData?: unknown }) {
   usePageTitle('Esports')
-  const { lang } = useLang()
-  const t = useT(lang)
 
   const game   = initialGame
   const accent = ACCENT[game]
+
+  const { lang } = useLang()
+  const t = useT(lang)
+  const tomorrowLabel = t('common.tomorrow_short')
 
   const searchParams = useSearchParams()
   const pathname = usePathname()
@@ -297,7 +240,7 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId, initial
   const [timeWin, setTimeWin]       = useState<TimeWin>(initialTw)
   const [currentPage, setCurrentPage] = useState(1)
 
-  const { selectedLeague: activeTournament, setSelectedLeague: setActiveTournament, setLeagues, setLiveCount, setTotalCount, setHideHero } = useLiveLayout()
+  const { selectedLeague: activeTournament, setSelectedLeague: setActiveTournament, setLeagues, setLiveCount, setTotalCount } = useLiveLayout()
 
   const { data, loading } = usePolling<EsportsMatch[]>(
     async () => {
@@ -326,23 +269,7 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId, initial
   useEffect(() => {
     if (data !== null) setDataKey(filterKey)
   }, [data, filterKey])
-  const showLoaderRaw = loading || dataKey !== filterKey
-
-  // Minimum hold: once the spin is shown, keep it for one full animation cycle
-  // (1.3s) so a fast fetch doesn't make the rhombus flash. The end of the
-  // cycle lands back at the rest pose, so the transition to idle is seamless.
-  const [minHold, setMinHold] = useState(false)
-  const minHoldTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
-  useEffect(() => {
-    if (!showLoaderRaw) return
-    setMinHold(true)
-    if (minHoldTimer.current) clearTimeout(minHoldTimer.current)
-    minHoldTimer.current = setTimeout(() => setMinHold(false), 1300)
-    // No cleanup here — let the timer fire even after showLoaderRaw flips to false,
-    // so the minimum-hold is respected. Unmount cleanup is in the effect below.
-  }, [showLoaderRaw])
-  useEffect(() => () => { if (minHoldTimer.current) clearTimeout(minHoldTimer.current) }, [])
-  const showLoader = showLoaderRaw || minHold
+  const showLoader = useLoaderMinHold(loading || dataKey !== filterKey)
 
   // Reset page on filter change
   useEffect(() => { setCurrentPage(1) }, [game, timeWin, activeTournament])
@@ -370,7 +297,6 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId, initial
     }
   }, [tournamentFromUrl, matches, matchId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { setHideHero(!!matchId) }, [matchId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sidebar
   const allGroups = useMemo(() => groupByTournament(matches), [matches])
@@ -442,17 +368,12 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId, initial
             : <CS2MatchScreen  seriesId={matchId} initialData={initialMatchData as import('../types').EsportsMatchDetail | undefined} />
         ) : (
           <>
-            {/* Active tournament filter banner */}
             {activeTournament && !showLoader && (
-              <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-lg border border-bg-border bg-bg-surface">
-                <span className="text-[11px] font-mono text-text-muted truncate flex-1">{activeTournament}</span>
-                <button
-                  onClick={() => setActiveTournament(null)}
-                  className="shrink-0 text-[9px] font-mono text-text-muted/50 hover:text-text-muted transition-colors px-1.5 py-0.5 rounded border border-bg-border"
-                >
-                  {t('common.reset')}
-                </button>
-              </div>
+              <ActiveFilterBanner
+                value={activeTournament}
+                onClear={() => setActiveTournament(null)}
+                showIcon={false}
+              />
             )}
 
             {/* Loading + empty share the same rhombus mark — when fetch ends
@@ -462,13 +383,13 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId, initial
               <PrescioLoader
                 color={accent}
                 state={showLoader ? 'loading' : 'idle'}
-                label={showLoader ? 'Loading matches' : 'No matches found'}
+                label={showLoader ? t('esports.loading_matches') : t('esports.no_matches')}
                 sublabel={
                   showLoader
                     ? undefined
                     : timeWin === 'live'
-                      ? 'No live matches right now'
-                      : 'Try a different time window'
+                      ? t('esports.no_live_now')
+                      : t('esports.try_time_window')
                 }
               />
             )}
@@ -481,7 +402,7 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId, initial
                     const tournLive = ms.filter(m => m.status === 'live').length
                     return (
                       <div key={tournament}>
-                        <TournamentDivider name={tournament} count={ms.length} liveCount={tournLive} first={idx === 0} />
+                        <GroupDivider name={tournament} count={ms.length} liveCount={tournLive} first={idx === 0} />
                         <div className="flex flex-col gap-1">
                           {ms.map(m => (
                             <EsportsRow
@@ -489,6 +410,8 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId, initial
                               match={m}
                               accent={accent}
                               href={`/cybersport/${game}/${m.id}`}
+                              lang={lang}
+                              tomorrowLabel={tomorrowLabel}
                             />
                           ))}
                         </div>
@@ -505,13 +428,7 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId, initial
                   accent={accent}
                   onChange={p => {
                     flushSync(() => setCurrentPage(p))
-                    requestAnimationFrame(() => {
-                      const el = document.getElementById('live-content')
-                      if (!el) return
-                      if (el.scrollTop === 0 && el.scrollHeight > el.clientHeight)
-                        el.scrollTop = Math.min(80, el.scrollHeight - el.clientHeight)
-                      el.scrollTo({ top: 0, behavior: 'smooth' })
-                    })
+                    scrollLiveContentToTop()
                   }}
                 />
               </>

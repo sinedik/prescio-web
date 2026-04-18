@@ -70,34 +70,40 @@ function TeamLogo({ name, logoUrl, color, size = 56 }: { name: string; logoUrl?:
   )
 }
 
-function humanStartIn(iso?: string): string {
+function humanStartIn(iso: string | undefined, tr: (k: import('../lib/i18n').TranslationKey) => string): string {
   if (!iso) return ''
   const d = new Date(iso).getTime()
   const diff = d - Date.now()
-  if (diff <= 0) return 'starting now'
+  if (diff <= 0) return tr('esports.starting_now')
   const mins = Math.round(diff / 60_000)
-  if (mins < 60) return `starts in ${mins}m`
+  if (mins < 60) return tr('esports.starts_in_min').replace('{n}', String(mins))
   const hrs = Math.floor(mins / 60)
   const rem = mins % 60
-  if (hrs < 24) return rem ? `starts in ${hrs}h ${rem}m` : `starts in ${hrs}h`
+  if (hrs < 24) return rem
+    ? tr('esports.starts_in_hm').replace('{h}', String(hrs)).replace('{m}', String(rem))
+    : tr('esports.starts_in_hour').replace('{h}', String(hrs))
   const days = Math.round(hrs / 24)
-  return `starts in ${days}d`
+  return tr('esports.starts_in_day').replace('{n}', String(days))
 }
 
-function StatusDot({ status, startsAt }: { status: string; startsAt?: string }) {
+function StatusDot({ status, startsAt, tr }: {
+  status: string
+  startsAt?: string
+  tr: (k: import('../lib/i18n').TranslationKey) => string
+}) {
   if (status === 'live') return (
     <span className="flex items-center gap-1 text-[9px] font-mono font-bold uppercase"
-      title="Match is live"
+      title={tr('esports.status.live')}
       style={{ color: '#ff5252' }}>
       <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse inline-block" />
       LIVE
     </span>
   )
   if (status === 'finished') return (
-    <span className="text-[9px] font-mono text-text-muted/50 uppercase" title="Match finished">finished</span>
+    <span className="text-[9px] font-mono text-text-muted/50 uppercase" title={tr('esports.match_finished')}>{tr('esports.status.finished')}</span>
   )
   return (
-    <span className="text-[9px] font-mono text-text-muted/50 uppercase" title={humanStartIn(startsAt) || 'upcoming'}>upcoming</span>
+    <span className="text-[9px] font-mono text-text-muted/50 uppercase" title={humanStartIn(startsAt, tr) || tr('esports.status.upcoming')}>{tr('esports.status.upcoming')}</span>
   )
 }
 
@@ -133,7 +139,7 @@ export default function EsportsTeamScreen({ teamId, game, initialData }: Props) 
   const teamName = data?.meta?.name ?? data?.meta?.nameShortened ?? teamNameFromMatches ?? `Team ${teamId}`
   const accent   = data?.meta?.colorPrimary ?? nameToColor(teamName)
 
-  usePageTitle(data ? `${teamName} — Esports` : 'Loading…')
+  usePageTitle(data ? `${teamName} — Esports` : tr('common.loading'))
 
   if (loading && !data) {
     return (
@@ -302,7 +308,7 @@ export default function EsportsTeamScreen({ teamId, game, initialData }: Props) 
                           </div>
                         </div>
                         <div className="flex flex-col items-end shrink-0 gap-1">
-                          <StatusDot status={m.status} startsAt={m.startsAt} />
+                          <StatusDot status={m.status} startsAt={m.startsAt} tr={tr} />
                           <p className="text-[10px] font-mono text-text-muted">{fmtDate(m.startsAt)}</p>
                         </div>
                       </div>

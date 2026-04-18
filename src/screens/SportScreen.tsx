@@ -29,6 +29,12 @@ import { useLiveLayout } from '../contexts/LiveLayoutContext'
 import { useLang } from '../contexts/LanguageContext'
 import { t as tFn, useT } from '../lib/i18n'
 import type { Lang } from '../lib/i18n'
+import PrescioLoader from '../components/PrescioLoader'
+import { Pagination } from '../components/live/Pagination'
+import { GroupDivider } from '../components/live/GroupDivider'
+import { ActiveFilterBanner } from '../components/live/ActiveFilterBanner'
+import { scrollLiveContentToTop } from '../components/live/scrollLiveContent'
+import { useLoaderMinHold } from '../components/live/useLoaderMinHold'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export type Sport = 'football' | 'basketball' | 'tennis' | 'mma'
@@ -141,54 +147,6 @@ function paginateGroups(groups: LeagueGroup[]): LeagueGroup[][] {
   return pages
 }
 
-function Pagination({ current, total, totalEvents, pageStart, pageEnd, onChange, accent }: {
-  current: number; total: number; totalEvents: number; pageStart: number; pageEnd: number
-  onChange: (p: number) => void; accent?: string
-}) {
-  const { lang } = useLang()
-  if (total <= 1) return null
-  const pages: (number | '...')[] = []
-  if (total <= 7) {
-    for (let i = 1; i <= total; i++) pages.push(i)
-  } else {
-    pages.push(1)
-    if (current > 3) pages.push('...')
-    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) pages.push(i)
-    if (current < total - 2) pages.push('...')
-    pages.push(total)
-  }
-  const a = accent ?? 'rgba(0,200,150,1)'
-  return (
-    <div className="flex flex-col items-center gap-2 pt-4 pb-2">
-      <span className="text-[10px] font-mono text-text-muted">
-        {lang === 'ru' ? `Матчи ${pageStart}–${pageEnd} из ${totalEvents}` : `Matches ${pageStart}–${pageEnd} of ${totalEvents}`}
-      </span>
-      <div className="flex items-center gap-1">
-        <button onClick={() => onChange(current - 1)} disabled={current === 1}
-          className="w-8 h-8 flex items-center justify-center rounded text-text-muted hover:text-text-primary transition-colors disabled:opacity-25 disabled:cursor-not-allowed">
-          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
-        </button>
-        {pages.map((p, i) =>
-          p === '...' ? (
-            <span key={`e${i}`} className="w-8 h-8 flex items-center justify-center text-[10px] font-mono text-text-muted/40">···</span>
-          ) : (
-            <button key={p} onClick={() => onChange(p as number)}
-              className="w-8 h-8 flex items-center justify-center rounded text-[11px] font-mono transition-all"
-              style={p === current
-                ? { background: mix(a, 9), color: a, border: `1px solid ${mix(a, 27)}` }
-                : { color: 'rgb(var(--text-muted))', border: '1px solid transparent' }
-              }>{p}</button>
-          )
-        )}
-        <button onClick={() => onChange(current + 1)} disabled={current === total}
-          className="w-8 h-8 flex items-center justify-center rounded text-text-muted hover:text-text-primary transition-colors disabled:opacity-25 disabled:cursor-not-allowed">
-          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
-        </button>
-      </div>
-    </div>
-  )
-}
-
 // ─── Date strip ───────────────────────────────────────────────────────────────
 function DateStrip({ dates, selected, onSelect, countByDate, liveCount, accent, syncingDate, lang }: {
   dates: string[]
@@ -290,44 +248,6 @@ function groupByLeague(events: SportEvent[]): LeagueGroup[] {
       const bMin = Math.min(...b.events.map(e => new Date(e.starts_at).getTime()))
       return aMin - bMin
     })
-}
-
-// ─── League divider ───────────────────────────────────────────────────────────
-function LeagueDivider({ name, logo, flag, count, liveCount, first }: {
-  name: string; logo?: string | null; flag?: string | null; count: number; liveCount: number; first?: boolean
-}) {
-  const [logoErr, setLogoErr] = useState(false)
-  const [flagErr, setFlagErr] = useState(false)
-
-  const icon = flag && !flagErr ? (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={flag} alt="" loading="lazy" onError={() => setFlagErr(true)}
-      className="w-[18px] h-[13px] object-cover rounded-[2px] shrink-0" />
-  ) : logo && !logoErr ? (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={logo} alt="" loading="lazy" onError={() => setLogoErr(true)}
-      className="w-5 h-5 object-contain shrink-0" />
-  ) : <div className="w-5 h-5 shrink-0" />
-
-  return (
-    <div className={`flex items-center gap-2.5 px-3.5 rounded-lg overflow-hidden ${first ? 'mt-0' : 'mt-5'} mb-1.5`}
-      style={{ minHeight: 40, background: 'rgba(var(--surface-tint-rgb),0.05)', borderLeft: '3px solid rgba(var(--surface-tint-rgb),0.08)' }}>
-      {icon}
-      <span className="text-[13px] font-semibold text-text-primary truncate flex-1">
-        {name}
-      </span>
-      {liveCount > 0 && (
-        <span className="flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0"
-          style={{ background: 'rgba(255,50,50,0.12)', color: '#ff5252', border: '1px solid rgba(255,50,50,0.25)' }}>
-          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-          {liveCount}
-        </span>
-      )}
-      <span className="text-[10px] font-mono text-text-muted shrink-0 min-w-[18px] text-right">
-        {count}
-      </span>
-    </div>
-  )
 }
 
 // ─── Team logo ────────────────────────────────────────────────────────────────
@@ -676,7 +596,7 @@ export function SportScreen({ initialSport, eventId, initialEvents, initialEvent
   useEffect(() => { setCurrentPage(1) }, [sport, selectedDate, selectedLeague])
   useEffect(() => { setSelectedDate(getCached<SelectedDate>(`sport_date:${sport}`) ?? today) }, [sport, today])
 
-  const showSkeleton = loading
+  const showSkeleton = useLoaderMinHold(loading)
   void isRefreshing // kept for future use
 
   const liveCount = events.filter(e => e.status === 'live').length
@@ -781,7 +701,7 @@ export function SportScreen({ initialSport, eventId, initialEvents, initialEvent
 
         {/* Page header — breadcrumbs only when viewing a match */}
         {eventId && (
-          <div className="flex items-center gap-0 mb-3 -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6 pt-3 pb-2 sport-sticky-header"
+          <div className="flex items-center gap-0 mb-3 pt-3 pb-2 sport-sticky-header"
             style={{ position: 'sticky', zIndex: 15, background: 'rgba(var(--bg-base-rgb), 0.75)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
           >
             <div className="flex items-center gap-0 min-w-0">
@@ -837,40 +757,25 @@ export function SportScreen({ initialSport, eventId, initialEvents, initialEvent
           <SportEventPage id={eventId} initialFast={initialEventFull as EventFastCache | undefined} onBack={() => window.history.length > 1 ? router.back() : router.push(`/sport/${sport}`)} onLeagueLoad={(meta: EventMeta) => { setMatchLeague(meta.league); setMatchLeagueId(meta.leagueId ?? null); setMatchHome(meta.homeTeam); setMatchAway(meta.awayTeam) }} />
         ) : (
           <>
-            {/* Active league filter banner */}
-            {selectedLeague && (
-              <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-lg border border-bg-border bg-bg-surface">
-                <svg className="w-3 h-3 text-text-muted/40 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
-                </svg>
-                <span className="text-[11px] font-mono text-text-muted/50 shrink-0">{t('sport.league_filter')}</span>
-                <span className="text-[11px] font-mono font-bold text-text-primary truncate">{selectedLeague}</span>
-                <button onClick={() => setSelectedLeague(null)}
-                  className="ml-auto text-[16px] leading-none text-text-muted/40 hover:text-text-muted transition-colors shrink-0">
-                  ×
-                </button>
-              </div>
+            {selectedLeague && !showSkeleton && (
+              <ActiveFilterBanner
+                label={t('sport.league_filter')}
+                value={selectedLeague}
+                onClear={() => setSelectedLeague(null)}
+              />
             )}
 
             {showSkeleton && (
-              <div className="flex flex-col gap-1.5">
-                {[0,1,2,3,4,5].map(i => (
-                  <div key={i} className="rounded-lg animate-pulse bg-bg-surface border border-bg-border"
-                    style={{ height: 72, animationDelay: `${i * 50}ms` }} />
-                ))}
-              </div>
+              <PrescioLoader color={accent} state="loading" label={t('sport.loading_matches')} />
             )}
 
             {!showSkeleton && events.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-24 text-center">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 bg-bg-surface border border-bg-border">
-                  <svg className="w-5 h-5 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
-                  </svg>
-                </div>
-                <p className="text-sm font-mono text-text-muted">{t('sport.no_events')}</p>
-                <p className="text-xs font-mono text-text-muted/50 mt-1">{t('sport.data_syncing')}</p>
-              </div>
+              <PrescioLoader
+                color={accent}
+                state="idle"
+                label={t('sport.no_events')}
+                sublabel={t('sport.data_syncing')}
+              />
             )}
 
             {!showSkeleton && filteredEvents.length === 0 && events.length > 0 && (
@@ -893,7 +798,7 @@ export function SportScreen({ initialSport, eventId, initialEvents, initialEvent
                     const leagueLiveCount = group.filter(e => e.status === 'live').length
                     return (
                       <div key={league}>
-                        <LeagueDivider
+                        <GroupDivider
                           name={league}
                           logo={logo}
                           flag={flag}
@@ -924,13 +829,7 @@ export function SportScreen({ initialSport, eventId, initialEvents, initialEvent
                   accent={accent}
                   onChange={p => {
                     flushSync(() => setCurrentPage(p))
-                    requestAnimationFrame(() => {
-                      const el = document.getElementById('live-content')
-                      if (!el) return
-                      if (el.scrollTop === 0 && el.scrollHeight > el.clientHeight)
-                        el.scrollTop = Math.min(80, el.scrollHeight - el.clientHeight)
-                      el.scrollTo({ top: 0, behavior: 'smooth' })
-                    })
+                    scrollLiveContentToTop()
                   }}
                 />
               </>

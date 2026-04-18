@@ -1148,9 +1148,11 @@ function streamLabel(url: string): string {
 }
 
 function RecentFormStrip({ matches, accent }: { matches: EsportsRecentMatch[]; accent: string }) {
+  const { lang } = useLang()
+  const t = useT(lang)
   const finished = matches.filter(m => m.finished && m.outcome)
   if (!matches.length) return (
-    <span className="text-[10px] font-mono text-text-muted/40">No recent data</span>
+    <span className="text-[10px] font-mono text-text-muted/40">{t('esports.no_recent_data')}</span>
   )
   return (
     <div className="flex gap-0.5">
@@ -1169,7 +1171,7 @@ function RecentFormStrip({ matches, accent }: { matches: EsportsRecentMatch[]; a
           </div>
         )
       })}
-      {!finished.length && <span className="text-[9px] font-mono text-text-muted/40 ml-1">no results</span>}
+      {!finished.length && <span className="text-[9px] font-mono text-text-muted/40 ml-1">{t('esports.no_results')}</span>}
     </div>
   )
 }
@@ -1605,9 +1607,9 @@ export default function DotaMatchScreen({ seriesId, initialData }: { seriesId: s
               style={{ background: 'rgba(255,200,0,0.12)', color: '#f5c842', border: '1px solid rgba(255,200,0,0.2)' }}>
               STEAM LIVE
             </span>
-            <span className="text-[11px] font-mono text-text-muted">Live minimap, heroes · ~2 min DotaTV delay</span>
+            <span className="text-[11px] font-mono text-text-muted">{t('esports.dota_tv_hint')}</span>
           </div>
-          <span className="text-[11px] font-mono shrink-0" style={{ color: accent }}>View →</span>
+          <span className="text-[11px] font-mono shrink-0" style={{ color: accent }}>{t('common.view')}</span>
         </Link>
       )}
 
@@ -1664,15 +1666,15 @@ export default function DotaMatchScreen({ seriesId, initialData }: { seriesId: s
             <p className="text-[11px] font-mono font-bold text-text-primary">
               {isDota ? 'Game 1 in progress' : 'Map 1 in progress'}
             </p>
-            <p className="text-[10px] font-mono text-text-muted/60 mt-0.5">Live stats will appear shortly</p>
+            <p className="text-[10px] font-mono text-text-muted/60 mt-0.5">{t('esports.live_stats_soon')}</p>
           </div>
         </div>
       )}
 
       {(match.games?.length ?? 0) === 0 && !isLive && !isFinished && (
         <div className="bg-bg-surface border border-bg-border rounded-lg px-4 py-8 text-center">
-          <p className="text-[11px] font-mono text-text-muted">No maps data yet</p>
-          <p className="text-[10px] font-mono text-text-muted/50 mt-1">Live data will appear once the match starts</p>
+          <p className="text-[11px] font-mono text-text-muted">{t('esports.no_maps_yet')}</p>
+          <p className="text-[10px] font-mono text-text-muted/50 mt-1">{t('esports.live_data_wait')}</p>
         </div>
       )}
 

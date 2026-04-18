@@ -15,6 +15,8 @@ import { useAuthContext } from '../contexts/AuthContext'
 import AnalysisLoader from '../AnalysisLoader'
 import { markAnalyzing, clearAnalyzing, isAnalyzing, markAnalyzed } from '../lib/activeAnalyses'
 import { MARKET_CACHE_PREFIX } from '../lib/marketNavCache'
+import { useLang } from '../contexts/LanguageContext'
+import { useT } from '../lib/i18n'
 
 // ---- Event analysis types ----
 interface KeyFactor {
@@ -47,6 +49,8 @@ function PriceChart({ history, loading }: {
   history: HistoryPoint[]
   loading?: boolean
 }) {
+  const { lang } = useLang()
+  const t = useT(lang)
   const svgRef = useRef<SVGSVGElement>(null)
   const [hover, setHover] = useState<{ x: number; y: number; pt: HistoryPoint } | null>(null)
 
@@ -98,7 +102,7 @@ function PriceChart({ history, loading }: {
         <svg className="w-8 h-8 text-text-muted/45" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
           <path d="M3 17l6-6 4 4 8-8" />
         </svg>
-        <p className="text-xs font-mono text-text-muted">No price history available</p>
+        <p className="text-xs font-mono text-text-muted">{t('markets.no_price_history')}</p>
       </div>
     )
   }
@@ -285,6 +289,8 @@ export default function MarketDetailPage() {
   const params = useParams<{ slug?: string; id?: string }>()
   const slug = (params?.slug ?? params?.id) as string | undefined
   const { profile } = useAuthContext()
+  const { lang } = useLang()
+  const t = useT(lang)
 
 
   const [market, setMarket] = useState<Market | undefined>(undefined)
@@ -928,7 +934,7 @@ export default function MarketDetailPage() {
       {/* PRO / ALPHA: no analysis yet → analyze button */}
       {!freshLoading && !analyzing && isPro && !analysis && (
         <div className="bg-bg-surface border border-bg-border rounded-lg p-6 mb-4 text-center">
-          <p className="text-sm font-mono text-text-secondary mb-1">No AI analysis yet</p>
+          <p className="text-sm font-mono text-text-secondary mb-1">{t('markets.no_ai_analysis')}</p>
           <p className="text-xs font-mono text-text-muted mb-4">
             {isAlpha ? 'Alpha · Unlimited analyses' : 'Pro · Unlimited analyses'}
           </p>
