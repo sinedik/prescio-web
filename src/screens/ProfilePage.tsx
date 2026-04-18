@@ -7,12 +7,16 @@ import { useTheme } from '../contexts/ThemeContext'
 import { usePaddle } from '../hooks/usePaddle'
 import { activateProAction, getPaddlePortalAction } from '../actions/paddle'
 import PaywallModal from '../components/PaywallModal'
+import EditProfileModal from '../components/EditProfileModal'
+import DeleteAccountModal from '../components/DeleteAccountModal'
+import ChangePasswordModal from '../components/ChangePasswordModal'
+import { authApi } from '../lib/api'
 import { SearchHistoryScreen } from './SearchHistoryScreen'
 import { IconCheck, IconFlame, IconMoon, IconSun, IconMapPin } from '../components/icons'
 import { useLang } from '../contexts/LanguageContext'
 import { useT } from '../lib/i18n'
 
-const INTEREST_IDS = ['geopolitics', 'elections', 'crypto', 'us-politics', 'policy', 'other'] as const
+const INTEREST_IDS = ['politics', 'sport', 'esports', 'crypto', 'economics', 'science_tech'] as const
 
 const COUNTRY_LABELS: Record<string, string> = {
   US: 'United States',
@@ -74,6 +78,26 @@ export default function ProfilePage() {
   const [portalLoading, setPortalLoading] = useState(false)
   const [upgradeLoading, setUpgradeLoading] = useState(false)
   const [showPaywall, setShowPaywall] = useState(false)
+  const [showEdit, setShowEdit] = useState(false)
+  const [showDelete, setShowDelete] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [exporting, setExporting] = useState(false)
+
+  async function handleExport() {
+    setExporting(true)
+    try {
+      const data = await authApi.exportData()
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `prescio-data-${new Date().toISOString().slice(0, 10)}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+    } finally {
+      setExporting(false)
+    }
+  }
 
   const [defaultPlatform, setDefaultPlatform] = useState(profile?.default_platform ?? 'all')
   const [language, setLanguage] = useState(profile?.language ?? 'en')
@@ -87,6 +111,11 @@ export default function ProfilePage() {
     const t = setTimeout(() => setSavedToast(false), 2500)
     return () => clearTimeout(t)
   }, [savedToast])
+
+  useEffect(() => {
+    const remote = profile?.theme
+    if (remote && remote !== theme) setTheme(remote)
+  }, [profile?.theme, theme, setTheme])
 
   if (!user || !profile) return null
 
@@ -204,6 +233,15 @@ export default function ProfilePage() {
             Member since {formatMemberSince(profile.created_at)}
           </p>
         </div>
+
+        <button
+          onClick={() => setShowEdit(true)}
+          className="text-[10px] font-mono font-bold tracking-wider px-3 py-1.5 rounded border
+            text-text-muted border-bg-border hover:text-text-primary hover:border-text-muted
+            transition-colors shrink-0"
+        >
+          {tr('profile.edit')}
+        </button>
       </div>
 
       <Divider />
@@ -450,7 +488,7 @@ export default function ProfilePage() {
               {(['dark', 'light'] as const).map((t) => (
                 <button
                   key={t}
-                  onClick={() => setTheme(t)}
+                  onClick={() => { setTheme(t); savePreference({ theme: t }) }}
                   className={`px-3 py-1 text-[10px] font-mono font-bold rounded transition-colors ${
                     theme === t
                       ? 'text-accent border border-accent/30 bg-accent/5'
@@ -598,15 +636,37 @@ export default function ProfilePage() {
             </button>
           )}
           <button
+            onClick={() => setShowPassword(true)}
+            className="text-xs font-mono text-text-secondary hover:text-text-primary transition-colors w-fit"
+          >
+            {tr('profile.change_password')}
+          </button>
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            className="text-xs font-mono text-text-secondary hover:text-text-primary transition-colors w-fit disabled:opacity-50"
+          >
+            {exporting ? tr('profile.exporting') : tr('profile.export_data')}
+          </button>
+          <button
             onClick={handleSignOut}
             className="text-xs font-mono text-danger hover:text-danger/80 transition-colors w-fit"
           >
             {tr('profile.sign_out')}
           </button>
+          <button
+            onClick={() => setShowDelete(true)}
+            className="text-xs font-mono text-text-muted hover:text-danger transition-colors w-fit"
+          >
+            {tr('profile.delete_account')}
+          </button>
         </div>
       </div>
 
       {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
+      {showEdit && <EditProfileModal onClose={() => setShowEdit(false)} />}
+      {showDelete && <DeleteAccountModal onClose={() => setShowDelete(false)} />}
+      {showPassword && <ChangePasswordModal onClose={() => setShowPassword(false)} />}
       </div>
       )}
     </div>

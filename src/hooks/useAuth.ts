@@ -28,6 +28,7 @@ export interface Profile {
   notif_email_digest?: boolean
   notif_resolution_reminder?: boolean
   last_active_date?: string
+  theme?: 'dark' | 'light'
 }
 
 // Module-level cache — survives StrictMode double-mount, component re-renders

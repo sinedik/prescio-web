@@ -119,6 +119,8 @@ export const searchApi = {
 export const authApi = {
   getMe: () => apiFetch<UserProfile>('/user/me'),
   getInterests: () => apiFetch<{ interests: UserInterest[] }>('/user/interests'),
+  exportData: () => apiFetch<Record<string, unknown>>('/user/export'),
+  deleteAccount: () => apiFetch<{ deleted: boolean }>('/user/me', { method: 'DELETE' }),
 }
 
 // ─── Прочие эндпоинты (используются Layout и другими существующими экранами) ───

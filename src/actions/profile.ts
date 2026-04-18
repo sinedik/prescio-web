@@ -16,6 +16,7 @@ export interface ProfileUpdate {
   notif_resolution_reminder?: boolean
   onboarding_done?: boolean
   interests?: string[]
+  theme?: 'dark' | 'light'
 }
 
 async function currentUserId(): Promise<string> {
