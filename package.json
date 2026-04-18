@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "check-i18n": "node scripts/check-i18n.mjs"
   },
   "dependencies": {
     "@paddle/paddle-js": "^1.6.2",

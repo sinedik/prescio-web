@@ -48,12 +48,10 @@ export const metadata: Metadata = {
     title: 'Prescio — AI Analytics for Markets, Sports & Esports',
     description: 'One feed. Polymarket, Kalshi, Metaculus, sports & esports. AI finds where the market misprices events — before the crowd corrects it.',
   },
+  // icon.tsx и apple-icon.tsx в src/app/ генерируют PNG-иконки автоматически.
+  // SVG-fallback для поддерживающих браузеров.
   icons: {
-    icon: [
-      { url: '/favicon.svg', type: 'image/svg+xml' },
-    ],
-    shortcut: '/favicon.svg',
-    apple: '/favicon.svg',
+    other: [{ rel: 'mask-icon', url: '/favicon.svg', color: '#00ff88' }],
   },
   manifest: '/site.webmanifest',
   alternates: {

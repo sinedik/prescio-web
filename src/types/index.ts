@@ -336,7 +336,7 @@ export interface Scenario {
 export interface UserProfile {
   id: string
   email: string
-  username?: string
+  display_name?: string
   avatar_url?: string
   onboarding_done: boolean
   subscriptions?: { plan: SubscriptionPlan; status: string; current_period_end?: string }[]

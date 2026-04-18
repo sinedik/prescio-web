@@ -6,6 +6,7 @@ import { sportApi } from '../lib/api'
 import { getCached, setCached } from '../lib/clientCache'
 import { useAuthContext } from '../contexts/AuthContext'
 import { useSportWs } from '../hooks/useSportWs'
+import { useLiveElapsed } from '../hooks/useLiveElapsed'
 import type { SportEvent, SportOdds, SportPrediction, SportStanding, SportInjury, SubscriptionPlan, SportLineup, SportFixtureStat, SportMatchEvent, SportTopScorer } from '../types/index'
 import { useLang } from '../contexts/LanguageContext'
 import { useT } from '../lib/i18n'
@@ -1010,7 +1011,8 @@ export default function SportEventPage({ id: idProp, onBack, onLeagueLoad, initi
   const homeTeamId    = raw?.home_team_id as number | null | undefined
   const awayTeamId    = raw?.away_team_id as number | null | undefined
   const leagueId      = raw?.league_id   as number | null | undefined
-  const elapsed       = raw?.elapsed     as number | null | undefined
+  const elapsedAnchor = raw?.elapsed     as number | null | undefined
+  const statusShort   = raw?.status_short as string | null | undefined
   const homeLogo      = raw?.home_logo   as string | null | undefined
   const awayLogo      = raw?.away_logo   as string | null | undefined
   const leagueLogo    = raw?.league_logo as string | null | undefined
@@ -1023,6 +1025,7 @@ export default function SportEventPage({ id: idProp, onBack, onLeagueLoad, initi
   const isLive     = event?.status === 'live'
   const isFinished = event?.status === 'finished'
   const hasScore   = event?.home_score != null && event?.away_score != null
+  const elapsed    = useLiveElapsed(elapsedAnchor, event?.status, statusShort)
 
   const availableTabs = (['h2h', 'totals', 'spreads', 'btts'] as const).filter(t => event?.sport_odds?.some(o => o.market_type === t))
   const [activeTab, setActiveTab] = useState<string>('h2h')

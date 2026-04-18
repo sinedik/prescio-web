@@ -22,9 +22,8 @@ function getLang(): string {
   try { return localStorage.getItem('prescio_lang') || 'en' } catch { return 'en' }
 }
 
-async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const authHeaders = await getAuthHeader()
-  const res = await fetch(`/api${path}`, {
+async function doFetch(path: string, options: RequestInit, authHeaders: Record<string, string>) {
+  return fetch(`/api${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -33,6 +32,45 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
       ...(options.headers as Record<string, string> ?? {}),
     },
   })
+}
+
+let refreshPromise: Promise<string | null> | null = null
+
+async function refreshSessionOnce(): Promise<string | null> {
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      try {
+        const { data, error } = await supabase.auth.refreshSession()
+        if (error || !data.session?.access_token) return null
+        return data.session.access_token
+      } finally {
+        setTimeout(() => { refreshPromise = null }, 0)
+      }
+    })()
+  }
+  return refreshPromise
+}
+
+async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
+  let authHeaders = await getAuthHeader()
+  let res = await doFetch(path, options, authHeaders)
+
+  if (res.status === 401 && authHeaders.Authorization) {
+    const token = await refreshSessionOnce()
+    if (token) {
+      authHeaders = { Authorization: `Bearer ${token}` }
+      res = await doFetch(path, options, authHeaders)
+    }
+    if (res.status === 401) {
+      await supabase.auth.signOut()
+      if (typeof window !== 'undefined') {
+        const next = encodeURIComponent(window.location.pathname + window.location.search)
+        window.location.replace(`/auth?next=${next}&expired=1`)
+      }
+      throw Object.assign(new Error('Session expired'), { status: 401 })
+    }
+  }
+
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }))
     throw Object.assign(new Error(err.error || 'API error'), { status: res.status })
@@ -120,7 +158,19 @@ export const authApi = {
   getMe: () => apiFetch<UserProfile>('/user/me'),
   getInterests: () => apiFetch<{ interests: UserInterest[] }>('/user/interests'),
   exportData: () => apiFetch<Record<string, unknown>>('/user/export'),
-  deleteAccount: () => apiFetch<{ deleted: boolean }>('/user/me', { method: 'DELETE' }),
+  deleteAccount: () => apiFetch<{ deleted: boolean; grace_days: number }>('/user/me', { method: 'DELETE' }),
+  restoreAccount: () => apiFetch<{ restored: boolean }>('/user/me/restore', { method: 'POST' }),
+  markHasPassword: () => apiFetch<{ ok: true }>('/user/mark-has-password', { method: 'POST' }),
+}
+
+export const mfaApi = {
+  generateRecoveryCodes: () => apiFetch<{ codes: string[] }>('/mfa/recovery-codes', { method: 'POST' }),
+  recoveryCodesStatus: () => apiFetch<{ remaining: number }>('/mfa/recovery-codes/status'),
+  consumeRecoveryCode: (code: string) =>
+    apiFetch<{ ok: true }>('/mfa/recovery-codes/consume', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    }),
 }
 
 // ─── Прочие эндпоинты (используются Layout и другими существующими экранами) ───

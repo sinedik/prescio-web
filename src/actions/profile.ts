@@ -17,6 +17,8 @@ export interface ProfileUpdate {
   onboarding_done?: boolean
   interests?: string[]
   theme?: 'dark' | 'light'
+  timezone?: string
+  avatar_url?: string | null
 }
 
 async function currentUserId(): Promise<string> {

@@ -8,9 +8,15 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     const supabase = await getSupabaseServerClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) {
-      return NextResponse.redirect(`${origin}${next}`)
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+    if (!error && data.user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('onboarding_done')
+        .eq('id', data.user.id)
+        .maybeSingle()
+      const dest = profile?.onboarding_done ? next : '/onboarding'
+      return NextResponse.redirect(`${origin}${dest}`)
     }
   }
 

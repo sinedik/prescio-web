@@ -5,6 +5,7 @@ import { useAuthContext } from '../contexts/AuthContext'
 import { activateProAction } from '../actions/paddle'
 import { useLang } from '../contexts/LanguageContext'
 import { useT } from '../lib/i18n'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 
 interface Props {
   onClose: () => void
@@ -19,6 +20,7 @@ export default function PaywallModal({ onClose, variant = 'pro', analysesToday =
   const { user, refreshProfile } = useAuthContext()
   const { lang } = useLang()
   const tr = useT(lang)
+  const trapRef = useFocusTrap<HTMLDivElement>(onClose)
   const { openCheckout } = usePaddle(async (transactionId) => {
     try {
       await activateProAction(transactionId)
@@ -66,7 +68,7 @@ export default function PaywallModal({ onClose, variant = 'pro', analysesToday =
       style={{ background: 'rgb(var(--bg-base) / 0.85)', backdropFilter: 'blur(4px)' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="w-full max-w-sm bg-bg-surface border border-bg-border rounded-2xl p-6 animate-slide-up">
+      <div ref={trapRef} role="dialog" aria-modal="true" className="w-full max-w-sm bg-bg-surface border border-bg-border rounded-2xl p-6 animate-slide-up">
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div>

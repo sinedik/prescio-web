@@ -135,6 +135,52 @@ export function LeagueSkeleton() {
   )
 }
 
+export function TeamPageSkeleton() {
+  return (
+    <div className="max-w-5xl mx-auto px-6 py-5 animate-pulse">
+      <div className="flex items-center gap-4 mb-6">
+        <div className="w-20 h-20 rounded-xl bg-bg-surface border border-bg-border" />
+        <div className="flex flex-col gap-2">
+          <div className="h-5 w-48 rounded bg-bg-elevated" />
+          <div className="h-3 w-28 rounded bg-bg-elevated opacity-60" />
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-3 mb-5">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="h-20 rounded-lg bg-bg-surface border border-bg-border" />
+        ))}
+      </div>
+      <div className="h-64 rounded-lg bg-bg-surface border border-bg-border mb-4" />
+      <div className="space-y-2">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="h-14 rounded-lg bg-bg-surface border border-bg-border" />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+export function PlayerPageSkeleton() {
+  return (
+    <div className="max-w-3xl mx-auto px-6 py-6 animate-pulse">
+      <div className="flex items-center gap-4 mb-6">
+        <div className="w-24 h-24 rounded-full bg-bg-surface border border-bg-border" />
+        <div className="flex flex-col gap-2">
+          <div className="h-6 w-52 rounded bg-bg-elevated" />
+          <div className="h-3 w-32 rounded bg-bg-elevated opacity-60" />
+          <div className="h-3 w-20 rounded bg-bg-elevated opacity-60" />
+        </div>
+      </div>
+      <div className="grid grid-cols-4 gap-3 mb-5">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-16 rounded-lg bg-bg-surface border border-bg-border" />
+        ))}
+      </div>
+      <div className="h-72 rounded-lg bg-bg-surface border border-bg-border" />
+    </div>
+  )
+}
+
 export function EventDetailSkeleton() {
   return (
     <div className="max-w-3xl mx-auto px-6 py-6 flex flex-col gap-4 animate-pulse">

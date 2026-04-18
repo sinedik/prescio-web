@@ -1,5 +1,5 @@
-import { SportListSkeleton } from '@/components/LoadingSkeleton'
+import RouteLoader from '@/components/RouteLoader'
 
 export default function Loading() {
-  return <SportListSkeleton rows={8} />
+  return <RouteLoader />
 }

@@ -10,8 +10,8 @@ interface AuthContextType {
   session: Session | null
   isPro: boolean
   isAlpha: boolean
-  signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string) => Promise<void>
+  signIn: (email: string, password: string, captchaToken?: string) => Promise<void>
+  signUp: (email: string, password: string, displayName?: string, captchaToken?: string) => Promise<{ needsConfirmation: boolean }>
   signOut: () => Promise<void>
   signInWithGoogle: () => Promise<void>
   signInWithTwitter: () => Promise<void>

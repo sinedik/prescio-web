@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase/client'
 import { useLang } from '../contexts/LanguageContext'
 import { useT } from '../lib/i18n'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 
 interface Props {
   onClose: () => void
@@ -13,6 +14,7 @@ const MIN_LEN = 8
 export default function ChangePasswordModal({ onClose }: Props) {
   const { lang } = useLang()
   const tr = useT(lang)
+  const trapRef = useFocusTrap<HTMLDivElement>(onClose)
 
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -33,6 +35,8 @@ export default function ChangePasswordModal({ onClose }: Props) {
       setSaving(false)
       return
     }
+    const { authApi } = await import('../lib/api')
+    authApi.markHasPassword().catch(() => {})
     setDone(true)
     setSaving(false)
     setTimeout(onClose, 1200)
@@ -44,7 +48,7 @@ export default function ChangePasswordModal({ onClose }: Props) {
       style={{ background: 'rgb(var(--bg-base) / 0.85)', backdropFilter: 'blur(4px)' }}
       onClick={(e) => { if (e.target === e.currentTarget && !saving) onClose() }}
     >
-      <div className="w-full max-w-sm bg-bg-surface border border-bg-border rounded-2xl p-6 animate-slide-up">
+      <div ref={trapRef} role="dialog" aria-modal="true" className="w-full max-w-sm bg-bg-surface border border-bg-border rounded-2xl p-6 animate-slide-up">
         <div className="flex items-start justify-between mb-5">
           <div>
             <p className="text-[10px] font-mono text-text-muted tracking-wider mb-1">{tr('profile.security')}</p>

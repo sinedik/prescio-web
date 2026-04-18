@@ -1,5 +1,5 @@
-import { LeagueSkeleton } from '@/components/LoadingSkeleton'
+import RouteLoader from '@/components/RouteLoader'
 
 export default function Loading() {
-  return <LeagueSkeleton />
+  return <RouteLoader />
 }

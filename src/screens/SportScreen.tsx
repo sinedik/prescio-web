@@ -7,6 +7,7 @@ import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { useSportWs } from '../hooks/useSportWs'
+import { useLiveElapsed } from '../hooks/useLiveElapsed'
 import { sportApi } from '../lib/api'
 import { syncSportDateAction } from '../actions/sport'
 import { ErrorBoundary } from '../components/ErrorBoundary'
@@ -311,7 +312,9 @@ const SportRow = memo(function SportRow({ event, sport, accent }: {
   const isLive     = event.status === 'live'
   const isFinished = event.status === 'finished'
   const hasScore   = event.home_score != null && event.away_score != null
-  const elapsed    = (event.raw_data as Record<string, unknown> | null)?.elapsed as number | null | undefined
+  const elapsedAnchor = (event.raw_data as Record<string, unknown> | null)?.elapsed as number | null | undefined
+  const statusShort   = (event.raw_data as Record<string, unknown> | null)?.status_short as string | null | undefined
+  const elapsed    = useLiveElapsed(elapsedAnchor, event.status, statusShort)
   const odds       = extractOdds(event.sport_odds, sport)
   const raw        = event.raw_data as Record<string, unknown> | null
   const homeLogo   = raw?.home_logo as string | null | undefined
@@ -584,10 +587,10 @@ export function SportScreen({ initialSport, eventId, initialEvents, initialEvent
   // WS: patch score/status in-place without re-fetching the full list
   useSportWs({
     subscribeList: true,
-    onListUpdate: useCallback((data: { id: string; status: string; home_score: number | null; away_score: number | null; elapsed: number | null }) => {
+    onListUpdate: useCallback((data: { id: string; status: string; home_score: number | null; away_score: number | null; elapsed: number | null; status_short: string | null }) => {
       setEvents(prev => prev.map(e =>
         e.id === data.id
-          ? { ...e, status: data.status as SportEvent['status'], home_score: data.home_score ?? undefined, away_score: data.away_score ?? undefined, raw_data: { ...(e.raw_data as Record<string, unknown> | null ?? {}), elapsed: data.elapsed } }
+          ? { ...e, status: data.status as SportEvent['status'], home_score: data.home_score ?? undefined, away_score: data.away_score ?? undefined, raw_data: { ...(e.raw_data as Record<string, unknown> | null ?? {}), elapsed: data.elapsed, status_short: data.status_short } }
           : e
       ))
     }, []),

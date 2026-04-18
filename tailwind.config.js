@@ -13,6 +13,7 @@ export default {
         'text-muted':    'rgb(var(--text-muted) / <alpha-value>)',
         'accent':        'rgb(var(--accent) / <alpha-value>)',
         'accent-hover':  'rgb(var(--accent-hover) / <alpha-value>)',
+        'alpha':         'rgb(var(--alpha) / <alpha-value>)',
         'watch':         'rgb(var(--watch) / <alpha-value>)',
         'danger':        'rgb(var(--danger) / <alpha-value>)',
         'poly':          'rgb(var(--poly) / <alpha-value>)',

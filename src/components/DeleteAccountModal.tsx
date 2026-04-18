@@ -5,6 +5,7 @@ import { useAuthContext } from '../contexts/AuthContext'
 import { authApi } from '../lib/api'
 import { useLang } from '../contexts/LanguageContext'
 import { useT } from '../lib/i18n'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 
 interface Props {
   onClose: () => void
@@ -15,6 +16,7 @@ export default function DeleteAccountModal({ onClose }: Props) {
   const { user, signOut } = useAuthContext()
   const { lang } = useLang()
   const tr = useT(lang)
+  const trapRef = useFocusTrap<HTMLDivElement>(onClose)
 
   const [confirm, setConfirm] = useState('')
   const [deleting, setDeleting] = useState(false)
@@ -42,7 +44,7 @@ export default function DeleteAccountModal({ onClose }: Props) {
       style={{ background: 'rgb(var(--bg-base) / 0.85)', backdropFilter: 'blur(4px)' }}
       onClick={(e) => { if (e.target === e.currentTarget && !deleting) onClose() }}
     >
-      <div className="w-full max-w-sm bg-bg-surface border border-danger/30 rounded-2xl p-6 animate-slide-up">
+      <div ref={trapRef} role="dialog" aria-modal="true" className="w-full max-w-sm bg-bg-surface border border-danger/30 rounded-2xl p-6 animate-slide-up">
         <div className="flex items-start justify-between mb-4">
           <div>
             <p className="text-[10px] font-mono text-danger tracking-wider mb-1">{tr('profile.danger_zone')}</p>
@@ -62,6 +64,10 @@ export default function DeleteAccountModal({ onClose }: Props) {
         <p className="text-xs font-mono text-text-secondary mb-4 leading-relaxed">
           {tr('profile.delete_warning')}
         </p>
+
+        <div className="text-[11px] font-mono text-watch bg-watch/5 border border-watch/20 rounded px-3 py-2 mb-4">
+          {tr('profile.delete_grace')}
+        </div>
 
         <ul className="text-[11px] font-mono text-text-muted mb-4 space-y-1 list-disc list-inside">
           <li>{tr('profile.delete_bullet_profile')}</li>

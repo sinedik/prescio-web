@@ -34,7 +34,52 @@ const publicEnv = {
     process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_PRO ?? process.env.VITE_PADDLE_PRICE_ID_PRO ?? '',
   NEXT_PUBLIC_PADDLE_PRICE_ID_ALPHA:
     process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_ALPHA ?? process.env.VITE_PADDLE_PRICE_ID_ALPHA ?? '',
+  NEXT_PUBLIC_TURNSTILE_SITE_KEY:
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? '',
 } as const
+
+const supabaseHost = (() => {
+  try { return new URL(publicEnv.NEXT_PUBLIC_SUPABASE_URL).host } catch { return '' }
+})()
+
+const isDev = process.env.NODE_ENV !== 'production'
+const devConnectExtras = isDev ? ' ws://localhost:* ws://127.0.0.1:* http://localhost:* http://127.0.0.1:*' : ''
+
+const IMG_HOSTS = [
+  'https://*.supabase.co',
+  'https://cdn.paddle.com',
+  'https://cdn.cloudflare.steamstatic.com',
+  'https://media.api-sports.io',
+  'https://media.steampowered.com',
+  'https://images.unsplash.com',
+  'https://cdn.pandascore.co',
+  'https://*.grid.gg',
+  'https://*.opendota.com',
+].join(' ')
+
+const CSP = [
+  "default-src 'self'",
+  `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.paddle.com https://sandbox-cdn.paddle.com https://challenges.cloudflare.com`,
+  `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
+  `font-src 'self' data: https://fonts.gstatic.com`,
+  `img-src 'self' data: blob: ${IMG_HOSTS}`,
+  `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.paddle.com https://sandbox-api.paddle.com https://challenges.cloudflare.com${supabaseHost ? ` https://${supabaseHost} wss://${supabaseHost}` : ''}${devConnectExtras}`,
+  `frame-src https://buy.paddle.com https://sandbox-buy.paddle.com https://challenges.cloudflare.com`,
+  `worker-src 'self' blob:`,
+  `object-src 'none'`,
+  `base-uri 'self'`,
+  `form-action 'self'`,
+  `frame-ancestors 'none'`,
+  ...(isDev ? [] : [`upgrade-insecure-requests`]),
+].join('; ')
+
+const SECURITY_HEADERS = [
+  { key: 'Content-Security-Policy', value: CSP },
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+  { key: 'X-Frame-Options', value: 'DENY' },
+]
 
 const nextConfig: NextConfig = {
   env: publicEnv as unknown as Record<string, string>,
@@ -42,6 +87,9 @@ const nextConfig: NextConfig = {
   productionBrowserSourceMaps: false,
   experimental: {
     optimizePackageImports: ['lucide-react'],
+  },
+  async headers() {
+    return [{ source: '/:path*', headers: SECURITY_HEADERS }]
   },
   async rewrites() {
     return [

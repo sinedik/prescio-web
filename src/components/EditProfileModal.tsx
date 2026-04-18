@@ -1,8 +1,10 @@
 'use client'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useAuthContext } from '../contexts/AuthContext'
+import { supabase } from '../lib/supabase/client'
 import { useLang } from '../contexts/LanguageContext'
 import { useT } from '../lib/i18n'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 
 const COUNTRY_OPTIONS: { value: string; label: string }[] = [
   { value: '', label: '—' },
@@ -25,15 +27,47 @@ interface Props {
 }
 
 export default function EditProfileModal({ onClose }: Props) {
-  const { profile, updateProfile } = useAuthContext()
+  const { user, profile, updateProfile } = useAuthContext()
   const { lang } = useLang()
   const tr = useT(lang)
+  const trapRef = useFocusTrap<HTMLDivElement>(onClose)
 
   const [displayName, setDisplayName] = useState(profile?.display_name ?? '')
   const [country, setCountry] = useState(profile?.country ?? '')
   const [experience, setExperience] = useState(profile?.trading_experience ?? '')
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(profile?.avatar_url ?? null)
+  const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  async function handleAvatarFile(file: File) {
+    if (!user) return
+    if (file.size > 2 * 1024 * 1024) {
+      setError(tr('profile.avatar_too_large'))
+      return
+    }
+    setError(null)
+    setUploading(true)
+    try {
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+      const path = `${user.id}/avatar-${Date.now()}.${ext}`
+      const { error: upErr } = await supabase.storage
+        .from('avatars')
+        .upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type })
+      if (upErr) throw upErr
+      const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+      setAvatarUrl(data.publicUrl)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Upload failed')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  function removeAvatar() {
+    setAvatarUrl(null)
+  }
 
   async function handleSave() {
     setSaving(true)
@@ -43,6 +77,7 @@ export default function EditProfileModal({ onClose }: Props) {
         display_name: displayName.trim() || undefined,
         country: country || undefined,
         trading_experience: experience || undefined,
+        avatar_url: avatarUrl ?? null,
       })
       onClose()
     } catch (e) {
@@ -57,7 +92,7 @@ export default function EditProfileModal({ onClose }: Props) {
       style={{ background: 'rgb(var(--bg-base) / 0.85)', backdropFilter: 'blur(4px)' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="w-full max-w-sm bg-bg-surface border border-bg-border rounded-2xl p-6 animate-slide-up">
+      <div ref={trapRef} role="dialog" aria-modal="true" className="w-full max-w-sm bg-bg-surface border border-bg-border rounded-2xl p-6 animate-slide-up">
         <div className="flex items-start justify-between mb-5">
           <div>
             <p className="text-[10px] font-mono text-text-muted tracking-wider mb-1">{tr('profile.edit')}</p>
@@ -71,6 +106,55 @@ export default function EditProfileModal({ onClose }: Props) {
         </div>
 
         <div className="flex flex-col gap-4 mb-5">
+          <div>
+            <label className="block text-[10px] font-mono text-text-muted tracking-wider mb-2">
+              {tr('profile.avatar')}
+            </label>
+            <div className="flex items-center gap-3">
+              <div className="w-14 h-14 rounded-full overflow-hidden bg-bg-base border border-bg-border flex items-center justify-center shrink-0">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-lg font-mono font-bold text-text-muted">
+                    {(profile?.display_name || user?.email || '?').slice(0, 2).toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="text-[11px] font-mono font-bold px-3 py-1.5 rounded border border-bg-border
+                    text-text-secondary hover:border-text-muted hover:text-text-primary transition-colors disabled:opacity-50 w-fit"
+                >
+                  {uploading ? tr('profile.uploading') : avatarUrl ? tr('profile.avatar_change') : tr('profile.avatar_upload')}
+                </button>
+                {avatarUrl && (
+                  <button
+                    type="button"
+                    onClick={removeAvatar}
+                    className="text-[10px] font-mono text-text-muted hover:text-danger transition-colors w-fit"
+                  >
+                    {tr('profile.avatar_remove')}
+                  </button>
+                )}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) void handleAvatarFile(f)
+                  e.target.value = ''
+                }}
+              />
+            </div>
+            <p className="text-[10px] font-mono text-text-muted mt-2">{tr('profile.avatar_hint')}</p>
+          </div>
+
           <div>
             <label className="block text-[10px] font-mono text-text-muted tracking-wider mb-1.5">
               {tr('profile.display_name_label')}

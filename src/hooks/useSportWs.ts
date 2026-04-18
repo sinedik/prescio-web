@@ -4,14 +4,14 @@ import { useEffect, useRef, useCallback } from 'react'
 type WsMessage =
   | { type: 'event_update'; data: Record<string, unknown> }
   | { type: 'odds_update'; eventId: string; data: Record<string, unknown> }
-  | { type: 'list_update'; data: { id: string; status: string; home_score: number | null; away_score: number | null; elapsed: number | null } }
+  | { type: 'list_update'; data: { id: string; status: string; home_score: number | null; away_score: number | null; elapsed: number | null; status_short: string | null } }
 
 interface UseSportWsOptions {
   eventId?: string
   subscribeList?: boolean
   onEventUpdate?: (data: Record<string, unknown>) => void
   onOddsUpdate?: (eventId: string, data: Record<string, unknown>) => void
-  onListUpdate?: (data: { id: string; status: string; home_score: number | null; away_score: number | null; elapsed: number | null }) => void
+  onListUpdate?: (data: { id: string; status: string; home_score: number | null; away_score: number | null; elapsed: number | null; status_short: string | null }) => void
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'

@@ -29,6 +29,11 @@ export interface Profile {
   notif_resolution_reminder?: boolean
   last_active_date?: string
   theme?: 'dark' | 'light'
+  timezone?: string
+  avatar_url?: string | null
+  deleted_at?: string | null
+  subscription_status?: 'active' | 'past_due' | 'paused' | 'canceled' | 'trialing' | null
+  current_period_end?: string | null
 }
 
 // Module-level cache — survives StrictMode double-mount, component re-renders
@@ -45,15 +50,25 @@ async function fetchProfile(userId: string, force = false): Promise<void> {
   if (!force && (profileCache.fetching || profileCache.userId === userId)) return
   profileCache.fetching = true
   try {
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single()
-    if (data) {
-      profileCache.data = data as Profile
+    const [{ data: profile }, { data: subs }] = await Promise.all([
+      supabase.from('profiles').select('*').eq('id', userId).single(),
+      supabase
+        .from('subscriptions')
+        .select('status, current_period_end')
+        .eq('user_id', userId)
+        .order('current_period_end', { ascending: false, nullsFirst: false })
+        .limit(1),
+    ])
+    if (profile) {
+      const sub = subs?.[0]
+      const merged: Profile = {
+        ...(profile as Profile),
+        subscription_status: (sub?.status as Profile['subscription_status']) ?? null,
+        current_period_end: sub?.current_period_end ?? null,
+      }
+      profileCache.data = merged
       profileCache.userId = userId
-      onProfileUpdate?.(data as Profile)
+      onProfileUpdate?.(merged)
     }
   } finally {
     profileCache.fetching = false
@@ -120,14 +135,31 @@ export function useAuth() {
     }
   }, [])
 
-  async function signIn(email: string, password: string) {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+  async function signIn(email: string, password: string, captchaToken?: string) {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+      options: captchaToken ? { captchaToken } : undefined,
+    })
     if (error) throw error
   }
 
-  async function signUp(email: string, password: string) {
-    const { error } = await supabase.auth.signUp({ email, password })
+  async function signUp(email: string, password: string, displayName?: string, captchaToken?: string) {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: displayName ? { display_name: displayName } : undefined,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/onboarding`,
+        captchaToken,
+      },
+    })
     if (error) throw error
+    if (data.session) {
+      const { authApi } = await import('../lib/api')
+      authApi.markHasPassword().catch(() => {})
+    }
+    return { needsConfirmation: !data.session }
   }
 
   async function signOut() {
