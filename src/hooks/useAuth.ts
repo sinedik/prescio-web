@@ -94,9 +94,12 @@ export function useAuth() {
         if (profileCache.userId === session.user.id && profileCache.data) {
           setProfile(profileCache.data)
           setLoading(false)
-        } else {
+        } else if (!profileCache.fetching) {
+          // Only start a fetch if onAuthStateChange (SIGNED_IN) hasn't already started one;
+          // if it has, that handler's .finally() will call setLoading(false) — don't call it early.
           fetchProfile(session.user.id).finally(() => setLoading(false))
         }
+        // If profileCache.fetching, SIGNED_IN handler owns the setLoading(false) call.
       } else {
         setLoading(false)
       }

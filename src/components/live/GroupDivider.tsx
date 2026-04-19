@@ -14,32 +14,38 @@ export function GroupDivider({ name, count, liveCount, first, logo, flag }: Prop
   const [logoErr, setLogoErr] = useState(false)
   const [flagErr, setFlagErr] = useState(false)
 
-  const hasIcon = (flag && !flagErr) || (logo && !logoErr)
   const icon = flag && !flagErr ? (
     // eslint-disable-next-line @next/next/no-img-element
     <img src={flag} alt="" loading="lazy" onError={() => setFlagErr(true)}
-      className="w-[18px] h-[13px] object-cover rounded-[2px] shrink-0" />
+      className="w-4 h-3 object-cover shrink-0" style={{ borderRadius: 1 }} />
   ) : logo && !logoErr ? (
     // eslint-disable-next-line @next/next/no-img-element
     <img src={logo} alt="" loading="lazy" onError={() => setLogoErr(true)}
-      className="w-5 h-5 object-contain shrink-0" />
-  ) : null
+      className="w-4 h-4 object-contain shrink-0" />
+  ) : <div className="w-4 h-4 shrink-0" />
 
   return (
-    <div className={`flex items-center gap-2.5 px-3.5 rounded-lg overflow-hidden ${first ? 'mt-0' : 'mt-5'} mb-1.5`}
-      style={{ minHeight: 40, background: 'rgba(var(--surface-tint-rgb),0.05)', borderLeft: '3px solid rgba(var(--surface-tint-rgb),0.08)' }}>
-      {hasIcon ? icon : <div className="w-5 h-5 shrink-0" />}
-      <span className="text-[13px] font-semibold text-text-primary truncate flex-1">
+    <div
+      className={`flex items-center gap-2 px-3.5 ${first ? 'mt-0' : 'mt-4'}`}
+      style={{
+        minHeight: 34,
+        background: 'rgba(var(--surface-tint-rgb),0.04)',
+        borderBottom: '0.5px solid rgba(var(--surface-tint-rgb),0.07)',
+      }}
+    >
+      {icon}
+      <span className="text-[10px] font-mono uppercase tracking-[0.08em] truncate flex-1"
+        style={{ color: 'rgba(var(--surface-tint-rgb),0.5)' }}>
         {name}
       </span>
       {liveCount > 0 && (
-        <span className="flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0"
-          style={{ background: 'rgba(255,50,50,0.12)', color: '#ff5252', border: '1px solid rgba(255,50,50,0.25)' }}>
-          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-          {liveCount}
+        <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded shrink-0"
+          style={{ background: 'rgba(255,50,50,0.1)', color: '#ff5252', border: '0.5px solid rgba(255,50,50,0.25)' }}>
+          ● {liveCount}
         </span>
       )}
-      <span className="text-[10px] font-mono text-text-muted shrink-0 min-w-[18px] text-right">
+      <span className="text-[9px] font-mono shrink-0"
+        style={{ color: 'rgba(var(--surface-tint-rgb),0.25)' }}>
         {count}
       </span>
     </div>

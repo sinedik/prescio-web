@@ -8,6 +8,7 @@ import { useT } from '../lib/i18n'
 import Logo from '../components/Logo'
 import AppFooter from '../components/AppFooter'
 import { IconMoon, IconSun } from '../components/icons'
+import PrescioLoader from '../components/PrescioLoader'
 
 // ── Mock market cards (hero right panel) ─────────────────────────────────────
 const MOCK_CARDS = [
@@ -960,28 +961,10 @@ export default function LandingPage() {
     router.replace(profile.onboarding_done ? '/markets' : '/onboarding')
   }, [loading, user, profile, router])
 
-  if (!loading && user) {
-    if (!profile) return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ background: 'rgb(var(--bg-base))' }}>
-        <span className="text-text-muted font-mono text-sm">Failed to load profile.</span>
-        <button
-          onClick={() => signOut()}
-          className="text-xs font-mono text-accent underline"
-        >
-          Sign out
-        </button>
-      </div>
-    )
+  if (loading || user) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'rgb(var(--bg-base))' }}>
-        <span className="text-text-muted font-mono text-sm animate-pulse">LOADING...</span>
-      </div>
-    )
-  }
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'rgb(var(--bg-base))' }}>
-        <span className="text-text-muted font-mono text-sm animate-pulse">LOADING...</span>
+        <PrescioLoader />
       </div>
     )
   }

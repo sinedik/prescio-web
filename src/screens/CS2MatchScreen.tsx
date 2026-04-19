@@ -64,6 +64,7 @@ const DOTA_DIRE    = '#ef4444'
 const CS_CT        = '#6fa8dc'
 const CS_T         = '#e8a33d'
 const LIVE_RED     = '#ff3d3d'
+const CS2_ACCENT   = '#ff6b2b'
 
 function sideColorForCs(side?: string | null): string | null {
   const s = (side ?? '').toLowerCase()
@@ -120,10 +121,11 @@ function LiveClock({ initialSeconds, ticking, accent }: { initialSeconds: number
 
 // ─── Team logo / initials ─────────────────────────────────────────────────────
 
-function TeamLogo({ team, size = 40 }: { team: EsportsTeamDetail; size?: number }) {
+function TeamLogo({ team, size = 40, circle }: { team: EsportsTeamDetail; size?: number; circle?: boolean }) {
   const [err, setErr] = useState(false)
   const color = team.colorPrimary ?? nameToColor(team.name ?? '?')
   const initials = (team.name ?? '?').slice(0, 2).toUpperCase()
+  const borderStyle = circle ? { border: '0.5px solid rgba(var(--surface-tint-rgb),0.2)' } : {}
   if (team.logoUrl && !err) {
     return (
       <img
@@ -132,15 +134,15 @@ function TeamLogo({ team, size = 40 }: { team: EsportsTeamDetail; size?: number 
         width={size}
         height={size}
         onError={() => setErr(true)}
-        className="object-contain rounded"
-        style={{ width: size, height: size }}
+        className={`object-contain ${circle ? 'rounded-full' : 'rounded'}`}
+        style={{ width: size, height: size, ...borderStyle }}
       />
     )
   }
   return (
     <div
-      className="rounded flex items-center justify-center font-mono font-bold text-white shrink-0"
-      style={{ width: size, height: size, background: color, fontSize: size * 0.35 }}
+      className={`${circle ? 'rounded-full' : 'rounded'} flex items-center justify-center font-mono font-bold text-white shrink-0`}
+      style={{ width: size, height: size, background: color, fontSize: size * 0.35, ...borderStyle }}
     >
       {initials}
     </div>
@@ -1123,28 +1125,1010 @@ function PreMatchSection({ pre, teamAName, teamBName, accent }: {
 
 // ─── Win probability bar ──────────────────────────────────────────────────────
 
-function OddsBar({ yesPrice, noPrice, teamA, teamB, accentA }: {
-  yesPrice: number; noPrice: number; teamA: string; teamB: string; accentA?: string | null
+function WinProbBlock({ yesPrice, noPrice, teamA, teamB, markets }: {
+  yesPrice: number; noPrice: number; teamA: string; teamB: string
+  markets?: import('../types').EsportsMarket[]
 }) {
+  if (markets && markets.length > 0) return null // handled by BettingTab
   const pct = Math.round(yesPrice * 100)
-  if (!pct) return null
-  if (yesPrice === 0.5) return null
-  const color = accentA ?? 'var(--accent)'
+  if (!pct || yesPrice === 0.5) return null
   return (
     <div className="bg-bg-surface border border-bg-border rounded-lg p-4">
-      <p className="text-[10px] font-mono text-text-muted mb-2 uppercase tracking-wider">Win probability</p>
-      <div className="flex items-center gap-2 mb-1.5">
-        <span className="text-[11px] font-mono text-text-primary w-24 truncate">{teamA}</span>
-        <div className="flex-1 h-2 rounded-full bg-bg-elevated overflow-hidden">
-          <div className="h-full rounded-full transition-all duration-500"
-            style={{ width: `${pct}%`, background: color }} />
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[9px] font-mono text-text-muted uppercase tracking-wider">WIN PROBABILITY · PREDICTION MARKETS</span>
+      </div>
+      <div className="flex items-center gap-2 mb-1">
+        <span className="text-[9px] font-mono w-7 shrink-0" style={{ color: 'rgb(var(--alpha))' }}>YES</span>
+        <div className="flex-1 h-1.5 rounded-full overflow-hidden flex">
+          <div className="h-full transition-all duration-500" style={{ width: `${pct}%`, background: 'rgb(var(--alpha))' }} />
+          <div className="h-full transition-all duration-500" style={{ width: `${100 - pct}%`, background: 'rgb(var(--danger))' }} />
         </div>
-        <span className="text-[11px] font-mono text-text-primary w-24 truncate text-right">{teamB}</span>
+        <span className="text-[11px] font-mono font-medium w-10 text-right" style={{ color: 'rgb(var(--alpha))' }}>{pct}%</span>
       </div>
-      <div className="flex justify-between">
-        <span className="text-[11px] font-mono font-bold" style={{ color }}>{pct}%</span>
-        <span className="text-[11px] font-mono font-bold text-text-muted">{100 - pct}%</span>
+      <div className="flex items-center gap-2">
+        <span className="text-[9px] font-mono w-7 shrink-0" style={{ color: 'rgb(var(--danger))' }}>NO</span>
+        <div className="flex-1" />
+        <span className="text-[11px] font-mono font-medium w-10 text-right" style={{ color: 'rgb(var(--danger))' }}>{100 - pct}%</span>
       </div>
+      <p className="text-[8px] font-mono text-text-muted/50 mt-1.5 text-right">
+        {teamA} vs {teamB} · Polymarket / Kalshi
+      </p>
+    </div>
+  )
+}
+
+// ─── Hero: maps bar ───────────────────────────────────────────────────────────
+
+function sideLabel(side?: string | null) {
+  const s = (side ?? '').toLowerCase()
+  if (s === 'ct' || s.includes('counter')) return 'CT'
+  if (s === 't' || s === 'terrorist') return 'T'
+  return null
+}
+
+function SideBadge({ side }: { side?: string | null }) {
+  const label = sideLabel(side)
+  if (!label) return null
+  const isCt = label === 'CT'
+  return (
+    <span className="text-[7px] font-mono font-bold px-1 py-[1px] rounded"
+      style={isCt
+        ? { background: 'rgba(var(--poly),0.18)', color: 'rgb(var(--poly))' }
+        : { background: 'rgba(var(--watch),0.18)', color: 'rgb(var(--watch))' }}>
+      {label}
+    </span>
+  )
+}
+
+function Cs2MapsBar({ games, teamAName, teamBName }: {
+  games: EsportsGame[]; teamAName: string; teamBName: string
+}) {
+  if (!games.length) return null
+  return (
+    <div style={{ display: 'flex', gap: 6, padding: '8px 14px 12px', overflowX: 'auto' }}>
+      {games.map(g => {
+        const isLiveG    = g.started && !g.finished
+        const isFinishedG = g.finished
+        const isPending  = !g.started && !g.finished
+        const aWon = g.teamA?.won
+        const bWon = g.teamB?.won
+        const sA = g.teamA?.score
+        const sB = g.teamB?.score
+        const currentRound = isLiveG && g.rounds ? g.rounds.filter(r => r.started).length : null
+        const mapLabel = `MAP ${g.seq}${g.map ? ` · ${g.map.toUpperCase()}` : ''}`
+
+        const borderColor = isLiveG
+          ? CS2_ACCENT
+          : isFinishedG
+            ? (aWon ? 'rgba(var(--alpha),0.4)' : bWon ? 'rgba(var(--danger),0.4)' : 'rgba(var(--surface-tint-rgb),0.1)')
+            : 'rgba(var(--surface-tint-rgb),0.1)'
+
+        return (
+          <div key={g.seq} style={{
+            flex: 1, minWidth: 80, padding: '6px 8px', borderRadius: 6,
+            border: `1px solid ${borderColor}`,
+            background: isLiveG ? `${CS2_ACCENT}08` : 'rgba(var(--surface-tint-rgb),0.02)',
+            opacity: isPending ? 0.35 : 1,
+          }}>
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontSize: 8, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(var(--surface-tint-rgb),0.45)' }}>
+                {mapLabel}
+              </span>
+              {isLiveG && currentRound != null && (
+                <span style={{ fontSize: 7, fontFamily: 'monospace', fontWeight: 700, color: CS2_ACCENT }}>
+                  ● R{currentRound}
+                </span>
+              )}
+              {isLiveG && currentRound == null && (
+                <span style={{ fontSize: 7, fontFamily: 'monospace', fontWeight: 700, color: CS2_ACCENT }}>● LIVE</span>
+              )}
+              {isPending && (
+                <span style={{ fontSize: 7, fontFamily: 'monospace', color: 'rgba(var(--surface-tint-rgb),0.3)' }}>PENDING</span>
+              )}
+              {isFinishedG && (
+                <span style={{ fontSize: 7, fontFamily: 'monospace', color: 'rgba(var(--surface-tint-rgb),0.3)' }}>FT</span>
+              )}
+            </div>
+            {/* Scores */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3 }}>
+                <span style={{
+                  fontSize: 14, fontWeight: 500, fontFamily: 'monospace',
+                  color: isLiveG ? CS2_ACCENT : aWon ? 'rgb(var(--text-primary))' : 'rgba(var(--surface-tint-rgb),0.4)',
+                }}>
+                  {isPending ? '—' : (sA ?? '—')}
+                </span>
+                {!isPending && <SideBadge side={g.teamA?.side} />}
+              </div>
+              <span style={{ fontSize: 8, fontFamily: 'monospace', color: 'rgba(var(--surface-tint-rgb),0.25)' }}>
+                {isFinishedG ? 'раунды' : '·'}
+              </span>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
+                <span style={{
+                  fontSize: 14, fontWeight: 500, fontFamily: 'monospace',
+                  color: isLiveG ? CS2_ACCENT : bWon ? 'rgb(var(--text-primary))' : 'rgba(var(--surface-tint-rgb),0.4)',
+                }}>
+                  {isPending ? '—' : (sB ?? '—')}
+                </span>
+                {!isPending && <SideBadge side={g.teamB?.side} />}
+              </div>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ─── Hero: sticky header ──────────────────────────────────────────────────────
+
+function Cs2Hero({ match, teamA, teamB, scoreA, scoreB, isLive, isFinished, gameSlug, isRefreshing, onBack }: {
+  match: EsportsMatchDetail
+  teamA?: EsportsTeamDetail; teamB?: EsportsTeamDetail
+  scoreA: number | null; scoreB: number | null
+  isLive: boolean; isFinished: boolean
+  gameSlug: string; isRefreshing: boolean
+  onBack: () => void
+}) {
+  const formatLabel = (() => {
+    const f = (match.format ?? '').toLowerCase()
+    const m = f.match(/bo\s*(\d+)/) ?? f.match(/best.?of.?(\d+)/)
+    return m ? `BEST OF ${m[1]}` : match.format?.toUpperCase() ?? ''
+  })()
+
+  return (
+    <div style={{
+      background: 'rgb(var(--bg-surface))',
+      borderBottom: '1px solid rgba(var(--surface-tint-rgb),0.08)',
+    }}>
+      {/* Row 1: Meta bar */}
+      <div className="flex items-center justify-between px-4 py-1.5" style={{ minHeight: 32 }}>
+        <div className="flex items-center gap-2">
+          <button onClick={onBack}
+            className="flex items-center gap-1 text-[9px] font-mono transition-colors hover:text-text-primary"
+            style={{ color: 'rgb(var(--text-muted))' }}>
+            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M19 12H5M12 5l-7 7 7 7"/>
+            </svg>
+          </button>
+          <span className="text-[9px] font-mono truncate" style={{ color: 'rgb(var(--text-muted))' }}>
+            {match.tournament ?? gameLabel(match.subcategory)}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          {isRefreshing && (
+            <svg className="w-3 h-3 animate-spin" style={{ color: 'rgb(var(--text-muted))' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 12a9 9 0 11-6.219-8.56"/>
+            </svg>
+          )}
+          {formatLabel && (
+            <span className="text-[8px] font-mono font-bold px-1.5 py-[2px] rounded"
+              style={{ background: 'rgba(var(--watch),0.15)', color: 'rgb(var(--watch))' }}>
+              {formatLabel}
+            </span>
+          )}
+          {isLive && (
+            <span className="inline-flex items-center gap-1 text-[8px] font-mono font-bold px-1.5 py-[2px] rounded"
+              style={{ background: 'rgba(var(--danger),0.15)', color: 'rgb(var(--danger))' }}>
+              <span className="w-1 h-1 rounded-full animate-pulse" style={{ background: 'rgb(var(--danger))' }} />LIVE
+            </span>
+          )}
+          {isFinished && (
+            <span className="text-[8px] font-mono px-1.5 py-[2px] rounded border"
+              style={{ borderColor: 'rgba(var(--surface-tint-rgb),0.15)', color: 'rgb(var(--text-muted))' }}>
+              FIN
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Row 2: Scoreboard */}
+      <div className="flex items-center px-4 pb-3" style={{ minHeight: 80 }}>
+        {/* Team A */}
+        <div className="flex-1 flex flex-col items-center gap-1.5">
+          {teamA && (
+            teamA.id
+              ? <Link href={`/cybersport/${gameSlug}/team/${teamA.id}`} prefetch={false}><TeamLogo team={teamA} size={44} circle /></Link>
+              : <TeamLogo team={teamA} size={44} circle />
+          )}
+          <span className="text-[12px] font-mono text-center" style={{ color: 'rgb(var(--text-secondary))' }}>
+            {teamA?.name ?? '—'}
+          </span>
+          {isFinished && scoreA != null && scoreA > (scoreB ?? 0) && (
+            <span className="text-[8px] font-mono font-bold" style={{ color: 'rgb(var(--alpha))' }}>WON</span>
+          )}
+        </div>
+
+        {/* Center: score */}
+        <div className="flex flex-col items-center gap-0.5 w-24 shrink-0">
+          <span className="text-[8px] font-mono uppercase tracking-widest" style={{ color: 'rgb(var(--text-muted))' }}>СЕРИЯ</span>
+          {(isLive || isFinished) && scoreA != null && scoreB != null ? (
+            <span className="font-mono font-medium tabular-nums" style={{ fontSize: 30, color: 'rgb(var(--text-primary))' }}>
+              {scoreA} : {scoreB}
+            </span>
+          ) : match.status === 'upcoming' ? (
+            <>
+              <span className="font-mono" style={{ fontSize: 20, color: 'rgba(var(--surface-tint-rgb),0.3)' }}>vs</span>
+              <Countdown startsAt={match.startsAt} />
+            </>
+          ) : (
+            <span className="font-mono" style={{ fontSize: 20, color: 'rgba(var(--surface-tint-rgb),0.3)' }}>vs</span>
+          )}
+        </div>
+
+        {/* Team B */}
+        <div className="flex-1 flex flex-col items-center gap-1.5">
+          {teamB && (
+            teamB.id
+              ? <Link href={`/cybersport/${gameSlug}/team/${teamB.id}`} prefetch={false}><TeamLogo team={teamB} size={44} circle /></Link>
+              : <TeamLogo team={teamB} size={44} circle />
+          )}
+          <span className="text-[12px] font-mono text-center" style={{ color: 'rgb(var(--text-secondary))' }}>
+            {teamB?.name ?? '—'}
+          </span>
+          {isFinished && scoreB != null && scoreB > (scoreA ?? 0) && (
+            <span className="text-[8px] font-mono font-bold" style={{ color: 'rgb(var(--alpha))' }}>WON</span>
+          )}
+        </div>
+      </div>
+
+      {/* Row 3: Maps bar */}
+      {(match.games?.length ?? 0) > 0 && (
+        <Cs2MapsBar games={match.games} teamAName={teamA?.name ?? '—'} teamBName={teamB?.name ?? '—'} />
+      )}
+    </div>
+  )
+}
+
+// ─── Tabs ─────────────────────────────────────────────────────────────────────
+
+type Cs2Tab = 'overview' | 'maps' | 'players' | 'betting'
+const TAB_LABELS: Record<Cs2Tab, string> = {
+  overview: 'ОБЗОР',
+  maps:     'КАРТЫ',
+  players:  'ИГРОКИ',
+  betting:  'БЕТТИНГ',
+}
+
+function Cs2TabBar({ active, onSelect }: { active: Cs2Tab; onSelect: (t: Cs2Tab) => void }) {
+  return (
+    <div className="flex border-b" style={{ borderColor: 'rgba(var(--surface-tint-rgb),0.08)', background: 'rgb(var(--bg-surface))' }}>
+      {(Object.keys(TAB_LABELS) as Cs2Tab[]).map(tab => {
+        const isActive = tab === active
+        return (
+          <button key={tab} onClick={() => onSelect(tab)}
+            className="px-4 py-2.5 text-[10px] font-mono font-bold uppercase tracking-wider transition-colors"
+            style={{
+              color: isActive ? CS2_ACCENT : 'rgb(var(--text-muted))',
+              borderBottom: isActive ? `2px solid ${CS2_ACCENT}` : '2px solid transparent',
+              marginBottom: -1,
+            }}>
+            {TAB_LABELS[tab]}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+// ─── CS2 Section primitives ───────────────────────────────────────────────────
+
+function Cs2SectionCard({ children, noPad }: { children: React.ReactNode; noPad?: boolean }) {
+  return (
+    <div style={{
+      background: 'rgb(var(--bg-surface))',
+      border: '1px solid rgba(var(--surface-tint-rgb),0.08)',
+      borderRadius: 8,
+      overflow: 'hidden',
+      padding: noPad ? 0 : '10px 12px',
+    }}>
+      {children}
+    </div>
+  )
+}
+
+function Cs2SectionHeader({ title, right }: { title: string; right?: string }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+      <span style={{ fontSize: 8, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(var(--surface-tint-rgb),0.4)' }}>
+        {title}
+      </span>
+      {right && (
+        <span style={{ fontSize: 8, fontFamily: 'monospace', color: 'rgba(var(--surface-tint-rgb),0.3)' }}>
+          {right}
+        </span>
+      )}
+    </div>
+  )
+}
+
+// ─── CS2 Round bar ────────────────────────────────────────────────────────────
+
+function Cs2RoundBar({ game, teamAName, teamBName }: {
+  game: EsportsGame; teamAName: string; teamBName: string
+}) {
+  const rounds = game.rounds ?? []
+  if (!rounds.length && !game.started) return null
+
+  const isLiveG = game.started && !game.finished
+  const currentRoundNum = isLiveG
+    ? (rounds.find(r => r.started && !r.finished)?.round ?? null)
+    : null
+
+  // Build slots for MR12 (24 rounds standard), expand if OT rounds exist
+  const maxRoundInData = rounds.reduce((m, r) => Math.max(m, r.round), 0)
+  const totalSlots = Math.max(24, maxRoundInData)
+
+  const slots: (EsportsRound | null)[] = Array.from({ length: totalSlots }, (_, i) =>
+    rounds.find(r => r.round === i + 1) ?? null
+  )
+
+  const half1 = slots.slice(0, 12)
+  const half2 = slots.slice(12, 24)
+  const otSlots = totalSlots > 24 ? slots.slice(24) : []
+
+  const anyHalf2Started = rounds.some(r => r.round > 12 && r.started)
+  const sideASecond = rounds.find(r => r.round === 13)?.teamA?.side ?? null
+
+  const aWins = rounds.filter(r => r.teamA?.won).length
+  const bWins = rounds.filter(r => r.teamB?.won).length
+  const mapLabel = `MAP ${game.seq}${game.map ? ` · ${game.map.toUpperCase()}` : ''}`
+
+  const RoundSquare = ({ r, roundNum }: { r: EsportsRound | null; roundNum: number }) => {
+    const isCurrent = roundNum === currentRoundNum
+    const aWon = r?.teamA?.won === true
+    const bWon = r?.teamB?.won === true
+    const hasWinner = aWon || bWon
+
+    if (isCurrent) {
+      return (
+        <div style={{
+          width: 14, height: 14, borderRadius: 2, flexShrink: 0,
+          background: CS2_ACCENT, border: `1px solid ${CS2_ACCENT}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <span style={{ fontSize: 6, fontFamily: 'monospace', color: '#fff', fontWeight: 700 }}>{roundNum}</span>
+        </div>
+      )
+    }
+    if (hasWinner) {
+      return (
+        <div style={{
+          width: 14, height: 14, borderRadius: 2, flexShrink: 0,
+          background: aWon ? 'rgba(var(--alpha),0.18)' : 'rgba(var(--danger),0.18)',
+          border: `1px solid ${aWon ? 'rgba(var(--alpha),0.35)' : 'rgba(var(--danger),0.35)'}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <span style={{ fontSize: 6, fontFamily: 'monospace', fontWeight: 700, color: aWon ? 'rgb(var(--alpha))' : 'rgb(var(--danger))' }}>
+            {aWon ? 'W' : 'L'}
+          </span>
+        </div>
+      )
+    }
+    return (
+      <div style={{
+        width: 14, height: 14, borderRadius: 2, flexShrink: 0,
+        background: 'rgba(var(--surface-tint-rgb),0.04)',
+        border: '0.5px solid rgba(var(--surface-tint-rgb),0.1)',
+      }} />
+    )
+  }
+
+  return (
+    <div>
+      <Cs2SectionHeader
+        title={`${mapLabel} · РАУНДЫ`}
+        right={isLiveG && currentRoundNum != null ? `● R${currentRoundNum}` : game.finished ? `${aWins} : ${bWins}` : undefined}
+      />
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
+        {half1.map((r, i) => <RoundSquare key={i + 1} r={r} roundNum={i + 1} />)}
+        <div style={{ width: 1, height: 14, background: 'rgba(var(--surface-tint-rgb),0.15)', margin: '0 3px', flexShrink: 0 }} />
+        {sideASecond && (
+          <span style={{ fontSize: 7, fontFamily: 'monospace', color: 'rgba(var(--surface-tint-rgb),0.3)', lineHeight: '14px', marginRight: 3 }}>
+            {sideASecond.toUpperCase().includes('CT') ? 'CT→' : sideASecond.toUpperCase().includes('T') ? 'T→' : '→'}
+          </span>
+        )}
+        {anyHalf2Started
+          ? half2.map((r, i) => <RoundSquare key={i + 13} r={r} roundNum={i + 13} />)
+          : <span style={{ fontSize: 8, fontFamily: 'monospace', color: 'rgba(var(--surface-tint-rgb),0.2)', lineHeight: '14px' }}>half 2</span>
+        }
+        {otSlots.length > 0 && (
+          <>
+            <div style={{ width: 1, height: 14, background: 'rgba(var(--surface-tint-rgb),0.15)', margin: '0 3px', flexShrink: 0 }} />
+            <span style={{ fontSize: 7, fontFamily: 'monospace', color: 'rgba(var(--surface-tint-rgb),0.3)', lineHeight: '14px', marginRight: 3 }}>OT</span>
+            {otSlots.map((r, i) => <RoundSquare key={i + 25} r={r} roundNum={i + 25} />)}
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── CS2 Economy bar ──────────────────────────────────────────────────────────
+
+function Cs2EconomyBar({ game, teamAName, teamBName }: {
+  game: EsportsGame; teamAName: string; teamBName: string
+}) {
+  const aLoad = game.teamA?.loadoutValue ?? 0
+  const bLoad = game.teamB?.loadoutValue ?? 0
+  if (aLoad === 0 && bLoad === 0) return null
+  const total = aLoad + bLoad
+  const aPct = total > 0 ? (aLoad / total) * 100 : 50
+  const fmt = (n: number) => n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${n}`
+
+  return (
+    <div>
+      <Cs2SectionHeader title="ЭКОНОМИКА" />
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+        <span style={{ fontSize: 9, fontFamily: 'monospace', color: 'rgb(var(--alpha))' }}>{teamAName}</span>
+        <span style={{ fontSize: 9, fontFamily: 'monospace', color: 'rgba(var(--surface-tint-rgb),0.4)' }}>{teamBName}</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 500, color: 'rgb(var(--poly))' }}>{fmt(aLoad)}</span>
+        <div style={{ flex: 1, height: 5, borderRadius: 3, overflow: 'hidden', display: 'flex', background: 'rgba(var(--surface-tint-rgb),0.04)' }}>
+          <div style={{ width: `${aPct}%`, height: '100%', background: 'rgb(var(--poly))', transition: 'width 0.5s' }} />
+          <div style={{ width: `${100 - aPct}%`, height: '100%', background: 'rgb(var(--watch))', transition: 'width 0.5s' }} />
+        </div>
+        <span style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 500, color: 'rgb(var(--watch))' }}>{fmt(bLoad)}</span>
+      </div>
+    </div>
+  )
+}
+
+// ─── CS2 Player grid (two-column) ─────────────────────────────────────────────
+
+function Cs2PlayerGrid({ game, teamAName, teamBName }: {
+  game: EsportsGame; teamAName: string; teamBName: string
+}) {
+  const gA = game.teamA
+  const gB = game.teamB
+  const hasA = (gA?.players?.length ?? 0) > 0
+  const hasB = (gB?.players?.length ?? 0) > 0
+  if (!hasA && !hasB) return null
+
+  const sortedA = hasA ? [...gA!.players!].sort((a, b) => (b.kills ?? 0) - (a.kills ?? 0)) : []
+  const sortedB = hasB ? [...gB!.players!].sort((a, b) => (b.kills ?? 0) - (a.kills ?? 0)) : []
+  const maxKA = sortedA[0]?.kills ?? 0
+  const maxKB = sortedB[0]?.kills ?? 0
+  const sideALabel = sideLabel(gA?.side)
+  const sideBLabel = sideLabel(gB?.side)
+
+  const fmtMoney = (n?: number | null) => n == null ? '—' : n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${n}`
+
+  const PlayerRow2 = ({ p, maxK }: { p: EsportsPlayer; maxK: number }) => {
+    const name = p.nickname ?? p.name ?? p.id
+    const isTopK = (p.kills ?? 0) === maxK && maxK > 0
+    const hp = p.currentHealth ?? null
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '2px 4px' }}>
+        {p.alive === false && (
+          <span style={{ fontSize: 7, color: 'rgb(var(--danger))', flexShrink: 0, lineHeight: 1 }}>✕</span>
+        )}
+        <span style={{ flex: 1, fontSize: 11, fontFamily: 'monospace', color: 'rgb(var(--text-primary))', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {name}
+        </span>
+        <span style={{ fontSize: 10, fontFamily: 'monospace', fontWeight: isTopK ? 700 : 400, color: isTopK ? 'rgb(var(--text-primary))' : 'rgb(var(--text-secondary))', width: 14, textAlign: 'right' }}>
+          {p.kills ?? '—'}
+        </span>
+        <span style={{ fontSize: 8, color: 'rgba(var(--surface-tint-rgb),0.3)', fontFamily: 'monospace' }}>/</span>
+        <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgb(var(--text-muted))', width: 14, textAlign: 'right' }}>
+          {p.deaths ?? '—'}
+        </span>
+        <span style={{ fontSize: 8, color: 'rgba(var(--surface-tint-rgb),0.3)', fontFamily: 'monospace' }}>/</span>
+        <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgba(var(--surface-tint-rgb),0.45)', width: 14, textAlign: 'right' }}>
+          {p.assists ?? '—'}
+        </span>
+        <div style={{ width: 24, height: 3, borderRadius: 2, overflow: 'hidden', background: 'rgba(var(--surface-tint-rgb),0.08)', flexShrink: 0 }}>
+          {hp != null && (
+            <div style={{ width: `${Math.min(hp, 100)}%`, height: '100%', background: hp > 50 ? 'rgb(var(--alpha))' : 'rgb(var(--danger))' }} />
+          )}
+        </div>
+        <span style={{ fontSize: 9, fontFamily: 'monospace', color: 'rgba(var(--surface-tint-rgb),0.35)', width: 30, textAlign: 'right', flexShrink: 0 }}>
+          {fmtMoney(p.money)}
+        </span>
+      </div>
+    )
+  }
+
+  const TeamCol = ({ name, sLabel, isA, players, maxK }: {
+    name: string; sLabel: string | null; isA: boolean; players: EsportsPlayer[]; maxK: number
+  }) => (
+    <div>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 4,
+        padding: '4px 4px 5px', borderBottom: '0.5px solid rgba(var(--surface-tint-rgb),0.08)',
+        marginBottom: 3,
+      }}>
+        <span style={{
+          fontSize: 8, fontFamily: 'monospace', fontWeight: 700,
+          letterSpacing: '0.08em', textTransform: 'uppercase',
+          color: isA ? 'rgb(var(--alpha))' : 'rgb(var(--danger))',
+        }}>
+          {name}{sLabel ? ` · ${sLabel}` : ''}
+        </span>
+      </div>
+      {players.map(p => <PlayerRow2 key={p.id} p={p} maxK={maxK} />)}
+    </div>
+  )
+
+  return (
+    <div>
+      <Cs2SectionHeader title="ИГРОКИ" right="K · D · A · HP · $" />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <TeamCol name={teamAName} sLabel={sideALabel} isA players={sortedA} maxK={maxKA} />
+        <TeamCol name={teamBName} sLabel={sideBLabel} isA={false} players={sortedB} maxK={maxKB} />
+      </div>
+    </div>
+  )
+}
+
+// ─── CS2 Veto block (collapsible) ─────────────────────────────────────────────
+
+function Cs2VetoBlock({ actions, teamA, teamB, accent, format, defaultCollapsed }: {
+  actions: EsportsDraftAction[]
+  teamA: EsportsTeamDetail | null
+  teamB: EsportsTeamDetail | null
+  accent: string
+  format?: string | null
+  defaultCollapsed?: boolean
+}) {
+  const [open, setOpen] = useState(!defaultCollapsed)
+  const maps = actions.filter(a => (a.itemType ?? '').toLowerCase() === 'map')
+  if (!maps.length) return null
+  const ordered = [...maps].sort((x, y) => Number(x.seq) - Number(y.seq))
+
+  const f = (format ?? '').toLowerCase()
+  const m = f.match(/bo\s*(\d+)/) ?? f.match(/best.?of.?(\d+)/)
+  const formatLabel = m ? `BO${m[1]} · ${maps.length} шагов` : `${maps.length} шагов`
+
+  // Two-column: odd indices (0,2,4,6) = team A steps; even (1,3,5) = team B steps
+  const stepsA = ordered.filter((_, i) => i % 2 === 0)
+  const stepsB = ordered.filter((_, i) => i % 2 === 1)
+
+  const VetoRow = ({ a, stepIdx }: { a: EsportsDraftAction; stepIdx: number }) => {
+    const isBan = a.type === 'ban'
+    const isPick = a.type === 'pick'
+    const isLeft = a.type === 'left' || a.type === 'remaining'
+    const isTeamA = a.teamId === teamA?.id
+    const isTeamB = a.teamId === teamB?.id
+    const teamName = isTeamA ? teamA?.name : isTeamB ? teamB?.name : null
+    const isActive = isPick
+    return (
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 5, padding: '4px 6px', borderRadius: 4,
+        background: isActive ? `${CS2_ACCENT}0d` : 'transparent',
+      }}>
+        <span style={{ fontSize: 7, fontFamily: 'monospace', color: 'rgba(var(--surface-tint-rgb),0.3)', width: 14, flexShrink: 0 }}>
+          {stepIdx}.
+        </span>
+        <span style={{
+          fontSize: 8, fontFamily: 'monospace', fontWeight: 700, width: 24, flexShrink: 0,
+          color: isBan ? 'rgb(var(--danger))' : isPick ? 'rgb(var(--alpha))' : 'rgb(var(--watch))',
+        }}>
+          {isBan ? 'BAN' : isPick ? 'PICK' : 'LEFT'}
+        </span>
+        <span style={{ fontSize: 9, fontFamily: 'monospace', color: 'rgb(var(--text-primary))' }}>
+          {a.heroName ?? '—'}{isActive ? ' ←' : ''}
+        </span>
+      </div>
+    )
+  }
+
+  return (
+    <Cs2SectionCard noPad>
+      <button
+        onClick={() => setOpen(v => !v)}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          width: '100%', padding: '9px 12px', cursor: 'pointer', background: 'transparent', border: 0,
+          borderBottom: open ? '0.5px solid rgba(var(--surface-tint-rgb),0.08)' : '0',
+        }}
+      >
+        <span style={{ fontSize: 8, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(var(--surface-tint-rgb),0.4)' }}>
+          MAP VETO
+        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 8, fontFamily: 'monospace', color: 'rgba(var(--surface-tint-rgb),0.3)' }}>{formatLabel}</span>
+          <span style={{ fontSize: 9, fontFamily: 'monospace', color: 'rgba(var(--surface-tint-rgb),0.4)', transform: open ? 'rotate(180deg)' : 'none', display: 'inline-block', transition: 'transform 0.15s' }}>↓</span>
+        </div>
+      </button>
+      {open && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0, padding: '6px 4px 8px' }}>
+          <div>
+            {stepsA.map((a, i) => <VetoRow key={a.seq} a={a} stepIdx={(i * 2) + 1} />)}
+          </div>
+          <div>
+            {stepsB.map((a, i) => <VetoRow key={a.seq} a={a} stepIdx={(i * 2) + 2} />)}
+          </div>
+        </div>
+      )}
+    </Cs2SectionCard>
+  )
+}
+
+// ─── Tab: ОБЗОР ───────────────────────────────────────────────────────────────
+
+function OverviewTab({ match, teamA, teamB, accent, t }: {
+  match: EsportsMatchDetail; teamA?: EsportsTeamDetail; teamB?: EsportsTeamDetail
+  accent: string; t: ReturnType<typeof useT>
+}) {
+  const isLive = match.status === 'live'
+  const isFinished = match.status === 'finished'
+
+  const liveGame = match.games?.find(g => g.started && !g.finished) ?? null
+  const lastDone = [...(match.games ?? [])].reverse().find(g => g.finished) ?? null
+  const focusGame = liveGame ?? lastDone
+
+  const hasVeto = (match.draft ?? []).some(a => (a.itemType ?? '').toLowerCase() === 'map')
+
+  if (!isLive && !isFinished) {
+    return (
+      <div className="flex flex-col gap-4">
+        {match.preMatch && (() => {
+          const pm = match.preMatch!
+          const empty = !pm.tournament && !pm.streams?.length && !pm.recentA?.length && !pm.recentB?.length && !pm.h2h?.matches?.length
+          if (empty) return (
+            <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3">
+              <p className="text-[11px] font-mono" style={{ color: 'rgba(245,158,11,0.9)' }}>{t('esports.grid_dev_limit')}</p>
+            </div>
+          )
+          return <PreMatchSection pre={pm} teamAName={teamA?.name ?? '—'} teamBName={teamB?.name ?? '—'} accent={accent} />
+        })()}
+        {hasVeto && (
+          <Cs2VetoBlock actions={match.draft!} teamA={teamA ?? null} teamB={teamB ?? null} accent={accent} format={match.format} defaultCollapsed={false} />
+        )}
+        <WinProbBlock yesPrice={match.yesPrice} noPrice={match.noPrice} teamA={teamA?.name ?? '—'} teamB={teamB?.name ?? '—'} markets={match.markets} />
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {/* Block 1: Round bar */}
+      {focusGame && (focusGame.rounds?.length ?? 0) > 0 && teamA && teamB && (
+        <Cs2SectionCard>
+          <Cs2RoundBar game={focusGame} teamAName={teamA.name ?? '—'} teamBName={teamB.name ?? '—'} />
+        </Cs2SectionCard>
+      )}
+
+      {/* Block 2: Economy */}
+      {focusGame && ((focusGame.teamA?.loadoutValue ?? 0) > 0 || (focusGame.teamB?.loadoutValue ?? 0) > 0) && teamA && teamB && (
+        <Cs2SectionCard>
+          <Cs2EconomyBar game={focusGame} teamAName={teamA.name ?? '—'} teamBName={teamB.name ?? '—'} />
+        </Cs2SectionCard>
+      )}
+
+      {/* Block 3: Players */}
+      {focusGame && ((focusGame.teamA?.players?.length ?? 0) > 0 || (focusGame.teamB?.players?.length ?? 0) > 0) && teamA && teamB && (
+        <Cs2SectionCard>
+          <Cs2PlayerGrid game={focusGame} teamAName={teamA.name ?? '—'} teamBName={teamB.name ?? '—'} />
+        </Cs2SectionCard>
+      )}
+
+      {/* Block 4: Minimap */}
+      {focusGame && isLive && (() => {
+        const hasPos = [...(focusGame.teamA?.players ?? []), ...(focusGame.teamB?.players ?? [])]
+          .some(p => p.position && typeof p.position.x === 'number')
+        return hasPos ? (
+          <Cs2SectionCard noPad>
+            <div style={{ padding: '9px 12px 0' }}>
+              <Cs2SectionHeader title="МИНИКАРТА · ТЕКУЩИЙ РАУНД" />
+            </div>
+            <Cs2Minimap teamA={focusGame.teamA ?? null} teamB={focusGame.teamB ?? null} accent={accent} />
+          </Cs2SectionCard>
+        ) : null
+      })()}
+
+      {/* No game data */}
+      {!focusGame && isLive && (
+        <div className="bg-bg-surface border rounded-lg px-5 py-4 flex items-center gap-3"
+          style={{ borderColor: `${CS2_ACCENT}33`, borderLeft: `3px solid ${CS2_ACCENT}` }}>
+          <span className="w-2 h-2 rounded-full animate-pulse shrink-0" style={{ background: CS2_ACCENT }} />
+          <div>
+            <p className="text-[11px] font-mono font-bold text-text-primary">Map 1 in progress</p>
+            <p className="text-[10px] font-mono text-text-muted/60 mt-0.5">{t('esports.live_stats_soon')}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Streams */}
+      {isLive && (match.streams?.length ?? 0) > 0 && (
+        <StreamPlayer urls={match.streams!} />
+      )}
+
+      {/* Block 5: MAP VETO — collapsed */}
+      {hasVeto && (
+        <Cs2VetoBlock actions={match.draft!} teamA={teamA ?? null} teamB={teamB ?? null} accent={accent} format={match.format} defaultCollapsed />
+      )}
+
+      <WinProbBlock yesPrice={match.yesPrice} noPrice={match.noPrice} teamA={teamA?.name ?? '—'} teamB={teamB?.name ?? '—'} markets={match.markets} />
+    </div>
+  )
+}
+
+// ─── Tab: КАРТЫ ───────────────────────────────────────────────────────────────
+
+function MapsTab({ match, teamA, teamB, accent }: {
+  match: EsportsMatchDetail; teamA?: EsportsTeamDetail; teamB?: EsportsTeamDetail; accent: string
+}) {
+  if (!match.games?.length) {
+    return <p className="text-[11px] font-mono text-text-muted text-center py-8">Нет данных по картам</p>
+  }
+  const tAName = teamA?.name ?? '—'
+  const tBName = teamB?.name ?? '—'
+
+  return (
+    <div className="flex flex-col gap-4">
+      {match.games.map(g => {
+        const isLiveG = g.started && !g.finished
+        const isFinishedG = g.finished
+        const isPending = !g.started && !g.finished
+        const aWon = g.teamA?.won
+        const bWon = g.teamB?.won
+        const mapLabel = `MAP ${g.seq}${g.map ? ` · ${g.map.toUpperCase()}` : ''}`
+        const currentRound = isLiveG && g.rounds ? g.rounds.filter(r => r.started).length : null
+        const borderColor = isLiveG ? CS2_ACCENT
+          : isFinishedG ? (aWon ? 'rgba(var(--alpha),0.4)' : bWon ? 'rgba(var(--danger),0.4)' : 'rgba(var(--surface-tint-rgb),0.08)')
+          : 'rgba(var(--surface-tint-rgb),0.08)'
+
+        return (
+          <div key={g.seq} style={{
+            background: 'rgb(var(--bg-surface))',
+            border: `1px solid ${borderColor}`,
+            borderRadius: 8, overflow: 'hidden',
+            opacity: isPending ? 0.65 : 1,
+          }}>
+            {/* Map header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 12px', borderBottom: '0.5px solid rgba(var(--surface-tint-rgb),0.08)' }}>
+              <span style={{ fontSize: 9, fontFamily: 'monospace', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: isLiveG ? CS2_ACCENT : 'rgb(var(--text-secondary))' }}>
+                {mapLabel}
+              </span>
+              {isLiveG && (
+                <span style={{ fontSize: 8, fontFamily: 'monospace', fontWeight: 700, color: CS2_ACCENT }}>
+                  ● LIVE{currentRound != null ? ` · R${currentRound}` : ''}
+                </span>
+              )}
+              {isFinishedG && (
+                <span style={{ fontSize: 8, fontFamily: 'monospace', color: 'rgba(var(--surface-tint-rgb),0.35)' }}>FT</span>
+              )}
+              {isPending && (
+                <span style={{ fontSize: 8, fontFamily: 'monospace', color: 'rgba(var(--surface-tint-rgb),0.3)' }}>PENDING</span>
+              )}
+            </div>
+
+            {isPending ? (
+              <p style={{ fontSize: 11, fontFamily: 'monospace', color: 'rgba(var(--surface-tint-rgb),0.3)', textAlign: 'center', padding: '20px 12px' }}>
+                Матч ещё не начался
+              </p>
+            ) : (
+              <div className="flex flex-col gap-0" style={{ padding: '10px 12px', gap: 12 }}>
+                {/* Round bar */}
+                {(g.rounds?.length ?? 0) > 0 && (
+                  <Cs2RoundBar game={g} teamAName={tAName} teamBName={tBName} />
+                )}
+                {/* Economy */}
+                {((g.teamA?.loadoutValue ?? 0) > 0 || (g.teamB?.loadoutValue ?? 0) > 0) && (
+                  <Cs2EconomyBar game={g} teamAName={tAName} teamBName={tBName} />
+                )}
+                {/* Players */}
+                {((g.teamA?.players?.length ?? 0) > 0 || (g.teamB?.players?.length ?? 0) > 0) && (
+                  <Cs2PlayerGrid game={g} teamAName={tAName} teamBName={tBName} />
+                )}
+                {/* Minimap */}
+                {isLiveG && (() => {
+                  const hasPos = [...(g.teamA?.players ?? []), ...(g.teamB?.players ?? [])]
+                    .some(p => p.position && typeof p.position.x === 'number')
+                  return hasPos ? <Cs2Minimap teamA={g.teamA ?? null} teamB={g.teamB ?? null} accent={accent} /> : null
+                })()}
+                {/* Final score */}
+                {isFinishedG && g.teamA?.score != null && g.teamB?.score != null && (
+                  <div style={{ textAlign: 'center', padding: '4px 0 2px' }}>
+                    <span style={{ fontSize: 22, fontFamily: 'monospace', fontWeight: 500, color: 'rgb(var(--text-primary))' }}>
+                      {g.teamA.score} : {g.teamB.score}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ─── Tab: ИГРОКИ ──────────────────────────────────────────────────────────────
+
+function aggregatePlayers(games: EsportsGame[], side: 'A' | 'B'): EsportsPlayer[] {
+  const acc = new Map<string, EsportsPlayer>()
+  for (const g of games) {
+    if (!g.started) continue
+    const players = side === 'A' ? g.teamA?.players : g.teamB?.players
+    for (const p of players ?? []) {
+      if (!acc.has(p.id)) {
+        acc.set(p.id, { ...p })
+      } else {
+        const e = acc.get(p.id)!
+        acc.set(p.id, {
+          ...e,
+          kills: e.kills + p.kills,
+          deaths: e.deaths + p.deaths,
+          assists: e.assists + p.assists,
+          headshots: (e.headshots ?? 0) + (p.headshots ?? 0),
+          damageDealt: (e.damageDealt ?? 0) + (p.damageDealt ?? 0),
+        })
+      }
+    }
+  }
+  return Array.from(acc.values())
+}
+
+function PlayersTab({ match, teamA, teamB, accent }: {
+  match: EsportsMatchDetail; teamA?: EsportsTeamDetail; teamB?: EsportsTeamDetail; accent: string
+}) {
+  const completedRounds = match.games.reduce((n, g) => n + (g.rounds?.filter(r => r.finished).length ?? 0), 0)
+  const playersA = aggregatePlayers(match.games ?? [], 'A')
+  const playersB = aggregatePlayers(match.games ?? [], 'B')
+
+  if (!playersA.length && !playersB.length) {
+    return <p className="text-[11px] font-mono text-text-muted text-center py-8">Нет данных об игроках</p>
+  }
+
+  const sortedA = [...playersA].sort((a, b) => (b.kills ?? 0) - (a.kills ?? 0))
+  const sortedB = [...playersB].sort((a, b) => (b.kills ?? 0) - (a.kills ?? 0))
+  const maxKA = sortedA[0]?.kills ?? 0
+  const maxKB = sortedB[0]?.kills ?? 0
+  const fmtMoney = (n?: number | null) => n == null ? '—' : n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${n}`
+
+  const AggRow = ({ p, maxK }: { p: EsportsPlayer; maxK: number }) => {
+    const name = p.nickname ?? p.name ?? p.id
+    const isTopK = (p.kills ?? 0) === maxK && maxK > 0
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 10px' }}>
+        <span style={{ flex: 1, fontSize: 11, fontFamily: 'monospace', color: 'rgb(var(--text-primary))', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {name}
+        </span>
+        <span style={{ fontSize: 10, fontFamily: 'monospace', fontWeight: isTopK ? 700 : 400, color: isTopK ? 'rgb(var(--text-primary))' : 'rgb(var(--text-secondary))', width: 16, textAlign: 'right' }}>
+          {p.kills ?? '—'}
+        </span>
+        <span style={{ fontSize: 8, color: 'rgba(var(--surface-tint-rgb),0.3)', fontFamily: 'monospace' }}>/</span>
+        <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgb(var(--text-muted))', width: 16, textAlign: 'right' }}>{p.deaths ?? '—'}</span>
+        <span style={{ fontSize: 8, color: 'rgba(var(--surface-tint-rgb),0.3)', fontFamily: 'monospace' }}>/</span>
+        <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgba(var(--surface-tint-rgb),0.45)', width: 16, textAlign: 'right' }}>{p.assists ?? '—'}</span>
+        <div style={{ width: 24, height: 3, borderRadius: 2, overflow: 'hidden', background: 'rgba(var(--surface-tint-rgb),0.08)', flexShrink: 0 }}>
+          {p.currentHealth != null && (
+            <div style={{ width: `${Math.min(p.currentHealth, 100)}%`, height: '100%', background: (p.currentHealth ?? 0) > 50 ? 'rgb(var(--alpha))' : 'rgb(var(--danger))' }} />
+          )}
+        </div>
+        <span style={{ fontSize: 9, fontFamily: 'monospace', color: 'rgba(var(--surface-tint-rgb),0.35)', width: 30, textAlign: 'right', flexShrink: 0 }}>
+          {fmtMoney(p.money)}
+        </span>
+      </div>
+    )
+  }
+
+  const colHeader = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '0 10px 4px' }}>
+      <span style={{ flex: 1 }} />
+      <span style={{ fontSize: 8, fontFamily: 'monospace', color: 'rgba(var(--surface-tint-rgb),0.3)', width: 16, textAlign: 'right' }}>K</span>
+      <span style={{ width: 4 }} />
+      <span style={{ fontSize: 8, fontFamily: 'monospace', color: 'rgba(var(--surface-tint-rgb),0.3)', width: 16, textAlign: 'right' }}>D</span>
+      <span style={{ width: 4 }} />
+      <span style={{ fontSize: 8, fontFamily: 'monospace', color: 'rgba(var(--surface-tint-rgb),0.3)', width: 16, textAlign: 'right' }}>A</span>
+      <div style={{ width: 24, flexShrink: 0 }}><span style={{ fontSize: 8, fontFamily: 'monospace', color: 'rgba(var(--surface-tint-rgb),0.3)' }}>HP</span></div>
+      <span style={{ fontSize: 8, fontFamily: 'monospace', color: 'rgba(var(--surface-tint-rgb),0.3)', width: 30, textAlign: 'right', flexShrink: 0 }}>$</span>
+    </div>
+  )
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div style={{ background: 'rgb(var(--bg-surface))', border: '1px solid rgba(var(--surface-tint-rgb),0.08)', borderRadius: 8, overflow: 'hidden' }}>
+        {colHeader}
+        {sortedA.length > 0 && (
+          <div>
+            <div style={{ padding: '5px 10px 4px', borderTop: '0.5px solid rgba(var(--surface-tint-rgb),0.08)', borderBottom: '0.5px solid rgba(var(--surface-tint-rgb),0.05)' }}>
+              <span style={{ fontSize: 8, fontFamily: 'monospace', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgb(var(--alpha))' }}>
+                {teamA?.name ?? 'Team A'}
+              </span>
+            </div>
+            {sortedA.map(p => <AggRow key={p.id} p={p} maxK={maxKA} />)}
+          </div>
+        )}
+        {sortedA.length > 0 && sortedB.length > 0 && (
+          <div style={{ height: 0.5, background: 'rgba(var(--surface-tint-rgb),0.08)', margin: '6px 0' }} />
+        )}
+        {sortedB.length > 0 && (
+          <div>
+            <div style={{ padding: '5px 10px 4px', borderTop: '0.5px solid rgba(var(--surface-tint-rgb),0.08)', borderBottom: '0.5px solid rgba(var(--surface-tint-rgb),0.05)' }}>
+              <span style={{ fontSize: 8, fontFamily: 'monospace', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgb(var(--danger))' }}>
+                {teamB?.name ?? 'Team B'}
+              </span>
+            </div>
+            {sortedB.map(p => <AggRow key={p.id} p={p} maxK={maxKB} />)}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── Tab: БЕТТИНГ ─────────────────────────────────────────────────────────────
+
+function BettingTab({ match, teamA, teamB }: {
+  match: EsportsMatchDetail; teamA?: EsportsTeamDetail; teamB?: EsportsTeamDetail
+}) {
+  const markets = match.markets ?? []
+  const hasProb = match.yesPrice != null && match.yesPrice !== 0.5 && match.yesPrice > 0
+
+  if (!markets.length && !hasProb) {
+    return <p className="text-[11px] font-mono text-text-muted text-center py-8">Нет рынков</p>
+  }
+
+  // Group markets by type/mapNumber
+  const seriesMarkets  = markets.filter(m => !m.mapNumber)
+  const mapMarketsMap = new Map<number, typeof markets>()
+  for (const m of markets.filter(m => m.mapNumber)) {
+    const n = m.mapNumber!
+    if (!mapMarketsMap.has(n)) mapMarketsMap.set(n, [])
+    mapMarketsMap.get(n)!.push(m)
+  }
+
+  const MarketRow = ({ m }: { m: import('../types').EsportsMarket }) => {
+    const pct = Math.round(m.yesPrice * 100)
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderBottom: '0.5px solid rgba(var(--surface-tint-rgb),0.06)' }}>
+        <span style={{ flex: 1, fontSize: 11, fontFamily: 'monospace', color: 'rgb(var(--text-secondary))', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {m.question ?? m.type}
+        </span>
+        <div style={{ width: 60, height: 3, borderRadius: 2, overflow: 'hidden', background: 'rgba(var(--surface-tint-rgb),0.08)', flexShrink: 0 }}>
+          <div style={{ width: `${pct}%`, height: '100%', background: 'rgb(var(--alpha))' }} />
+        </div>
+        <span style={{ fontSize: 13, fontFamily: 'monospace', fontWeight: 500, color: 'rgb(var(--alpha))', width: 32, textAlign: 'right', flexShrink: 0 }}>
+          {pct}%
+        </span>
+        <span style={{ fontSize: 9, fontFamily: 'monospace', color: 'rgba(var(--surface-tint-rgb),0.3)', flexShrink: 0 }}>→</span>
+      </div>
+    )
+  }
+
+  const GroupHeader = ({ label }: { label: string }) => (
+    <div style={{ padding: '8px 10px 4px', borderBottom: '0.5px solid rgba(var(--surface-tint-rgb),0.08)' }}>
+      <span style={{ fontSize: 8, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(var(--surface-tint-rgb),0.4)' }}>
+        {label}
+      </span>
+    </div>
+  )
+
+  return (
+    <div className="flex flex-col gap-3">
+      {hasProb && (
+        <WinProbBlock
+          yesPrice={match.yesPrice} noPrice={match.noPrice}
+          teamA={teamA?.name ?? '—'} teamB={teamB?.name ?? '—'}
+        />
+      )}
+
+      {markets.length > 0 && (
+        <div style={{ background: 'rgb(var(--bg-surface))', border: '1px solid rgba(var(--surface-tint-rgb),0.08)', borderRadius: 8, overflow: 'hidden' }}>
+          {seriesMarkets.length > 0 && (
+            <>
+              <GroupHeader label="ПОБЕДИТЕЛЬ СЕРИИ" />
+              {seriesMarkets.map(m => <MarketRow key={m.id} m={m} />)}
+            </>
+          )}
+          {Array.from(mapMarketsMap.entries()).sort(([a], [b]) => a - b).map(([n, ms]) => {
+            const mapName = match.games?.find(g => g.seq === n)?.map
+            const label = mapName ? `ПОБЕДИТЕЛЬ КАРТЫ ${n} · ${mapName.toUpperCase()}` : `ПОБЕДИТЕЛЬ КАРТЫ ${n}`
+            return (
+              <div key={n}>
+                <GroupHeader label={label} />
+                {ms.map(m => <MarketRow key={m.id} m={m} />)}
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
@@ -1171,19 +2155,22 @@ export default function CS2MatchScreen({ seriesId, initialData }: { seriesId: st
   const { lang } = useLang()
   const t = useT(lang)
 
+  const [activeTab, setActiveTab] = useState<Cs2Tab>('overview')
+
   const isLive     = match?.status === 'live'
   const isFinished = match?.status === 'finished'
-  const isDota     = false
-  const isCs2      = true
 
   const teamA = match?.teamA as EsportsTeamDetail | undefined
   const teamB = match?.teamB as EsportsTeamDetail | undefined
   const scoreA = teamA?.score ?? null
   const scoreB = teamB?.score ?? null
 
-  const accent = teamA?.colorPrimary ?? nameToColor(teamA?.name ?? '')
+  const accent    = teamA?.colorPrimary ?? nameToColor(teamA?.name ?? '')
+  const gameSlug  = (match?.subcategory ?? '').includes('valorant') ? 'valorant' : 'cs2'
 
-  const gameSlug = (match?.subcategory ?? '').includes('valorant') ? 'valorant' : 'cs2'
+  const handleBack = useCallback(() => {
+    window.history.length > 1 ? router.back() : router.push(`/cybersport/${gameSlug}`)
+  }, [router, gameSlug])
 
   // ─── Skeleton ────────────────────────────────────────────────────────────────
   if (loading && !match) {
@@ -1213,260 +2200,39 @@ export default function CS2MatchScreen({ seriesId, initialData }: { seriesId: st
 
   return (
     <ErrorBoundary>
-    <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex flex-col gap-4">
+      <div className="w-full max-w-3xl mx-auto">
 
-      {/* Back + badges */}
-      <div className="flex items-center justify-between">
-        <button onClick={() => window.history.length > 1 ? router.back() : router.push(`/cybersport/${gameSlug}`)}
-          className="flex items-center gap-1.5 text-[11px] font-mono text-text-muted hover:text-text-primary transition-colors">
-          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M19 12H5M12 5l-7 7 7 7"/>
-          </svg>
-          Back
-        </button>
-        <div className="flex items-center gap-2">
-          <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded border border-bg-border text-text-muted">
-            {gameLabel(match.subcategory)}
-          </span>
-          {isLive && (
-            <span className="inline-flex items-center gap-1 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
-              style={{ background: 'rgba(255,61,61,0.15)', color: '#ff3d3d', border: '1px solid rgba(255,61,61,0.25)' }}>
-              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />LIVE
-            </span>
+        {/* Sticky: hero + tabs */}
+        <div style={{ position: 'sticky', top: 0, zIndex: 20 }}>
+          <Cs2Hero
+            match={match}
+            teamA={teamA} teamB={teamB}
+            scoreA={scoreA} scoreB={scoreB}
+            isLive={!!isLive} isFinished={!!isFinished}
+            gameSlug={gameSlug}
+            isRefreshing={isRefreshing}
+            onBack={handleBack}
+          />
+          <Cs2TabBar active={activeTab} onSelect={setActiveTab} />
+        </div>
+
+        {/* Tab content */}
+        <div className="px-4 sm:px-6 py-4 flex flex-col gap-4">
+          {activeTab === 'overview' && (
+            <OverviewTab match={match} teamA={teamA} teamB={teamB} accent={accent} t={t} />
           )}
-          {isFinished && (
-            <span className="text-[9px] font-mono text-text-muted border border-bg-border px-2 py-0.5 rounded">FINISHED</span>
+          {activeTab === 'maps' && (
+            <MapsTab match={match} teamA={teamA} teamB={teamB} accent={accent} />
+          )}
+          {activeTab === 'players' && (
+            <PlayersTab match={match} teamA={teamA} teamB={teamB} accent={accent} />
+          )}
+          {activeTab === 'betting' && (
+            <BettingTab match={match} teamA={teamA} teamB={teamB} />
           )}
         </div>
+
       </div>
-
-      {/* Match header */}
-      <div className="bg-bg-surface border border-bg-border rounded-lg p-4 sm:p-5"
-        style={isLive ? { borderTop: `3px solid ${accent}` } : undefined}>
-
-        {/* Context chip row */}
-        {(match.tournament || match.format) && (
-          <div className="flex flex-wrap items-center gap-1.5 mb-3">
-            {match.tournament && (
-              <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-bg-elevated/60 border border-bg-border/60 text-text-secondary">
-                {match.tournament}
-              </span>
-            )}
-            {match.format && (
-              <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded border border-bg-border/60 text-text-muted">
-                {(() => {
-                  const f = String(match.format).toLowerCase()
-                  const m = f.match(/bo\s*(\d+)/) ?? f.match(/best.?of.?(\d+)/)
-                  return m ? `Best of ${m[1]}` : match.format.toUpperCase()
-                })()}
-              </span>
-            )}
-            {isLive && match.games && match.games.length > 0 && (
-              <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded"
-                style={{ background: 'rgba(255,61,61,0.12)', color: '#ff3d3d', border: '1px solid rgba(255,61,61,0.25)' }}>
-                Map {match.games.length}
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* Teams + score */}
-        <div className="flex items-center gap-2 sm:gap-4 relative">
-          {/* Winner subtle backdrop */}
-          {isFinished && scoreA != null && scoreB != null && scoreA !== scoreB && (
-            <div aria-hidden className="absolute inset-0 pointer-events-none rounded-md"
-              style={{
-                background: `linear-gradient(${scoreA > scoreB ? '90deg' : '270deg'}, ${accent}14, transparent 55%)`,
-              }} />
-          )}
-          {/* Team A */}
-          <div className="flex-1 min-w-0 flex flex-col items-start gap-2 relative">
-            {teamA?.id ? (
-              <Link href={`/cybersport/${gameSlug}/team/${teamA.id}`} prefetch={false}>
-                <TeamLogo team={teamA} size={36} />
-              </Link>
-            ) : teamA && <TeamLogo team={teamA} size={36} />}
-            <div className="min-w-0 w-full">
-              {teamA?.id ? (
-                <Link
-                  href={`/cybersport/${gameSlug}/team/${teamA.id}`}
-                  prefetch={false}
-                  className="block text-[13px] sm:text-[15px] font-mono font-bold text-text-primary leading-tight hover:underline underline-offset-2 text-left break-words"
-                >
-                  {teamA?.name ?? '—'}
-                </Link>
-              ) : (
-                <span className="block text-[13px] sm:text-[15px] font-mono font-bold text-text-primary leading-tight break-words">
-                  {teamA?.name ?? '—'}
-                </span>
-              )}
-              {isFinished && scoreA != null && scoreA > (scoreB ?? 0) && (
-                <p className="text-[10px] font-mono mt-0.5" style={{ color: accent }}>WINNER</p>
-              )}
-              {teamA?.players && teamA.players.length > 0 && (
-                <p className="hidden sm:block text-[9px] font-mono text-text-muted/50 mt-0.5 truncate">
-                  {teamA.players.map(p => p.nickname ?? p.name).filter(Boolean).join(' · ')}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Score */}
-          <div className="shrink-0 text-center px-1 sm:px-2">
-            {(isLive || isFinished) && scoreA != null && scoreB != null ? (
-              <div className="flex items-center gap-1.5 sm:gap-3">
-                <span className="text-2xl sm:text-4xl font-mono font-bold text-text-primary">{scoreA}</span>
-                <span className="text-text-muted/50 text-lg sm:text-2xl">:</span>
-                <span className="text-2xl sm:text-4xl font-mono font-bold text-text-primary">{scoreB}</span>
-              </div>
-            ) : (
-              <span className="text-xl sm:text-2xl font-mono text-text-muted/50">vs</span>
-            )}
-            {(isLive || isFinished) && match.format && (() => {
-              const m = String(match.format).toLowerCase().match(/bo\s*(\d+)/) ?? String(match.format).toLowerCase().match(/best.?of.?(\d+)/)
-              const need = m ? Math.ceil(Number(m[1]) / 2) : null
-              return need ? (
-                <p className="text-[9px] font-mono text-text-muted/60 mt-1">First to {need}</p>
-              ) : null
-            })()}
-          </div>
-
-          {/* Team B */}
-          <div className="flex-1 min-w-0 flex flex-col items-end gap-2 relative">
-            {teamB?.id ? (
-              <Link href={`/cybersport/${gameSlug}/team/${teamB.id}`} prefetch={false}>
-                <TeamLogo team={teamB} size={36} />
-              </Link>
-            ) : teamB && <TeamLogo team={teamB} size={36} />}
-            <div className="text-right min-w-0 w-full">
-              {teamB?.id ? (
-                <Link
-                  href={`/cybersport/${gameSlug}/team/${teamB.id}`}
-                  prefetch={false}
-                  className="block text-[13px] sm:text-[15px] font-mono font-bold text-text-primary leading-tight hover:underline underline-offset-2 text-right break-words"
-                >
-                  {teamB?.name ?? '—'}
-                </Link>
-              ) : (
-                <span className="block text-[13px] sm:text-[15px] font-mono font-bold text-text-primary leading-tight break-words">
-                  {teamB?.name ?? '—'}
-                </span>
-              )}
-              {isFinished && scoreB != null && scoreB > (scoreA ?? 0) && (
-                <p className="text-[10px] font-mono mt-0.5 text-right" style={{ color: accent }}>WINNER</p>
-              )}
-              {teamB?.players && teamB.players.length > 0 && (
-                <p className="hidden sm:block text-[9px] font-mono text-text-muted/50 mt-0.5 truncate">
-                  {teamB.players.map(p => p.nickname ?? p.name).filter(Boolean).join(' · ')}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Meta row */}
-        <div className="mt-4 pt-3 border-t border-bg-border/40 flex flex-wrap items-center gap-x-3 gap-y-1">
-          {match.startsAt && !isLive && !isFinished && (
-            <>
-              <span className="text-[10px] font-mono text-text-muted">{fmtTime(match.startsAt)}</span>
-              <Countdown startsAt={match.startsAt} />
-            </>
-          )}
-          {isLive && match.liveState?.duration && fmtDuration(match.liveState.duration) && (
-            <span className="text-[10px] font-mono text-text-muted/60">
-              Series duration: {fmtDuration(match.liveState.duration)}
-            </span>
-          )}
-          {isLive && match.liveState?.updatedAt && (
-            <span className="text-[10px] font-mono text-text-muted/40 ml-auto">
-              upd {new Date(match.liveState.updatedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-            </span>
-          )}
-          {isRefreshing && (
-            <svg className="w-3 h-3 animate-spin text-text-muted/45 ml-auto shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 12a9 9 0 11-6.219-8.56"/>
-            </svg>
-          )}
-        </div>
-      </div>
-
-      {/* Map veto (CS2 / Valorant) */}
-      {(match.draft ?? []).some(a => (a.itemType ?? '').toLowerCase() === 'map') && (
-        <div className="bg-bg-surface border border-bg-border rounded-lg p-4">
-          <p className="text-[9px] font-mono text-text-muted uppercase tracking-wider mb-2">Map Veto</p>
-          <MapVeto actions={match.draft!} teamA={teamA ?? null} teamB={teamB ?? null} accent={accent} />
-        </div>
-      )}
-
-      {/* Live stream embed */}
-      {isLive && (match.streams?.length ?? 0) > 0 && (
-        <StreamPlayer urls={match.streams!} />
-      )}
-
-      {/* Pre-match (tournament, streams, recent form, H2H) */}
-      {!isLive && !isFinished && match.preMatch && (() => {
-        const pm = match.preMatch
-        const empty = !pm.tournament && (pm.streams?.length ?? 0) === 0
-          && (pm.recentA?.length ?? 0) === 0 && (pm.recentB?.length ?? 0) === 0
-          && (pm.h2h?.matches?.length ?? 0) === 0
-        if (empty) return (
-          <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3">
-            <p className="text-[11px] font-mono text-amber-300/90">
-              {t('esports.grid_dev_limit')}
-            </p>
-          </div>
-        )
-        return (
-          <PreMatchSection pre={pm}
-            teamAName={teamA?.name ?? '—'} teamBName={teamB?.name ?? '—'} accent={accent} />
-        )
-      })()}
-
-      {/* Games / Maps */}
-      {(match.games?.length ?? 0) > 0 && (
-        <GamesTabs
-          games={match.games}
-          teamA={teamA ?? { name: '—' } as EsportsTeamDetail}
-          teamB={teamB ?? { name: '—' } as EsportsTeamDetail}
-          isDota={isDota}
-          isCs2={isCs2}
-          accent={accent}
-        />
-      )}
-
-      {/* Live but no game data yet */}
-      {(match.games?.length ?? 0) === 0 && isLive && (
-        <div className="bg-bg-surface border rounded-lg px-5 py-4 flex items-center gap-3"
-          style={{ borderColor: `${accent}33`, borderLeft: `3px solid ${accent}` }}>
-          <span className="w-2 h-2 rounded-full animate-pulse shrink-0" style={{ background: accent }} />
-          <div>
-            <p className="text-[11px] font-mono font-bold text-text-primary">
-              Map 1 in progress
-            </p>
-            <p className="text-[10px] font-mono text-text-muted/60 mt-0.5">{t('esports.live_stats_soon')}</p>
-          </div>
-        </div>
-      )}
-
-      {(match.games?.length ?? 0) === 0 && !isLive && !isFinished && (
-        <div className="bg-bg-surface border border-bg-border rounded-lg px-4 py-8 text-center">
-          <p className="text-[11px] font-mono text-text-muted">{t('esports.no_maps_yet')}</p>
-          <p className="text-[10px] font-mono text-text-muted/50 mt-1">{t('esports.live_data_wait')}</p>
-        </div>
-      )}
-
-      {/* Markets — Prescio Fair Price */}
-      {match.markets?.length > 0 && (
-        <MarketsPanel markets={match.markets} teamA={teamA} teamB={teamB} accent={accent} />
-      )}
-
-      {!match.markets?.length && match.yesPrice != null && match.yesPrice !== 0.5 && (
-        <OddsBar yesPrice={match.yesPrice} noPrice={match.noPrice}
-          teamA={teamA?.name ?? '—'} teamB={teamB?.name ?? '—'}
-          accentA={teamA?.colorPrimary} />
-      )}
-
-    </div>
     </ErrorBoundary>
   )
 }

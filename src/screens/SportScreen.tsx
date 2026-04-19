@@ -187,26 +187,27 @@ function DateStrip({ dates, selected, onSelect, countByDate, liveCount, accent, 
           const { weekday, day, month } = formatDateLabel(dateStr, lang)
           const count = countByDate.get(dateStr) ?? 0
           const isSelected = selected === dateStr
+          const AMBER = '#D4A017'
           return (
             <button
               key={dateStr}
               onClick={() => onSelect(dateStr)}
               className="flex flex-col items-center px-3 py-2 rounded-lg border shrink-0 transition-all min-w-[52px]"
               style={isSelected
-                ? { borderColor: mix(accent, 33), background: mix(accent, 7), color: accent }
-                : { borderColor: 'rgba(var(--surface-tint-rgb), 0.07)', background: 'rgba(var(--surface-tint-rgb), 0.03)', color: count > 0 ? 'rgb(var(--text-secondary))' : 'rgb(var(--text-muted))' }
+                ? { borderColor: 'rgba(212,160,23,0.4)', background: 'rgba(212,160,23,0.08)', color: AMBER }
+                : { borderColor: 'rgba(var(--surface-tint-rgb), 0.1)', background: 'transparent', color: count > 0 ? 'rgba(var(--surface-tint-rgb),0.5)' : 'rgba(var(--surface-tint-rgb),0.22)' }
               }
             >
-              <span className="text-[11px] font-mono font-bold capitalize leading-tight">
+              <span className="text-[11px] font-mono font-medium capitalize leading-tight">
                 {weekday}
               </span>
               {day && (
-                <span className="text-[9px] font-mono mt-0.5 leading-none">
+                <span className="text-[9px] font-mono mt-0.5 leading-none opacity-70">
                   {day} {month}
                 </span>
               )}
               <span className="text-[10px] font-mono mt-0.5"
-                style={{ color: isSelected ? accent : count > 0 ? 'rgb(var(--text-muted))' : 'rgba(var(--text-muted),0.5)' }}>
+                style={{ color: isSelected ? AMBER : count > 0 ? 'rgba(var(--surface-tint-rgb),0.4)' : 'rgba(var(--surface-tint-rgb),0.18)' }}>
                 {syncingDate === dateStr
                   ? <svg className="w-2.5 h-2.5 animate-spin inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>
                   : count > 0 ? count : '—'
@@ -224,6 +225,20 @@ function DateStrip({ dates, selected, onSelect, countByDate, liveCount, accent, 
 }
 
 // ─── League grouping ──────────────────────────────────────────────────────────
+function sortEventsInGroup(events: SportEvent[]): SportEvent[] {
+  const live     = events.filter(e => e.status === 'live')
+    .sort((a, b) => {
+      const ea = (a.raw_data as Record<string, unknown> | null)?.elapsed as number ?? 0
+      const eb = (b.raw_data as Record<string, unknown> | null)?.elapsed as number ?? 0
+      return eb - ea
+    })
+  const upcoming = events.filter(e => e.status !== 'live' && e.status !== 'finished')
+    .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())
+  const finished = events.filter(e => e.status === 'finished')
+    .sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime())
+  return [...live, ...upcoming, ...finished]
+}
+
 function groupByLeague(events: SportEvent[]): LeagueGroup[] {
   const map = new Map<string, { events: SportEvent[]; logo?: string | null; flag?: string | null }>()
   for (const e of events) {
@@ -239,7 +254,7 @@ function groupByLeague(events: SportEvent[]): LeagueGroup[] {
     map.get(key)!.events.push(e)
   }
   return Array.from(map.entries())
-    .map(([league, { events, logo, flag }]) => ({ league, logo, flag, events }))
+    .map(([league, { events, logo, flag }]) => ({ league, logo, flag, events: sortEventsInGroup(events) }))
     .sort((a, b) => {
       const aLive = a.events.some(e => e.status === 'live')
       const bLive = b.events.some(e => e.status === 'live')
@@ -269,34 +284,40 @@ function TeamLogo({ logo, abbr: abbrStr, size, accent }: { logo?: string | null;
   )
 }
 
-// ─── Odds bar ─────────────────────────────────────────────────────────────────
-function OddsBar({ odds, accent, sport }: { odds: Odds3Way; accent: string; sport: Sport }) {
-  const { lang } = useLang()
-  const t = useT(lang)
+// ─── Odds pills ───────────────────────────────────────────────────────────────
+const SUCCESS = '#22c55e'
+function OddsPills({ odds, sport }: { odds: Odds3Way; sport: Sport }) {
   const showDraw = sport === 'football' && odds.draw != null
-  const homeWins = odds.home > odds.away
-  const awayWins = odds.away > odds.home
+  const max = Math.max(odds.home, odds.away, odds.draw ?? 0)
+
+  const Pill = ({ label, value }: { label: string; value: number }) => {
+    const isFav = value === max
+    return (
+      <div className="flex flex-col items-center text-center"
+        style={{
+          minWidth: 34,
+          padding: '3px 6px',
+          borderRadius: 3,
+          border: isFav ? `1px solid ${SUCCESS}55` : '0.5px solid rgba(var(--surface-tint-rgb),0.1)',
+          background: isFav ? `${SUCCESS}08` : 'rgba(var(--surface-tint-rgb),0.03)',
+        }}>
+        <span className="text-[7px] font-mono uppercase tracking-wide leading-none mb-0.5"
+          style={{ color: isFav ? SUCCESS : 'rgba(var(--surface-tint-rgb),0.3)' }}>
+          {label}
+        </span>
+        <span className="text-[10px] font-mono leading-none tabular-nums"
+          style={{ color: isFav ? SUCCESS : 'rgba(var(--surface-tint-rgb),0.55)' }}>
+          {value}%
+        </span>
+      </div>
+    )
+  }
+
   return (
-    <div className="flex gap-1 items-stretch">
-      <div className="flex flex-col items-center px-1.5 sm:px-2 py-1.5 rounded-md border transition-all min-w-[36px] sm:min-w-[42px]"
-        style={homeWins ? { borderColor: mix(accent, 33), background: mix(accent, 6) } : { borderColor: 'rgba(var(--surface-tint-rgb),0.08)', background: 'rgba(var(--surface-tint-rgb),0.03)' }}>
-        <span className="text-[7px] font-mono text-text-muted uppercase tracking-wide mb-0.5">{t('sport.home_label')}</span>
-        <span className="text-[12px] font-mono font-semibold leading-none"
-          style={{ color: homeWins ? accent : 'rgb(var(--text-secondary))' }}>{odds.home}%</span>
-      </div>
-      {showDraw && (
-        <div className="flex flex-col items-center px-1.5 sm:px-2 py-1.5 rounded-md border transition-all min-w-[32px] sm:min-w-[38px]"
-          style={{ borderColor: 'rgba(var(--surface-tint-rgb),0.08)', background: 'rgba(var(--surface-tint-rgb),0.02)' }}>
-          <span className="text-[7px] font-mono text-text-muted uppercase tracking-wide mb-0.5">{t('sport.th.draws')}</span>
-          <span className="text-[12px] font-mono font-semibold leading-none text-text-secondary">{odds.draw}%</span>
-        </div>
-      )}
-      <div className="flex flex-col items-center px-1.5 sm:px-2 py-1.5 rounded-md border transition-all min-w-[36px] sm:min-w-[42px]"
-        style={awayWins ? { borderColor: mix(accent, 33), background: mix(accent, 6) } : { borderColor: 'rgba(var(--surface-tint-rgb),0.08)', background: 'rgba(var(--surface-tint-rgb),0.03)' }}>
-        <span className="text-[7px] font-mono text-text-muted uppercase tracking-wide mb-0.5">{t('sport.away_label')}</span>
-        <span className="text-[12px] font-mono font-semibold leading-none"
-          style={{ color: awayWins ? accent : 'rgb(var(--text-secondary))' }}>{odds.away}%</span>
-      </div>
+    <div className="hidden sm:flex gap-0.5 items-stretch">
+      <Pill label="1" value={odds.home} />
+      {showDraw && <Pill label="X" value={odds.draw!} />}
+      <Pill label="2" value={odds.away} />
     </div>
   )
 }
@@ -324,119 +345,126 @@ const SportRow = memo(function SportRow({ event, sport, accent }: {
 
   const href = `/sport/${sport}/${event.id}`
 
+  // Per-state team name color
+  const homeNameStyle: React.CSSProperties = isFinished
+    ? homeLeads
+      ? { color: 'rgb(var(--text-primary))', fontWeight: 500 }
+      : { color: 'rgba(var(--surface-tint-rgb),0.32)', fontWeight: 400 }
+    : isLive
+      ? { color: 'rgb(var(--text-primary))', fontWeight: 400 }
+      : { color: 'rgb(var(--text-secondary))', fontWeight: 400 }
+
+  const awayNameStyle: React.CSSProperties = isFinished
+    ? awayLeads
+      ? { color: 'rgb(var(--text-primary))', fontWeight: 500 }
+      : { color: 'rgba(var(--surface-tint-rgb),0.32)', fontWeight: 400 }
+    : isLive
+      ? { color: 'rgb(var(--text-primary))', fontWeight: 400 }
+      : { color: 'rgb(var(--text-secondary))', fontWeight: 400 }
+
   return (
-    <div className="rounded-lg overflow-hidden"
-      style={{ border: `1px solid ${isLive ? 'rgba(255,50,50,0.2)' : 'rgba(var(--surface-tint-rgb),0.06)'}` }}>
+    <div style={{
+      opacity: isFinished ? 0.55 : 1,
+      borderLeft: isLive ? '2px solid #ff5252' : '2px solid transparent',
+      borderBottom: '0.5px solid rgba(var(--surface-tint-rgb),0.07)',
+    }}>
       <Link
         href={href}
         prefetch={false}
         onMouseEnter={() => router.prefetch(href)}
-        className="grid items-center gap-2 sm:gap-3 px-3 sm:px-3.5 py-2.5 transition-all group relative [grid-template-columns:48px_1fr_auto] sm:[grid-template-columns:64px_1fr_auto]"
+        className="grid items-center gap-2 transition-colors hover:bg-text-primary/[0.015]"
         style={{
-          background: isLive ? 'rgba(255,50,50,0.04)' : 'rgba(var(--bg-base-rgb), 0.55)',
-          backdropFilter: 'blur(2px)',
           display: 'grid',
+          gridTemplateColumns: '36px 1fr 28px auto 20px',
+          padding: '10px 14px',
+          background: isLive ? 'rgba(255,50,50,0.025)' : undefined,
         }}
       >
-        {/* Left accent bar */}
-        <div className="absolute left-0 top-0 bottom-0 w-[2px]"
-          style={{ background: isLive ? '#ff5252' : 'transparent' }} />
-        <div className="absolute left-0 top-0 bottom-0 w-[2px] opacity-0 group-hover:opacity-100 transition-opacity"
-          style={{ background: isLive ? 'transparent' : accent }} />
-
-        {/* Time / Score */}
-        <div className="flex flex-col items-center gap-0.5 pl-1.5">
+        {/* Zone 1: Status / Time */}
+        <div className="flex flex-col items-center justify-center gap-0.5 shrink-0">
           {isLive ? (
             <>
-              {hasScore && (
-                <div className="flex items-center gap-1 leading-none">
-                  <span className="text-[18px] font-mono font-black"
-                    style={{ color: homeLeads ? '#ff5252' : awayLeads ? 'rgba(var(--surface-tint-rgb),0.4)' : '#ff5252' }}>
-                    {event.home_score}
-                  </span>
-                  <span className="text-[12px] font-mono text-text-muted/45">:</span>
-                  <span className="text-[18px] font-mono font-black"
-                    style={{ color: awayLeads ? '#ff5252' : homeLeads ? 'rgba(var(--surface-tint-rgb),0.4)' : '#ff5252' }}>
-                    {event.away_score}
-                  </span>
+              <span className="text-[9px] font-mono font-bold tracking-wider" style={{ color: '#ff5252' }}>LIVE</span>
+              {elapsed != null && (
+                <div className="flex items-center gap-0.5">
+                  <span className="w-1 h-1 rounded-full bg-red-500 animate-pulse shrink-0" />
+                  <span className="text-[11px] font-mono leading-none" style={{ color: '#D4A017' }}>{elapsed}&apos;</span>
                 </div>
               )}
-              <div className="flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                <span className="text-[9px] font-mono font-bold" style={{ color: '#ff5252' }}>
-                  {elapsed != null ? `${elapsed}'` : 'Live'}
-                </span>
-              </div>
             </>
-          ) : isFinished && hasScore ? (
+          ) : isFinished ? (
+            <span className="text-[9px] font-mono uppercase tracking-[0.08em] text-center"
+              style={{ color: 'rgba(var(--surface-tint-rgb),0.3)' }}>
+              {t('sport.ft_abbr')}
+            </span>
+          ) : (
+            <span className="text-[11px] font-mono text-center leading-tight"
+              style={{ color: 'rgb(var(--text-secondary))' }}>
+              {formatTime(event.starts_at, lang)}
+            </span>
+          )}
+        </div>
+
+        {/* Zone 2: Teams */}
+        <div className="flex flex-col gap-[5px] min-w-0">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <TeamLogo logo={homeLogo} abbr={abbr(event.home_team)} size={14} accent={accent} />
+            <span className="text-[12px] truncate leading-tight" style={homeNameStyle}>{event.home_team}</span>
+          </div>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <TeamLogo logo={awayLogo} abbr={abbr(event.away_team)} size={14} accent={accent} />
+            <span className="text-[12px] truncate leading-tight" style={awayNameStyle}>{event.away_team}</span>
+          </div>
+        </div>
+
+        {/* Zone 3: Score */}
+        <div className="flex flex-col items-center justify-center gap-[5px] shrink-0">
+          {hasScore ? (
             <>
-              <div className="flex items-center gap-1 leading-none">
-                <span className="text-[18px] font-mono font-black"
-                  style={{ color: homeLeads ? 'rgba(var(--surface-tint-rgb),0.85)' : awayLeads ? 'rgba(var(--surface-tint-rgb),0.3)' : 'rgba(var(--surface-tint-rgb),0.65)' }}>
-                  {event.home_score}
-                </span>
-                <span className="text-[12px] font-mono text-text-muted/45">:</span>
-                <span className="text-[18px] font-mono font-black"
-                  style={{ color: awayLeads ? 'rgba(var(--surface-tint-rgb),0.85)' : homeLeads ? 'rgba(var(--surface-tint-rgb),0.3)' : 'rgba(var(--surface-tint-rgb),0.65)' }}>
-                  {event.away_score}
-                </span>
-              </div>
-              <span className="text-[8px] font-mono text-text-muted uppercase">{t('sport.ft_abbr')}</span>
+              <span className="text-[13px] font-mono leading-none tabular-nums"
+                style={isLive
+                  ? { color: '#ff5252', fontWeight: 500 }
+                  : isFinished
+                    ? { color: homeLeads ? 'rgb(var(--text-primary))' : 'rgba(var(--surface-tint-rgb),0.28)', fontWeight: homeLeads ? 500 : 400 }
+                    : { color: 'rgba(var(--surface-tint-rgb),0.3)', fontWeight: 400 }
+                }>
+                {event.home_score}
+              </span>
+              <span className="text-[13px] font-mono leading-none tabular-nums"
+                style={isLive
+                  ? { color: '#ff5252', fontWeight: 500 }
+                  : isFinished
+                    ? { color: awayLeads ? 'rgb(var(--text-primary))' : 'rgba(var(--surface-tint-rgb),0.28)', fontWeight: awayLeads ? 500 : 400 }
+                    : { color: 'rgba(var(--surface-tint-rgb),0.3)', fontWeight: 400 }
+                }>
+                {event.away_score}
+              </span>
             </>
           ) : (
             <>
-              <span className="text-[13px] font-mono text-text-primary leading-none">{formatTime(event.starts_at, lang)}</span>
+              <span className="text-[11px] font-mono leading-none" style={{ color: 'rgba(var(--surface-tint-rgb),0.22)' }}>—</span>
+              <span className="text-[11px] font-mono leading-none" style={{ color: 'rgba(var(--surface-tint-rgb),0.22)' }}>—</span>
             </>
           )}
         </div>
 
-        {/* Teams */}
-        <div className="flex flex-col gap-1.5 min-w-0">
-          {odds && (
-            <div className="flex w-full h-[5px] rounded-full overflow-hidden">
-              <div style={{ width: `${odds.home}%`, background: accent, opacity: 0.8, borderRadius: '99px 0 0 99px' }} />
-              {odds.draw != null && odds.draw > 0 && (
-                <div style={{ width: `${odds.draw}%`, background: 'rgba(89,100,112,0.7)' }} />
-              )}
-              <div style={{ flex: 1, background: 'rgba(var(--surface-tint-rgb),0.22)', borderRadius: '0 99px 99px 0' }} />
-            </div>
-          )}
-          <div className="flex items-center gap-2 min-w-0">
-            <TeamLogo logo={homeLogo} abbr={abbr(event.home_team)} size={24} accent={accent} />
-            <span className="text-[13px] font-semibold text-text-primary truncate leading-tight">{event.home_team}</span>
-          </div>
-          <div className="flex items-center gap-2 min-w-0">
-            <TeamLogo logo={awayLogo} abbr={abbr(event.away_team)} size={24} accent={accent} />
-            <span className="text-[13px] font-semibold text-text-primary truncate leading-tight">{event.away_team}</span>
-          </div>
+        {/* Zone 4: Odds pills (hidden for finished) */}
+        <div className="flex items-center shrink-0" onClick={e => e.preventDefault()}>
+          {!isFinished && odds && <OddsPills odds={odds} sport={sport} />}
         </div>
 
-        {/* Odds + expand */}
-        <div className="flex items-center gap-2 shrink-0" onClick={e => e.preventDefault()}>
-          {odds ? (
-            <OddsBar odds={odds} accent={accent} sport={sport} />
-          ) : (
-            <div className="w-2 h-2 rounded-full bg-bg-border/60" />
-          )}
-          <button
-            onClick={e => { e.preventDefault(); setExpanded(v => !v) }}
-            className="flex items-center gap-1 px-2 py-1 rounded border transition-all shrink-0"
-            style={expanded
-              ? { borderColor: mix(accent, 27), color: accent, background: mix(accent, 6) }
-              : { borderColor: 'rgba(var(--surface-tint-rgb),0.08)', color: 'rgba(var(--surface-tint-rgb),0.3)' }
-            }
-          >
-            <span className="text-[9px] font-mono">{t('sport.odds_abbr')}</span>
-            <svg className="w-2.5 h-2.5 transition-transform" style={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
-              viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M6 9l6 6 6-6"/>
-            </svg>
-          </button>
-        </div>
+        {/* Zone 5: Expand arrow */}
+        <button
+          className="flex items-center justify-center shrink-0 h-full"
+          onClick={e => { e.preventDefault(); setExpanded(v => !v) }}
+          style={{ color: 'rgba(var(--surface-tint-rgb),0.22)' }}
+        >
+          <span className="text-[16px] leading-none" style={{ transform: expanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s', display: 'inline-block' }}>›</span>
+        </button>
       </Link>
 
       {expanded && (
-        <div className="px-4 py-3 border-t border-bg-border/50 bg-bg-elevated/30">
+        <div className="px-[14px] py-3 border-t border-bg-border/30 bg-bg-elevated/20">
           <MatchDetail event={event} sport={sport} accent={accent} />
         </div>
       )}
@@ -809,7 +837,8 @@ export function SportScreen({ initialSport, eventId, initialEvents, initialEvent
                           liveCount={leagueLiveCount}
                           first={idx === 0}
                         />
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col rounded-b-lg overflow-hidden"
+                          style={{ border: '0.5px solid rgba(var(--surface-tint-rgb),0.07)', borderTop: 'none' }}>
                           {group.map(e => (
                             <SportRow
                               key={e.id}
