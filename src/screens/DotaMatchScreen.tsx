@@ -6,10 +6,9 @@ import { usePolling } from '../hooks/usePolling'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { api } from '../lib/api'
 import { ErrorBoundary } from '../components/ErrorBoundary'
-import MarketsPanel from '../components/esports/MarketsPanel'
 import { useLang } from '../contexts/LanguageContext'
 import { useT } from '../lib/i18n'
-import type { EsportsMatchDetail, EsportsGame, EsportsGameTeam, EsportsDraftAction, EsportsPlayer, EsportsTeamDetail, EsportsRound, EsportsDotaLive, EsportsDotaPlayer, EsportsPreMatch, EsportsRecentMatch } from '../types'
+import type { EsportsMatchDetail, EsportsGame, EsportsGameTeam, EsportsDraftAction, EsportsPlayer, EsportsTeamDetail, EsportsRound, EsportsDotaLive, EsportsDotaPlayer, EsportsPreMatch, EsportsRecentMatch, EsportsMarket } from '../types'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -64,6 +63,7 @@ const DOTA_DIRE    = '#ef4444'
 const CS_CT        = '#6fa8dc'
 const CS_T         = '#e8a33d'
 const LIVE_RED     = '#ff3d3d'
+const AMBER        = '#D4A017'
 
 function sideColorForCs(side?: string | null): string | null {
   const s = (side ?? '').toLowerCase()
@@ -1353,10 +1353,351 @@ function OddsBar({ yesPrice, noPrice, teamA, teamB, accentA }: {
   )
 }
 
+// ─── Dota tab type ────────────────────────────────────────────────────────────
+type DotaTab = 'overview' | 'players' | 'games' | 'betting'
+
+// ─── Net Worth block (primary metric) ─────────────────────────────────────────
+function DotaNetWorthBlock({ live, liveGame, teamAName, teamBName, gameTime }: {
+  live: EsportsDotaLive | null | undefined
+  liveGame: EsportsGame | null | undefined
+  teamAName: string
+  teamBName: string
+  gameTime?: number | null
+}) {
+  const { lang } = useLang()
+  const radiantPlayers = live?.players?.filter(p => p.isRadiant) ?? []
+  const direPlayers    = live?.players?.filter(p => !p.isRadiant) ?? []
+
+  const radNW = radiantPlayers.length > 0
+    ? radiantPlayers.reduce((s, p) => s + (p.networth ?? 0), 0)
+    : (liveGame?.teamA?.netWorth ?? null)
+  const direNW = direPlayers.length > 0
+    ? direPlayers.reduce((s, p) => s + (p.networth ?? 0), 0)
+    : (liveGame?.teamB?.netWorth ?? null)
+
+  if (radNW == null && direNW == null) return null
+
+  const rNW = radNW ?? 0, dNW = direNW ?? 0
+  const total = rNW + dNW || 1
+  const radPct = (rNW / total) * 100
+  const lead = live?.radiantLead ?? (rNW - dNW)
+  const absK = Math.abs(lead) >= 1000 ? `${(Math.abs(lead) / 1000).toFixed(1)}k` : String(Math.abs(lead))
+  const leader = lead > 100 ? teamAName : lead < -100 ? teamBName : null
+  const leaderCol = lead > 100 ? DOTA_RADIANT : lead < -100 ? DOTA_DIRE : 'rgba(var(--surface-tint-rgb),0.45)'
+  const timeStr = gameTime != null && gameTime >= 0 ? fmtClock(gameTime) : null
+
+  return (
+    <div className="rounded-xl border border-bg-border overflow-hidden bg-bg-surface">
+      <div className="flex items-center justify-between px-3 py-2.5 border-b border-bg-border/50">
+        <span className="text-[9px] font-mono tracking-[0.1em] uppercase" style={{ color: 'rgba(var(--surface-tint-rgb),0.5)' }}>
+          NET WORTH · {lang === 'ru' ? 'РАЗНИЦА ЗОЛОТА' : 'GOLD DIFF'}
+        </span>
+        {leader && (
+          <span className="text-[9px] font-mono font-semibold tabular-nums" style={{ color: leaderCol }}>
+            {leader} +{absK}
+          </span>
+        )}
+      </div>
+      <div className="px-3 py-3 flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-mono font-semibold" style={{ color: DOTA_RADIANT }}>{teamAName}</span>
+          <span className="text-[10px] font-mono" style={{ color: 'rgba(var(--surface-tint-rgb),0.4)' }}>{teamBName}</span>
+        </div>
+        <div className="flex h-[5px] rounded-sm overflow-hidden">
+          <div style={{ width: `${radPct}%`, background: DOTA_RADIANT, transition: 'width 0.5s ease' }} />
+          <div style={{ flex: 1, background: DOTA_DIRE }} />
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-mono tabular-nums font-semibold" style={{ color: DOTA_RADIANT }}>{fmtK(rNW)}</span>
+          <span className="text-[9px] font-mono" style={{ color: 'rgba(var(--surface-tint-rgb),0.3)' }}>
+            {timeStr ? (lang === 'ru' ? `игра ${timeStr}` : `game ${timeStr}`) : 'net worth'}
+          </span>
+          <span className="text-[11px] font-mono tabular-nums font-semibold" style={{ color: DOTA_DIRE }}>{fmtK(dNW)}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Dota player table (EsportsDotaPlayer — live data) ─────────────────────────
+function DotaPlayerTable({ players, side, teamName }: {
+  players: EsportsDotaPlayer[]
+  side: 'radiant' | 'dire'
+  teamName: string
+}) {
+  const sideColor = side === 'radiant' ? DOTA_RADIANT : DOTA_DIRE
+  const sorted = [...players].sort((a, b) => (b.networth ?? 0) - (a.networth ?? 0))
+  const nwColor = (idx: number) => {
+    if (idx === 0) return DOTA_RADIANT
+    if (idx === sorted.length - 1) return DOTA_DIRE
+    return 'rgb(var(--text-secondary))'
+  }
+  if (!sorted.length) return null
+  return (
+    <div className="rounded-md border border-bg-border/60 overflow-hidden"
+      style={{ borderTop: `2px solid ${sideColor}` }}>
+      <div className="flex items-center justify-between px-3 py-1.5"
+        style={{ background: 'rgba(var(--surface-tint-rgb),0.03)' }}>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[8px] font-mono font-bold tracking-wider uppercase" style={{ color: sideColor }}>
+            {side === 'radiant' ? 'RADIANT' : 'DIRE'}
+          </span>
+          <span className="text-[9px] font-mono truncate" style={{ color: 'rgba(var(--surface-tint-rgb),0.5)' }}>{teamName}</span>
+        </div>
+        <span className="text-[9px] font-mono tabular-nums" style={{ color: 'rgba(var(--surface-tint-rgb),0.4)' }}>
+          {sorted.reduce((s, p) => s + (p.kills ?? 0), 0)} kills
+        </span>
+      </div>
+      <div className="grid px-2 py-1 text-[8px] font-mono uppercase tracking-wider"
+        style={{ gridTemplateColumns: 'minmax(0,1fr) 24px 24px 24px 44px', color: 'rgba(var(--surface-tint-rgb),0.35)' }}>
+        <span>ИГРОК</span>
+        <span className="text-right">K</span>
+        <span className="text-right">D</span>
+        <span className="text-right">A</span>
+        <span className="text-right">NW</span>
+      </div>
+      {sorted.map((p, i) => (
+        <div key={p.steamAccountId} className="grid items-center px-2 py-1 border-t border-bg-border/25"
+          style={{ gridTemplateColumns: 'minmax(0,1fr) 24px 24px 24px 44px' }}>
+          <span className="text-[10px] font-mono truncate" style={{ color: 'rgb(var(--text-primary))' }}>
+            {p.name ?? `P${i + 1}`}
+          </span>
+          <span className="text-right text-[10px] font-mono tabular-nums" style={{ color: 'rgb(var(--text-secondary))' }}>{p.kills}</span>
+          <span className="text-right text-[10px] font-mono tabular-nums" style={{ color: 'rgba(var(--surface-tint-rgb),0.5)' }}>{p.deaths}</span>
+          <span className="text-right text-[10px] font-mono tabular-nums" style={{ color: 'rgba(var(--surface-tint-rgb),0.65)' }}>{p.assists}</span>
+          <span className="text-right text-[10px] font-mono tabular-nums font-medium" style={{ color: nwColor(i) }}>
+            {p.networth != null ? fmtK(p.networth) : '—'}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ─── Dota player table (EsportsPlayer — game-level data) ──────────────────────
+function DotaGamePlayerTable({ players, side, teamName }: {
+  players: EsportsPlayer[]
+  side: 'radiant' | 'dire'
+  teamName: string
+}) {
+  const sideColor = side === 'radiant' ? DOTA_RADIANT : DOTA_DIRE
+  const sorted = [...players].sort((a, b) => (b.netWorth ?? 0) - (a.netWorth ?? 0))
+  const nwColor = (idx: number) => {
+    if (idx === 0) return DOTA_RADIANT
+    if (idx === sorted.length - 1 && sorted.length >= 3) return DOTA_DIRE
+    return 'rgb(var(--text-secondary))'
+  }
+  if (!sorted.length) return null
+  return (
+    <div className="rounded-md border border-bg-border/60 overflow-hidden"
+      style={{ borderTop: `2px solid ${sideColor}` }}>
+      <div className="flex items-center justify-between px-3 py-1.5"
+        style={{ background: 'rgba(var(--surface-tint-rgb),0.03)' }}>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[8px] font-mono font-bold tracking-wider uppercase" style={{ color: sideColor }}>
+            {side === 'radiant' ? 'RADIANT' : 'DIRE'}
+          </span>
+          <span className="text-[9px] font-mono truncate" style={{ color: 'rgba(var(--surface-tint-rgb),0.5)' }}>{teamName}</span>
+        </div>
+        <span className="text-[9px] font-mono tabular-nums" style={{ color: 'rgba(var(--surface-tint-rgb),0.4)' }}>
+          {sorted.reduce((s, p) => s + (p.kills ?? 0), 0)} kills
+        </span>
+      </div>
+      <div className="grid px-2 py-1 text-[8px] font-mono uppercase tracking-wider"
+        style={{ gridTemplateColumns: 'minmax(0,1fr) 24px 24px 24px 44px', color: 'rgba(var(--surface-tint-rgb),0.35)' }}>
+        <span>ИГРОК</span>
+        <span className="text-right">K</span>
+        <span className="text-right">D</span>
+        <span className="text-right">A</span>
+        <span className="text-right">NW</span>
+      </div>
+      {sorted.map((p, i) => (
+        <div key={p.id} className="grid items-center px-2 py-1 border-t border-bg-border/25"
+          style={{ gridTemplateColumns: 'minmax(0,1fr) 24px 24px 24px 44px' }}>
+          <span className="text-[10px] font-mono truncate" style={{ color: 'rgb(var(--text-primary))' }}>
+            {p.nickname ?? p.name ?? p.id}
+          </span>
+          <span className="text-right text-[10px] font-mono tabular-nums" style={{ color: 'rgb(var(--text-secondary))' }}>{p.kills}</span>
+          <span className="text-right text-[10px] font-mono tabular-nums" style={{ color: 'rgba(var(--surface-tint-rgb),0.5)' }}>{p.deaths}</span>
+          <span className="text-right text-[10px] font-mono tabular-nums" style={{ color: 'rgba(var(--surface-tint-rgb),0.65)' }}>{p.assists}</span>
+          <span className="text-right text-[10px] font-mono tabular-nums font-medium" style={{ color: nwColor(i) }}>
+            {p.netWorth != null ? fmtK(p.netWorth) : '—'}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ─── Win probability block ─────────────────────────────────────────────────────
+function DotaWinProbBlock({ yesPrice, noPrice, teamAName, teamBName }: {
+  yesPrice: number; noPrice: number; teamAName: string; teamBName: string
+}) {
+  const { lang } = useLang()
+  if (!yesPrice || yesPrice === 0.5) return null
+  const yesPct = Math.round(yesPrice * 100)
+  const noPct  = 100 - yesPct
+  return (
+    <div className="rounded-xl border border-bg-border overflow-hidden bg-bg-surface">
+      <div className="flex items-center justify-between px-3 py-2.5 border-b border-bg-border/50">
+        <span className="text-[9px] font-mono tracking-[0.1em] uppercase" style={{ color: 'rgba(var(--surface-tint-rgb),0.5)' }}>
+          {lang === 'ru' ? 'ВЕРОЯТНОСТЬ ПОБЕДЫ' : 'WIN PROBABILITY'}
+        </span>
+        <span className="text-[9px] font-mono" style={{ color: 'rgba(var(--surface-tint-rgb),0.25)' }}>
+          Polymarket / Kalshi
+        </span>
+      </div>
+      <div className="px-3 py-3 flex flex-col gap-2">
+        {([
+          { label: lang === 'ru' ? 'ДА' : 'YES', pct: yesPct, name: teamAName, color: DOTA_RADIANT },
+          { label: lang === 'ru' ? 'НЕТ' : 'NO',  pct: noPct,  name: teamBName, color: DOTA_DIRE },
+        ] as const).map(({ label, pct, name, color }) => (
+          <div key={label} className="flex items-center gap-2">
+            <span className="text-[9px] font-mono font-bold shrink-0" style={{ width: 28, color }}>{label}</span>
+            <div className="flex-1 h-[6px] rounded-full overflow-hidden" style={{ background: 'rgba(var(--surface-tint-rgb),0.08)' }}>
+              <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color, transition: 'width 0.5s' }} />
+            </div>
+            <span className="text-[11px] font-mono tabular-nums font-semibold shrink-0"
+              style={{ width: 36, textAlign: 'right', color }}>
+              {pct}%
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Betting: grouped markets (Dota-specific) ────────────────────────────────
+function DotaBettingGrouped({
+  markets, teamAName, teamBName, teamAColor, lang,
+}: {
+  markets: EsportsMarket[]
+  teamAName: string
+  teamBName: string
+  teamAColor: string
+  lang: 'ru' | 'en'
+}) {
+  const winner = markets.filter(m => m.type === 'MATCH_WINNER')
+  const totals = markets.filter(m => m.type === 'TOTAL_MAPS')
+  const mapWin = markets.filter(m => m.type === 'MAP_WINNER')
+
+  const renderMatchWinner = (m: EsportsMarket) => {
+    const pct = Math.round(m.yesPrice * 100)
+    if (!pct || m.yesPrice === 0.5) return null
+    return (
+      <div key={m.id} className="bg-bg-surface border border-bg-border rounded-lg p-4">
+        <div className="flex items-center gap-2 mb-1.5">
+          <span className="text-[11px] font-mono text-text-primary w-24 truncate">{teamAName}</span>
+          <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'rgba(var(--surface-tint-rgb),0.08)' }}>
+            <div className="h-full rounded-full transition-all duration-500"
+              style={{ width: `${pct}%`, background: teamAColor }} />
+          </div>
+          <span className="text-[11px] font-mono text-text-primary w-24 truncate text-right">{teamBName}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-[11px] font-mono font-bold" style={{ color: teamAColor }}>{pct}%</span>
+          <span className="text-[11px] font-mono font-bold" style={{ color: DOTA_DIRE }}>{100 - pct}%</span>
+        </div>
+      </div>
+    )
+  }
+
+  const renderTotal = (m: EsportsMarket) => {
+    const pct = Math.round(m.yesPrice * 100)
+    if (!pct || pct === 50) return null
+    return (
+      <div key={m.id} className="bg-bg-surface border border-bg-border rounded-lg p-4">
+        <p className="text-[10px] font-mono text-text-muted mb-2 uppercase tracking-wider">{m.question ?? ''}</p>
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'rgba(var(--surface-tint-rgb),0.08)' }}>
+            <div className="h-full rounded-full transition-all duration-500"
+              style={{ width: `${pct}%`, background: AMBER }} />
+          </div>
+          <span className="text-[11px] font-mono font-bold shrink-0" style={{ color: AMBER }}>YES {pct}%</span>
+          <span className="text-[11px] font-mono font-bold text-text-muted shrink-0">NO {100 - pct}%</span>
+        </div>
+      </div>
+    )
+  }
+
+  const renderMapWinner = (m: EsportsMarket) => {
+    const label = lang === 'ru' ? `Игра ${m.mapNumber}` : `Game ${m.mapNumber}`
+    if (m.status === 'resolved') {
+      const winnerName = m.yesPrice === 1 ? teamAName : teamBName
+      const winColor   = m.yesPrice === 1 ? DOTA_RADIANT : DOTA_DIRE
+      return (
+        <div key={m.id} className="bg-bg-surface border border-bg-border rounded-lg px-4 py-3 flex items-center justify-between">
+          <p className="text-[10px] font-mono text-text-muted uppercase tracking-wider">{label}</p>
+          <span className="text-[11px] font-mono font-bold" style={{ color: winColor }}>{winnerName}</span>
+        </div>
+      )
+    }
+    const pct = Math.round(m.yesPrice * 100)
+    if (!pct || pct === 50) return null
+    return (
+      <div key={m.id} className="bg-bg-surface border border-bg-border rounded-lg px-4 py-3">
+        <div className="flex items-center gap-3 mb-1">
+          <span className="text-[10px] font-mono text-text-muted/70 w-14 truncate">{label}</span>
+          <div className="flex-1 h-[6px] rounded-full overflow-hidden" style={{ background: 'rgba(var(--surface-tint-rgb),0.08)' }}>
+            <div className="h-full rounded-full transition-all duration-500"
+              style={{ width: `${pct}%`, background: teamAColor }} />
+          </div>
+        </div>
+        <div className="flex justify-between pl-[56px]">
+          <span className="text-[10px] font-mono font-bold" style={{ color: teamAColor }}>{pct}%</span>
+          <span className="text-[10px] font-mono font-bold" style={{ color: DOTA_DIRE }}>{100 - pct}%</span>
+        </div>
+      </div>
+    )
+  }
+
+  const Group = ({ label, children, visible }: { label: string; children: React.ReactNode; visible: boolean }) => {
+    if (!visible) return null
+    return (
+      <section className="flex flex-col gap-2">
+        <h3 className="text-[10px] font-mono font-bold tracking-[0.14em] uppercase px-1"
+          style={{ color: 'rgba(var(--surface-tint-rgb),0.55)' }}>{label}</h3>
+        <div className="flex flex-col gap-2">{children}</div>
+      </section>
+    )
+  }
+
+  const winnerCards = winner.map(renderMatchWinner).filter(Boolean)
+  const totalsCards = totals.map(renderTotal).filter(Boolean)
+  const mapCards    = mapWin.map(renderMapWinner).filter(Boolean)
+
+  const any = winnerCards.length + totalsCards.length + mapCards.length > 0
+
+  return (
+    <>
+      <div className="flex items-baseline justify-between px-1">
+        <h2 className="text-[11px] font-mono font-bold tracking-[0.18em] uppercase" style={{ color: DOTA_RADIANT }}>
+          Prescio Fair Price
+        </h2>
+        <span className="text-[9px] font-mono uppercase tracking-wider" style={{ color: 'rgba(var(--surface-tint-rgb),0.4)' }}>
+          {lang === 'ru' ? 'внутренняя вероятность' : 'internal probability'}
+        </span>
+      </div>
+      <Group label={lang === 'ru' ? 'Победитель серии' : 'Match winner'} visible={winnerCards.length > 0}>{winnerCards}</Group>
+      <Group label={lang === 'ru' ? 'Тотал игр'         : 'Total games'}  visible={totalsCards.length > 0}>{totalsCards}</Group>
+      <Group label={lang === 'ru' ? 'Победитель игры'   : 'Game winner'}  visible={mapCards.length > 0}>{mapCards}</Group>
+      {!any && (
+        <div className="rounded-lg border border-bg-border/60 bg-bg-surface/50 px-4 py-3">
+          <p className="text-[10px] font-mono text-text-muted/70">
+            {lang === 'ru' ? 'Все рынки 50/50 — сигнала пока нет.' : 'All markets at 50/50 — no signal yet.'}
+          </p>
+        </div>
+      )}
+    </>
+  )
+}
+
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
 export default function DotaMatchScreen({ seriesId, initialData }: { seriesId: string; initialData?: EsportsMatchDetail }) {
   const router = useRouter()
+  const [activeTab, setActiveTab] = useState<DotaTab>('overview')
 
   const fetcher = useCallback(() => api.getEsportsMatch(seriesId), [seriesId])
   const { data, loading, isRefreshing } = usePolling<EsportsMatchDetail>(
@@ -1377,20 +1718,21 @@ export default function DotaMatchScreen({ seriesId, initialData }: { seriesId: s
   const { lang } = useLang()
   const t = useT(lang)
 
-  const isDota     = true
-  const isCs2      = false
-
   const teamA = match?.teamA as EsportsTeamDetail | undefined
   const teamB = match?.teamB as EsportsTeamDetail | undefined
   const scoreA = teamA?.score ?? null
   const scoreB = teamB?.score ?? null
 
   const accent = teamA?.colorPrimary ?? nameToColor(teamA?.name ?? '')
-
   const gameSlug = 'dota2'
 
   const steamMatchId = (match?.steamData?.games as { matchId?: number }[] | undefined)
     ?.find(g => g.matchId)?.matchId
+
+  const dotaLive = match?.dotaLive ?? null
+  const liveGame = match?.games?.find(g => g.started && !g.finished) ?? null
+  const radiantPlayers = dotaLive?.players?.filter(p => p.isRadiant) ?? []
+  const direPlayers    = dotaLive?.players?.filter(p => !p.isRadiant) ?? []
 
   // ─── Skeleton ────────────────────────────────────────────────────────────────
   if (loading && !match) {
@@ -1418,287 +1760,403 @@ export default function DotaMatchScreen({ seriesId, initialData }: { seriesId: s
     )
   }
 
+  const formatBo = (() => {
+    const f = String(match.format ?? '').toLowerCase()
+    const m = f.match(/bo\s*(\d+)/) ?? f.match(/best.?of.?(\d+)/)
+    return m ? `BO${m[1]}` : null
+  })()
+
+  const gameBorderColor = (g: EsportsGame): string => {
+    if (g.started && !g.finished) return AMBER
+    if (g.teamA?.won) return DOTA_RADIANT
+    if (g.teamB?.won) return DOTA_DIRE
+    return 'rgba(var(--surface-tint-rgb),0.15)'
+  }
+
+  const tabs: { key: DotaTab; label: string }[] = [
+    { key: 'overview', label: lang === 'ru' ? 'ОБЗОР'   : 'OVERVIEW' },
+    { key: 'games',    label: lang === 'ru' ? 'ИГРЫ'    : 'GAMES'    },
+    { key: 'players',  label: lang === 'ru' ? 'ИГРОКИ'  : 'PLAYERS'  },
+    { key: 'betting',  label: lang === 'ru' ? 'БЕТТИНГ' : 'BETTING'  },
+  ]
+
   return (
     <ErrorBoundary>
-    <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex flex-col gap-4">
+    <div className="w-full max-w-3xl mx-auto">
 
-      {/* Back + badges */}
-      <div className="flex items-center justify-between">
-        <button onClick={() => window.history.length > 1 ? router.back() : router.push(`/cybersport/${gameSlug}`)}
-          className="flex items-center gap-1.5 text-[11px] font-mono text-text-muted hover:text-text-primary transition-colors">
-          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M19 12H5M12 5l-7 7 7 7"/>
-          </svg>
-          Back
-        </button>
-        <div className="flex items-center gap-2">
-          <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded border border-bg-border text-text-muted">
-            {gameLabel(match.subcategory)}
-          </span>
-          {isLive && (
-            <span className="inline-flex items-center gap-1 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
-              style={{ background: 'rgba(255,61,61,0.15)', color: '#ff3d3d', border: '1px solid rgba(255,61,61,0.25)' }}>
-              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />LIVE
-            </span>
-          )}
-          {isFinished && (
-            <span className="text-[9px] font-mono text-text-muted border border-bg-border px-2 py-0.5 rounded">FINISHED</span>
-          )}
-        </div>
-      </div>
+      {/* ── Sticky hero ───────────────────────────────────────────────────────── */}
+      <div className="-mx-3 sm:-mx-4 md:-mx-6 sticky top-0 z-20"
+        style={{ background: 'rgb(var(--bg-base-rgb))', borderBottom: '1px solid rgba(var(--surface-tint-rgb),0.10)' }}>
 
-      {/* Match header */}
-      <div className="bg-bg-surface border border-bg-border rounded-lg p-4 sm:p-5"
-        style={isLive ? { borderTop: `3px solid ${accent}` } : undefined}>
-
-        {/* Context chip row */}
-        {(match.tournament || match.format) && (
-          <div className="flex flex-wrap items-center gap-1.5 mb-3">
+        {/* Row 1 — meta bar */}
+        <div className="flex items-center justify-between px-3 sm:px-4 md:px-6 pt-2 pb-1 gap-2" style={{ minHeight: 32 }}>
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              onClick={() => window.history.length > 1 ? router.back() : router.push(`/cybersport/${gameSlug}`)}
+              className="text-[11px] font-mono shrink-0 transition-colors"
+              style={{ color: 'rgba(var(--surface-tint-rgb),0.5)' }}>
+              ←
+            </button>
             {match.tournament && (
-              <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-bg-elevated/60 border border-bg-border/60 text-text-secondary">
+              <span className="text-[10px] font-mono truncate"
+                style={{ color: 'rgba(var(--surface-tint-rgb),0.45)' }}>
                 {match.tournament}
               </span>
             )}
-            {match.format && (
-              <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded border border-bg-border/60 text-text-muted">
-                {(() => {
-                  const f = String(match.format).toLowerCase()
-                  const m = f.match(/bo\s*(\d+)/) ?? f.match(/best.?of.?(\d+)/)
-                  return m ? `Best of ${m[1]}` : match.format.toUpperCase()
-                })()}
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {formatBo && (
+              <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded tabular-nums"
+                style={{ background: `${AMBER}18`, color: AMBER, border: `1px solid ${AMBER}40` }}>
+                {formatBo}
               </span>
             )}
-            {isLive && match.games && match.games.length > 0 && (
-              <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded"
-                style={{ background: 'rgba(255,61,61,0.12)', color: '#ff3d3d', border: '1px solid rgba(255,61,61,0.25)' }}>
-                Map {match.games.length}
+            {isLive && (
+              <span className="inline-flex items-center gap-1 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
+                style={{ background: 'rgba(255,61,61,0.15)', color: LIVE_RED, border: '1px solid rgba(255,61,61,0.30)' }}>
+                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: LIVE_RED }} />LIVE
               </span>
+            )}
+            {isFinished && (
+              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded border"
+                style={{ color: 'rgba(var(--surface-tint-rgb),0.4)', borderColor: 'rgba(var(--surface-tint-rgb),0.15)' }}>
+                FT
+              </span>
+            )}
+            {isRefreshing && (
+              <svg className="w-3 h-3 animate-spin shrink-0" style={{ color: 'rgba(var(--surface-tint-rgb),0.35)' }}
+                viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 12a9 9 0 11-6.219-8.56"/>
+              </svg>
+            )}
+          </div>
+        </div>
+
+        {/* Row 2 — scoreboard */}
+        <div className="flex items-center gap-3 px-3 sm:px-4 md:px-6 pb-3">
+          {/* Radiant / teamA */}
+          <div className="flex-1 flex items-center gap-3 min-w-0">
+            <TeamLogo team={teamA ?? { name: '?' } as EsportsTeamDetail} size={44} />
+            <div className="min-w-0">
+              <p className="text-[14px] font-mono font-bold leading-tight truncate"
+                style={{ color: isFinished && scoreA != null && scoreA > (scoreB ?? 0) ? DOTA_RADIANT : 'rgb(var(--text-primary))' }}>
+                {teamA?.name ?? '—'}
+              </p>
+              <p className="text-[9px] font-mono tracking-[0.12em] mt-0.5" style={{ color: `${DOTA_RADIANT}b3` }}>RADIANT</p>
+            </div>
+          </div>
+          {/* Series score */}
+          <div className="shrink-0 text-center">
+            {(isLive || isFinished) && scoreA != null && scoreB != null ? (
+              <div className="flex items-center gap-2 font-mono tabular-nums">
+                <span className="text-[28px] font-bold leading-none"
+                  style={{ color: isFinished && scoreA > scoreB ? DOTA_RADIANT : 'rgb(var(--text-primary))' }}>
+                  {scoreA}
+                </span>
+                <span className="text-[18px] leading-none" style={{ color: 'rgba(var(--surface-tint-rgb),0.25)' }}>:</span>
+                <span className="text-[28px] font-bold leading-none"
+                  style={{ color: isFinished && scoreB > scoreA ? DOTA_DIRE : 'rgb(var(--text-primary))' }}>
+                  {scoreB}
+                </span>
+              </div>
+            ) : (
+              <span className="text-[18px] font-mono" style={{ color: 'rgba(var(--surface-tint-rgb),0.3)' }}>vs</span>
+            )}
+          </div>
+          {/* Dire / teamB */}
+          <div className="flex-1 flex items-center justify-end gap-3 min-w-0">
+            <div className="min-w-0 text-right">
+              <p className="text-[14px] font-mono font-bold leading-tight truncate"
+                style={{ color: isFinished && scoreB != null && scoreB > (scoreA ?? 0) ? DOTA_DIRE : 'rgb(var(--text-primary))' }}>
+                {teamB?.name ?? '—'}
+              </p>
+              <p className="text-[9px] font-mono tracking-[0.12em] mt-0.5 text-right" style={{ color: `${DOTA_DIRE}b3` }}>DIRE</p>
+            </div>
+            <TeamLogo team={teamB ?? { name: '?' } as EsportsTeamDetail} size={44} />
+          </div>
+        </div>
+
+        {/* Row 3 — games bar */}
+        {(match.games?.length ?? 0) > 0 && (
+          <div className="flex gap-1.5 overflow-x-auto px-3 sm:px-4 md:px-6 pb-2"
+            style={{ scrollbarWidth: 'none' }}>
+            {match.games.map(g => {
+              const gLive = g.started && !g.finished
+              const gFin  = g.finished
+              const bc    = gameBorderColor(g)
+              const gA = g.teamA, gB = g.teamB
+              return (
+                <div key={g.seq} className="shrink-0 flex flex-col items-center gap-0.5 px-2 py-1 rounded-md"
+                  style={{
+                    border: `1px solid ${bc}`,
+                    background: gLive ? `${AMBER}0d` : 'rgba(var(--surface-tint-rgb),0.03)',
+                    minWidth: 44,
+                  }}>
+                  <span className="text-[8px] font-mono font-bold uppercase tracking-wider"
+                    style={{ color: gLive ? AMBER : 'rgba(var(--surface-tint-rgb),0.45)' }}>
+                    G{g.seq}
+                  </span>
+                  {gFin && gA?.score != null && gB?.score != null ? (
+                    <span className="text-[9px] font-mono tabular-nums font-semibold"
+                      style={{ color: gA.won ? DOTA_RADIANT : gB.won ? DOTA_DIRE : 'rgba(var(--surface-tint-rgb),0.5)' }}>
+                      {gA.score}:{gB.score}
+                    </span>
+                  ) : gLive ? (
+                    <span className="text-[9px] font-mono" style={{ color: AMBER }}>…</span>
+                  ) : (
+                    <span className="text-[9px] font-mono" style={{ color: 'rgba(var(--surface-tint-rgb),0.25)' }}>–</span>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Tab bar */}
+        <div role="tablist" className="flex border-t" style={{ borderColor: 'rgba(var(--surface-tint-rgb),0.08)' }}>
+          {tabs.map(({ key, label }) => (
+            <button key={key} role="tab" aria-selected={activeTab === key}
+              onClick={() => setActiveTab(key)}
+              className="flex-1 py-2.5 text-[10px] font-mono font-bold uppercase tracking-wider transition-colors"
+              style={{
+                color: activeTab === key ? LIVE_RED : 'rgba(var(--surface-tint-rgb),0.4)',
+                borderBottom: activeTab === key ? `2px solid ${LIVE_RED}` : '2px solid transparent',
+              }}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Tab content ───────────────────────────────────────────────────────── */}
+      <div className="px-3 sm:px-4 md:px-6 pt-4 pb-8 flex flex-col gap-4">
+
+        {/* ОБЗОР */}
+        {activeTab === 'overview' && (
+          <>
+            {/* Net worth — primary Dota metric */}
+            {(isLive || isFinished) && (
+              <DotaNetWorthBlock
+                live={dotaLive}
+                liveGame={liveGame}
+                teamAName={teamA?.name ?? '—'}
+                teamBName={teamB?.name ?? '—'}
+                gameTime={dotaLive?.gameTime ?? liveGame?.clock?.currentSeconds}
+              />
+            )}
+
+            {/* Current game: kill score + player tables */}
+            {isLive && dotaLive && (dotaLive.radiantScore != null || dotaLive.direScore != null) && (
+              <div className="rounded-xl border border-bg-border overflow-hidden bg-bg-surface">
+                <div className="flex items-center justify-between px-3 py-2.5 border-b border-bg-border/50">
+                  <span className="text-[9px] font-mono tracking-[0.1em] uppercase"
+                    style={{ color: 'rgba(var(--surface-tint-rgb),0.5)' }}>
+                    {lang === 'ru' ? 'ТЕКУЩАЯ ИГРА · УБИЙСТВА' : 'CURRENT GAME · KILLS'}
+                  </span>
+                  {dotaLive.gameTime != null && (
+                    <span className="text-[9px] font-mono tabular-nums"
+                      style={{ color: 'rgba(var(--surface-tint-rgb),0.45)' }}>
+                      {dotaLive.gameTime >= 0 ? fmtClock(dotaLive.gameTime) : `-${fmtClock(Math.abs(dotaLive.gameTime))}`}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center justify-between px-6 py-4">
+                  <div className="flex flex-col items-start gap-0.5">
+                    <span className="text-[9px] font-mono" style={{ color: `${DOTA_RADIANT}99` }}>RADIANT</span>
+                    <span className="text-[32px] font-mono font-bold tabular-nums" style={{ color: DOTA_RADIANT }}>
+                      {dotaLive.radiantScore ?? 0}
+                    </span>
+                  </div>
+                  <span className="text-[20px] font-mono" style={{ color: 'rgba(var(--surface-tint-rgb),0.2)' }}>:</span>
+                  <div className="flex flex-col items-end gap-0.5">
+                    <span className="text-[9px] font-mono text-right" style={{ color: `${DOTA_DIRE}99` }}>DIRE</span>
+                    <span className="text-[32px] font-mono font-bold tabular-nums" style={{ color: DOTA_DIRE }}>
+                      {dotaLive.direScore ?? 0}
+                    </span>
+                  </div>
+                </div>
+                {(radiantPlayers.length > 0 || direPlayers.length > 0) && (
+                  <div className="px-3 pb-3 flex flex-col gap-2 border-t border-bg-border/40 pt-3">
+                    {radiantPlayers.length > 0 && (
+                      <DotaPlayerTable players={radiantPlayers} side="radiant" teamName={teamA?.name ?? '—'} />
+                    )}
+                    {direPlayers.length > 0 && (
+                      <DotaPlayerTable players={direPlayers} side="dire" teamName={teamB?.name ?? '—'} />
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Win probability */}
+            {match.yesPrice != null && (
+              <DotaWinProbBlock
+                yesPrice={match.yesPrice}
+                noPrice={match.noPrice ?? (1 - match.yesPrice)}
+                teamAName={teamA?.name ?? '—'}
+                teamBName={teamB?.name ?? '—'}
+              />
+            )}
+
+            {/* Steam Live link */}
+            {steamMatchId && (
+              <Link href={`/cybersport/dota/${steamMatchId}`} prefetch={false}
+                className="flex items-center justify-between px-4 py-3 rounded-lg hover:opacity-90 transition-opacity"
+                style={{ background: 'rgba(255,200,0,0.05)', border: '1px solid rgba(255,200,0,0.2)' }}>
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
+                    style={{ background: 'rgba(255,200,0,0.12)', color: '#f5c842', border: '1px solid rgba(255,200,0,0.2)' }}>
+                    STEAM LIVE
+                  </span>
+                  <span className="text-[11px] font-mono text-text-muted">{t('esports.dota_tv_hint')}</span>
+                </div>
+                <span className="text-[11px] font-mono shrink-0" style={{ color: accent }}>{t('common.view')}</span>
+              </Link>
+            )}
+
+            {/* Series draft */}
+            {(match.draft?.length ?? 0) > 0 && (
+              <div className="bg-bg-surface border border-bg-border rounded-lg p-4">
+                <p className="text-[9px] font-mono text-text-muted uppercase tracking-wider mb-2">Series Draft</p>
+                <DraftRow actions={match.draft!} teamAId={teamA?.id} teamBId={teamB?.id} accent={accent} />
+              </div>
+            )}
+
+            {/* Live stream */}
+            {isLive && (match.streams?.length ?? 0) > 0 && (
+              <StreamPlayer urls={match.streams!} />
+            )}
+
+            {/* Pre-match info */}
+            {!isLive && !isFinished && match.preMatch && (() => {
+              const pm = match.preMatch
+              const empty = !pm.tournament && (pm.streams?.length ?? 0) === 0
+                && (pm.recentA?.length ?? 0) === 0 && (pm.recentB?.length ?? 0) === 0
+                && (pm.h2h?.matches?.length ?? 0) === 0
+              if (empty) return (
+                <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3">
+                  <p className="text-[11px] font-mono text-amber-300/90">{t('esports.grid_dev_limit')}</p>
+                </div>
+              )
+              return (
+                <PreMatchSection pre={pm}
+                  teamAName={teamA?.name ?? '—'} teamBName={teamB?.name ?? '—'} accent={accent} />
+              )
+            })()}
+
+            {/* Upcoming: no data yet */}
+            {!isLive && !isFinished && (match.games?.length ?? 0) === 0 && !match.preMatch && (
+              <div className="bg-bg-surface border border-bg-border rounded-lg px-4 py-8 text-center">
+                <p className="text-[11px] font-mono text-text-muted">{t('esports.no_maps_yet')}</p>
+                <p className="text-[10px] font-mono text-text-muted/50 mt-1">{t('esports.live_data_wait')}</p>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ИГРОКИ */}
+        {activeTab === 'players' && (
+          <div className="flex flex-col gap-3">
+            {radiantPlayers.length > 0 || direPlayers.length > 0 ? (
+              <>
+                {radiantPlayers.length > 0 && (
+                  <DotaPlayerTable players={radiantPlayers} side="radiant" teamName={teamA?.name ?? '—'} />
+                )}
+                {direPlayers.length > 0 && (
+                  <DotaPlayerTable players={direPlayers} side="dire" teamName={teamB?.name ?? '—'} />
+                )}
+              </>
+            ) : (match.games?.length ?? 0) > 0 ? (() => {
+              const lastGame = [...(match.games ?? [])].reverse()
+                .find(g => g.finished || (g.started && !g.finished))
+              if (!lastGame) return (
+                <p className="text-[11px] font-mono text-text-muted/60 py-8 text-center">
+                  {lang === 'ru' ? 'Нет данных по игрокам' : 'No player data'}
+                </p>
+              )
+              const gAPlayers = lastGame.teamA?.players ?? []
+              const gBPlayers = lastGame.teamB?.players ?? []
+              return (
+                <>
+                  {gAPlayers.length > 0 && (
+                    <DotaGamePlayerTable players={gAPlayers} side="radiant" teamName={teamA?.name ?? '—'} />
+                  )}
+                  {gBPlayers.length > 0 && (
+                    <DotaGamePlayerTable players={gBPlayers} side="dire" teamName={teamB?.name ?? '—'} />
+                  )}
+                </>
+              )
+            })() : (
+              <p className="text-[11px] font-mono text-text-muted/60 py-8 text-center">
+                {lang === 'ru' ? 'Данные по игрокам появятся во время матча' : 'Player data will appear during the match'}
+              </p>
             )}
           </div>
         )}
 
-        {/* Teams + score */}
-        <div className="flex items-center gap-2 sm:gap-4 relative">
-          {/* Winner subtle backdrop */}
-          {isFinished && scoreA != null && scoreB != null && scoreA !== scoreB && (
-            <div aria-hidden className="absolute inset-0 pointer-events-none rounded-md"
-              style={{
-                background: `linear-gradient(${scoreA > scoreB ? '90deg' : '270deg'}, ${accent}14, transparent 55%)`,
-              }} />
-          )}
-          {/* Team A */}
-          <div className="flex-1 min-w-0 flex flex-col items-start gap-2 relative">
-            {teamA?.id ? (
-              <Link href={`/cybersport/${gameSlug}/team/${teamA.id}`} prefetch={false}>
-                <TeamLogo team={teamA} size={36} />
-              </Link>
-            ) : teamA && <TeamLogo team={teamA} size={36} />}
-            <div className="min-w-0 w-full">
-              {teamA?.id ? (
-                <Link
-                  href={`/cybersport/${gameSlug}/team/${teamA.id}`}
-                  prefetch={false}
-                  className="block text-[13px] sm:text-[15px] font-mono font-bold text-text-primary leading-tight hover:underline underline-offset-2 text-left break-words"
-                >
-                  {teamA?.name ?? '—'}
-                </Link>
-              ) : (
-                <span className="block text-[13px] sm:text-[15px] font-mono font-bold text-text-primary leading-tight break-words">
-                  {teamA?.name ?? '—'}
-                </span>
-              )}
-              {isFinished && scoreA != null && scoreA > (scoreB ?? 0) && (
-                <p className="text-[10px] font-mono mt-0.5" style={{ color: accent }}>WINNER</p>
-              )}
-              {teamA?.players && teamA.players.length > 0 && (
-                <p className="hidden sm:block text-[9px] font-mono text-text-muted/50 mt-0.5 truncate">
-                  {teamA.players.map(p => p.nickname ?? p.name).filter(Boolean).join(' · ')}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Score */}
-          <div className="shrink-0 text-center px-1 sm:px-2">
-            {(isLive || isFinished) && scoreA != null && scoreB != null ? (
-              <div className="flex items-center gap-1.5 sm:gap-3">
-                <span className="text-2xl sm:text-4xl font-mono font-bold text-text-primary">{scoreA}</span>
-                <span className="text-text-muted/50 text-lg sm:text-2xl">:</span>
-                <span className="text-2xl sm:text-4xl font-mono font-bold text-text-primary">{scoreB}</span>
+        {/* ИГРЫ */}
+        {activeTab === 'games' && (
+          <div className="flex flex-col gap-4">
+            {(match.games?.length ?? 0) > 0 ? match.games.map(g => (
+              <div key={g.seq} className="flex flex-col gap-2">
+                <DotaNetWorthBlock
+                  live={g.started && !g.finished ? dotaLive : null}
+                  liveGame={g}
+                  teamAName={teamA?.name ?? '—'}
+                  teamBName={teamB?.name ?? '—'}
+                  gameTime={g.started && !g.finished
+                    ? (dotaLive?.gameTime ?? g.clock?.currentSeconds)
+                    : undefined}
+                />
+                <GameCard
+                  game={g}
+                  teamA={teamA ?? { name: '—' } as EsportsTeamDetail}
+                  teamB={teamB ?? { name: '—' } as EsportsTeamDetail}
+                  isDota={true}
+                  isCs2={false}
+                  accent={DOTA_RADIANT}
+                />
               </div>
-            ) : (
-              <span className="text-xl sm:text-2xl font-mono text-text-muted/50">vs</span>
+            )) : (
+              <p className="text-[11px] font-mono text-text-muted/60 py-8 text-center">
+                {t('esports.no_maps_yet')}
+              </p>
             )}
-            {(isLive || isFinished) && match.format && (() => {
-              const m = String(match.format).toLowerCase().match(/bo\s*(\d+)/) ?? String(match.format).toLowerCase().match(/best.?of.?(\d+)/)
-              const need = m ? Math.ceil(Number(m[1]) / 2) : null
-              return need ? (
-                <p className="text-[9px] font-mono text-text-muted/60 mt-1">First to {need}</p>
-              ) : null
-            })()}
           </div>
+        )}
 
-          {/* Team B */}
-          <div className="flex-1 min-w-0 flex flex-col items-end gap-2 relative">
-            {teamB?.id ? (
-              <Link href={`/cybersport/${gameSlug}/team/${teamB.id}`} prefetch={false}>
-                <TeamLogo team={teamB} size={36} />
-              </Link>
-            ) : teamB && <TeamLogo team={teamB} size={36} />}
-            <div className="text-right min-w-0 w-full">
-              {teamB?.id ? (
-                <Link
-                  href={`/cybersport/${gameSlug}/team/${teamB.id}`}
-                  prefetch={false}
-                  className="block text-[13px] sm:text-[15px] font-mono font-bold text-text-primary leading-tight hover:underline underline-offset-2 text-right break-words"
-                >
-                  {teamB?.name ?? '—'}
-                </Link>
-              ) : (
-                <span className="block text-[13px] sm:text-[15px] font-mono font-bold text-text-primary leading-tight break-words">
-                  {teamB?.name ?? '—'}
-                </span>
-              )}
-              {isFinished && scoreB != null && scoreB > (scoreA ?? 0) && (
-                <p className="text-[10px] font-mono mt-0.5 text-right" style={{ color: accent }}>WINNER</p>
-              )}
-              {teamB?.players && teamB.players.length > 0 && (
-                <p className="hidden sm:block text-[9px] font-mono text-text-muted/50 mt-0.5 truncate">
-                  {teamB.players.map(p => p.nickname ?? p.name).filter(Boolean).join(' · ')}
-                </p>
-              )}
-            </div>
+        {/* БЕТТИНГ */}
+        {activeTab === 'betting' && (
+          <div className="flex flex-col gap-5">
+            {match.markets?.length > 0 ? (
+              <DotaBettingGrouped
+                markets={match.markets}
+                teamAName={teamA?.name ?? '—'}
+                teamBName={teamB?.name ?? '—'}
+                teamAColor={teamA?.colorPrimary ?? DOTA_RADIANT}
+                lang={lang}
+              />
+            ) : match.yesPrice != null ? (
+              <>
+                <DotaWinProbBlock
+                  yesPrice={match.yesPrice}
+                  noPrice={match.noPrice ?? (1 - match.yesPrice)}
+                  teamAName={teamA?.name ?? '—'}
+                  teamBName={teamB?.name ?? '—'}
+                />
+                <OddsBar yesPrice={match.yesPrice} noPrice={match.noPrice}
+                  teamA={teamA?.name ?? '—'} teamB={teamB?.name ?? '—'}
+                  accentA={teamA?.colorPrimary} />
+              </>
+            ) : (
+              <p className="text-[11px] font-mono text-text-muted/60 py-8 text-center">
+                {lang === 'ru' ? 'Рынки недоступны' : 'No markets available'}
+              </p>
+            )}
           </div>
-        </div>
+        )}
 
-        {/* Meta row */}
-        <div className="mt-4 pt-3 border-t border-bg-border/40 flex flex-wrap items-center gap-x-3 gap-y-1">
-          {match.startsAt && !isLive && !isFinished && (
-            <>
-              <span className="text-[10px] font-mono text-text-muted">{fmtTime(match.startsAt)}</span>
-              <Countdown startsAt={match.startsAt} />
-            </>
-          )}
-          {isLive && match.liveState?.duration && fmtDuration(match.liveState.duration) && (
-            <span className="text-[10px] font-mono text-text-muted/60">
-              Series duration: {fmtDuration(match.liveState.duration)}
-            </span>
-          )}
-          {isLive && match.liveState?.updatedAt && (
-            <span className="text-[10px] font-mono text-text-muted/40 ml-auto">
-              upd {new Date(match.liveState.updatedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-            </span>
-          )}
-          {isRefreshing && (
-            <svg className="w-3 h-3 animate-spin text-text-muted/45 ml-auto shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 12a9 9 0 11-6.219-8.56"/>
-            </svg>
-          )}
-        </div>
       </div>
-
-      {/* Steam Live (Dota2) */}
-      {isDota && steamMatchId && (
-        <Link href={`/cybersport/dota/${steamMatchId}`} prefetch={false}
-          className="flex items-center justify-between px-4 py-3 rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-          style={{ background: 'rgba(255,200,0,0.05)', border: '1px solid rgba(255,200,0,0.2)' }}>
-          <div className="flex items-center gap-2">
-            <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
-              style={{ background: 'rgba(255,200,0,0.12)', color: '#f5c842', border: '1px solid rgba(255,200,0,0.2)' }}>
-              STEAM LIVE
-            </span>
-            <span className="text-[11px] font-mono text-text-muted">{t('esports.dota_tv_hint')}</span>
-          </div>
-          <span className="text-[11px] font-mono shrink-0" style={{ color: accent }}>{t('common.view')}</span>
-        </Link>
-      )}
-
-      {/* Series draft (Dota2) */}
-      {isDota && (match.draft?.length ?? 0) > 0 && (
-        <div className="bg-bg-surface border border-bg-border rounded-lg p-4">
-          <p className="text-[9px] font-mono text-text-muted uppercase tracking-wider mb-2">Series Draft</p>
-          <DraftRow actions={match.draft!} teamAId={teamA?.id} teamBId={teamB?.id} accent={accent} />
-        </div>
-      )}
-
-      {/* Live stream embed */}
-      {isLive && (match.streams?.length ?? 0) > 0 && (
-        <StreamPlayer urls={match.streams!} />
-      )}
-
-      {/* Pre-match (tournament, streams, recent form, H2H) */}
-      {!isLive && !isFinished && match.preMatch && (() => {
-        const pm = match.preMatch
-        const empty = !pm.tournament && (pm.streams?.length ?? 0) === 0
-          && (pm.recentA?.length ?? 0) === 0 && (pm.recentB?.length ?? 0) === 0
-          && (pm.h2h?.matches?.length ?? 0) === 0
-        if (empty) return (
-          <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3">
-            <p className="text-[11px] font-mono text-amber-300/90">
-              {t('esports.grid_dev_limit')}
-            </p>
-          </div>
-        )
-        return (
-          <PreMatchSection pre={pm}
-            teamAName={teamA?.name ?? '—'} teamBName={teamB?.name ?? '—'} accent={accent} />
-        )
-      })()}
-
-      {/* Games / Maps */}
-      {(match.games?.length ?? 0) > 0 && (
-        <GamesTabs
-          games={match.games}
-          teamA={teamA ?? { name: '—' } as EsportsTeamDetail}
-          teamB={teamB ?? { name: '—' } as EsportsTeamDetail}
-          isDota={isDota}
-          isCs2={isCs2}
-          accent={accent}
-        />
-      )}
-
-      {/* Live but no game data yet */}
-      {(match.games?.length ?? 0) === 0 && isLive && (
-        <div className="bg-bg-surface border rounded-lg px-5 py-4 flex items-center gap-3"
-          style={{ borderColor: `${accent}33`, borderLeft: `3px solid ${accent}` }}>
-          <span className="w-2 h-2 rounded-full animate-pulse shrink-0" style={{ background: accent }} />
-          <div>
-            <p className="text-[11px] font-mono font-bold text-text-primary">
-              {isDota ? 'Game 1 in progress' : 'Map 1 in progress'}
-            </p>
-            <p className="text-[10px] font-mono text-text-muted/60 mt-0.5">{t('esports.live_stats_soon')}</p>
-          </div>
-        </div>
-      )}
-
-      {(match.games?.length ?? 0) === 0 && !isLive && !isFinished && (
-        <div className="bg-bg-surface border border-bg-border rounded-lg px-4 py-8 text-center">
-          <p className="text-[11px] font-mono text-text-muted">{t('esports.no_maps_yet')}</p>
-          <p className="text-[10px] font-mono text-text-muted/50 mt-1">{t('esports.live_data_wait')}</p>
-        </div>
-      )}
-
-      {/* Dota 2 live data */}
-      {isDota && isLive && match.dotaLive && (
-        <DotaLiveSection
-          live={match.dotaLive}
-          teamAName={teamA?.name ?? '—'}
-          teamBName={teamB?.name ?? '—'}
-          accent={accent}
-        />
-      )}
-
-      {/* Markets — Prescio Fair Price */}
-      {match.markets?.length > 0 && (
-        <MarketsPanel markets={match.markets} teamA={teamA} teamB={teamB} accent={accent} />
-      )}
-
-      {!match.markets?.length && match.yesPrice != null && match.yesPrice !== 0.5 && (
-        <OddsBar yesPrice={match.yesPrice} noPrice={match.noPrice}
-          teamA={teamA?.name ?? '—'} teamB={teamB?.name ?? '—'}
-          accentA={teamA?.colorPrimary} />
-      )}
-
     </div>
     </ErrorBoundary>
   )
