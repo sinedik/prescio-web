@@ -4,42 +4,49 @@ import { usePageTitle } from '../hooks/usePageTitle'
 import { useParams, useRouter } from 'next/navigation'
 import type { Market, Analysis, MarketOpportunity, NewsItem, MetaculusMatch } from '../types'
 import {
-  formatProb, formatEdge, formatVolume, formatDate, daysUntil,
-  edgeColor, platformColor, actionColor,
+  formatProb, formatEdge, formatVolume, daysUntil,
 } from '../utils'
 import dynamic from 'next/dynamic'
 const PaywallModal = dynamic(() => import('../components/PaywallModal'), { ssr: false })
 import { api } from '../lib/api'
-import { analyzeEventAction, analyzeMarketAction } from '../actions/analyze'
+import { analyzeMarketAction } from '../actions/analyze'
 import { useAuthContext } from '../contexts/AuthContext'
 import AnalysisLoader from '../AnalysisLoader'
 import { markAnalyzing, clearAnalyzing, isAnalyzing, markAnalyzed } from '../lib/activeAnalyses'
 import { MARKET_CACHE_PREFIX } from '../lib/marketNavCache'
 import { useLang } from '../contexts/LanguageContext'
 import { useT } from '../lib/i18n'
+import { SourceBadge } from '../components/feed/SourceBadge'
+import { Breadcrumbs } from '../components/Breadcrumbs'
 
-// ---- Event analysis types ----
-interface KeyFactor {
-  factor: string
-  description: string
-  impact: 'bullish' | 'bearish' | 'neutral'
-  weight: number
+const CATEGORY_LABELS: Record<string, string> = {
+  POLITICS: 'Политика',
+  US_POLITICS: 'Политика США',
+  GEOPOLITICS: 'Геополитика',
+  ELECTIONS: 'Выборы',
+  POLICY: 'Политика',
+  SPORT: 'Спорт',
+  SPORTS: 'Спорт',
+  CRYPTO: 'Крипто',
+  ESPORTS: 'Киберспорт',
+  ECONOMICS: 'Экономика',
+  SCIENCE_TECH: 'Наука',
 }
 
-interface Scenario {
-  label: 'bull' | 'base' | 'bear'
-  probability: number
-  title: string
-  description: string
+function catLabel(cat?: string | null): string | null {
+  if (!cat) return null
+  const k = cat.toUpperCase()
+  return CATEGORY_LABELS[k] ?? k.replace(/_/g, ' ').toLowerCase()
 }
 
-interface EventAiSummary {
-  situation_summary: string
-  key_factors: KeyFactor[]
-  scenarios?: Scenario[] | null
-  next_key_date?: string | null
-  overall_sentiment: 'BULLISH' | 'BEARISH' | 'NEUTRAL'
-  uncertainty_level: 'LOW' | 'MEDIUM' | 'HIGH'
+function resolutionLabel(date: string | undefined, days: number | null): { text: string; tone: 'danger' | 'warning' | 'muted' } | null {
+  if (!date || days === null) return null
+  if (days <= 0) return { text: 'Резолв сегодня', tone: 'danger' }
+  if (days <= 3) return { text: `Резолв через ${days}д`, tone: 'danger' }
+  if (days <= 7) return { text: `Резолв через ${days}д`, tone: 'warning' }
+  const d = new Date(date)
+  const fmt = d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }).replace('.', '')
+  return { text: `Резолв ${fmt} · ${days}д`, tone: 'muted' }
 }
 
 // ---- Interactive SVG Price Chart ----
@@ -75,7 +82,6 @@ function PriceChart({ history, loading }: {
     const tRange = maxT - minT || 1
     const targetT = minT + frac * tRange
 
-    // Binary search for closest point
     let lo = 0, hi = pts.length - 1
     while (lo < hi) {
       const mid = (lo + hi) >> 1
@@ -129,33 +135,29 @@ function PriceChart({ history, loading }: {
     pts.slice(1).map(h => `L ${toX(h.t).toFixed(1)},${toY(h.p).toFixed(1)}`).join(' ') +
     ` L ${toX(last.t).toFixed(1)},${(pad.top + iH).toFixed(1)} L ${pad.left},${(pad.top + iH).toFixed(1)} Z`
 
-  // Y-axis grid lines & labels
   const yTicks = [0, 25, 50, 75, 100].filter(v => v >= minP - 5 && v <= maxP + 5)
 
-  // X-axis labels (4 points)
   const xTicks = [0, 0.33, 0.66, 1].map(f => ({
     x: pad.left + f * iW,
-    label: new Date((minT + f * tRange) * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    label: new Date((minT + f * tRange) * 1000).toLocaleDateString('ru-RU', { month: 'short', day: 'numeric' }).replace('.', ''),
   }))
 
-  // Tooltip positioning — flip when near right edge
   const tooltipOnLeft = hover && hover.x > W * 0.65
 
   return (
     <div>
-      {/* Change summary */}
       <div className="flex items-center gap-3 mb-3">
-        <span className="text-2xl font-mono font-bold text-text-primary">
+        <span className="text-[24px] font-mono font-bold text-text-primary leading-none">
           {hover ? `${Math.round(hover.pt.p)}%` : `${Math.round(last.p)}%`}
         </span>
-        <span className={`text-xs font-mono font-bold ${isUp ? 'text-accent' : 'text-danger'}`}>
+        <span className={`text-[11px] font-mono font-bold ${isUp ? 'text-accent' : 'text-danger'}`}>
           {change >= 0 ? '+' : '-'}{changePct}pp
         </span>
         {hover && (
-          <span className="text-xs font-mono text-text-muted">
-            {new Date(hover.pt.t * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          <span className="text-[11px] font-mono text-text-muted">
+            {new Date(hover.pt.t * 1000).toLocaleDateString('ru-RU', { month: 'short', day: 'numeric', year: 'numeric' }).replace('.', '')}
             {' · '}
-            {new Date(hover.pt.t * 1000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+            {new Date(hover.pt.t * 1000).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
           </span>
         )}
       </div>
@@ -179,7 +181,6 @@ function PriceChart({ history, loading }: {
           </clipPath>
         </defs>
 
-        {/* Y grid + labels */}
         {yTicks.map(v => (
           <g key={v}>
             <line
@@ -196,47 +197,39 @@ function PriceChart({ history, loading }: {
           </g>
         ))}
 
-        {/* Area + line (clipped) */}
         <g clipPath="url(#chartClip)">
           <path d={areaPath} fill="url(#chartGrad)" />
           <polyline points={linePts} fill="none" stroke={color} strokeWidth="1.8" strokeLinejoin="round" />
         </g>
 
-        {/* End dot */}
         <circle cx={toX(last.t).toFixed(1)} cy={toY(last.p).toFixed(1)} r="3.5" fill={color} />
 
-        {/* Crosshair */}
         {hover && (
           <g>
-            {/* Vertical line */}
             <line
               x1={hover.x.toFixed(1)} y1={pad.top}
               x2={hover.x.toFixed(1)} y2={pad.top + iH}
               stroke="rgb(var(--text-muted))" strokeWidth="1" strokeDasharray="3,3"
             />
-            {/* Horizontal line */}
             <line
               x1={pad.left} y1={hover.y.toFixed(1)}
               x2={W - pad.right} y2={hover.y.toFixed(1)}
               stroke="rgb(var(--text-muted))" strokeWidth="0.5" strokeDasharray="3,3"
             />
-            {/* Dot on line */}
             <circle cx={hover.x.toFixed(1)} cy={hover.y.toFixed(1)} r="4" fill={color} stroke="rgb(var(--bg-base))" strokeWidth="1.5" />
 
-            {/* Tooltip box */}
             <g transform={`translate(${tooltipOnLeft ? hover.x - 88 : hover.x + 8}, ${Math.max(pad.top, hover.y - 22)})`}>
               <rect x="0" y="0" width="80" height="32" rx="4" fill="rgb(var(--bg-elevated))" stroke="rgb(var(--bg-border))" strokeWidth="1" />
               <text x="8" y="13" fontSize="11" fill={color} fontFamily="monospace" fontWeight="bold">
                 {Math.round(hover.pt.p)}%
               </text>
               <text x="8" y="26" fontSize="9" fill="rgb(var(--text-muted))" fontFamily="monospace">
-                {new Date(hover.pt.t * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                {new Date(hover.pt.t * 1000).toLocaleDateString('ru-RU', { month: 'short', day: 'numeric' }).replace('.', '')}
               </text>
             </g>
           </g>
         )}
 
-        {/* X axis labels */}
         {xTicks.map((tk, i) => (
           <text
             key={i}
@@ -251,24 +244,11 @@ function PriceChart({ history, loading }: {
   )
 }
 
-// ---- Liquidity bars ----
-function LiquidityBars({ level }: { level?: string }) {
+function liquidityTier(level?: string): { tier: 'high' | 'medium' | 'low'; label: string; tone: 'accent' | 'watch' | 'danger' } {
   const l = (level ?? 'low').toLowerCase()
-  const active = l === 'high' ? 3 : l === 'medium' ? 2 : 1
-  const barColor = l === 'high' ? 'bg-accent' : l === 'medium' ? 'bg-watch' : 'bg-text-muted'
-  return (
-    <div className="relative group cursor-help inline-flex items-end gap-0.5">
-      {[1, 2, 3].map(n => (
-        <div key={n} className={`w-1.5 rounded-sm ${n <= active ? barColor : 'bg-bg-elevated'}`}
-          style={{ height: `${n * 5 + 3}px` }} />
-      ))}
-      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap text-[10px] font-mono
-        bg-bg-elevated border border-bg-border rounded px-2 py-1 opacity-0 group-hover:opacity-100
-        transition-opacity pointer-events-none z-10 capitalize">
-        {l} liquidity
-      </div>
-    </div>
-  )
+  if (l === 'high') return { tier: 'high', label: 'Высокая', tone: 'accent' }
+  if (l === 'medium') return { tier: 'medium', label: 'Средняя', tone: 'watch' }
+  return { tier: 'low', label: 'Низкая', tone: 'danger' }
 }
 
 function slugify(q: string) {
@@ -288,10 +268,8 @@ export default function MarketDetailPage() {
   const router = useRouter()
   const params = useParams<{ slug?: string; id?: string }>()
   const slug = (params?.slug ?? params?.id) as string | undefined
-  const { profile } = useAuthContext()
   const { lang } = useLang()
   const t = useT(lang)
-
 
   const [market, setMarket] = useState<Market | undefined>(undefined)
 
@@ -300,29 +278,26 @@ export default function MarketDetailPage() {
   const [news, setNews] = useState<NewsItem[] | undefined>(undefined)
   const [metaculusMatch, setMetaculusMatch] = useState<MetaculusMatch | undefined>(undefined)
 
-  const [marketLoading, setMarketLoading] = useState(true) // всегда скелетон до первого ответа API
-  const [freshLoading, setFreshLoading] = useState(true)   // свежий запрос ещё идёт
+  const [marketLoading, setMarketLoading] = useState(true)
+  const [freshLoading, setFreshLoading] = useState(true)
   const [historyLoading, setHistoryLoading] = useState(true)
   const [historyInterval, setHistoryInterval] = useState<'1w' | '1m' | '6m' | 'max'>('max')
   const [analyzing, setAnalyzing] = useState(false)
   const [analyzeError, setAnalyzeError] = useState<string | null>(null)
-  const [eventAi, setEventAi] = useState<EventAiSummary | null>(null)
-  const [eventAnalyzing, setEventAnalyzing] = useState(false)
   const userTriggeredAnalysis = useRef(false)
   const [history, setHistory] = useState<HistoryPoint[]>([])
   const [historyReal, setHistoryReal] = useState(false)
   const [siblings, setSiblings] = useState<{ id: string; question: string; price: number; no_price?: number; volume?: number; resolution_date?: string; slug?: string }[]>([])
+  const [resOpen, setResOpen] = useState(false)
 
   const [showPaywall, setShowPaywall] = useState(false)
   const [paywallVariant, setPaywallVariant] = useState<'pro' | 'alpha'>('pro')
   const { isPro, isAlpha } = useAuthContext()
 
-  // Master loader — всегда загружает свежие данные по UUID, не зависит от cache/state
   useEffect(() => {
     if (!slug) return
     let cancelled = false
 
-    // 1. Быстрый показ из sessionStorage (раньше — navigation state)
     let stateItem: Partial<MarketOpportunity> | undefined
     try {
       const raw = sessionStorage.getItem(MARKET_CACHE_PREFIX + slug)
@@ -357,23 +332,17 @@ export default function MarketDetailPage() {
       }
     }
 
-    // 2. Всегда делаем свежий запрос к API по UUID маркета
     ;(async () => {
       try {
-        // Сначала получаем ID маркета (slug → UUID через поиск, если нужно)
         const initial = stateItem?.market
         let marketId = initial?.id
 
         if (!marketId) {
-          // Если slug — это UUID, используем напрямую
           const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-          if (UUID_RE.test(slug)) {
-            marketId = slug
-          }
+          if (UUID_RE.test(slug)) marketId = slug
         }
 
         if (!marketId) {
-          // Пробуем найти по slug — API возвращает массив
           const results = await api.getMarkets({ limit: 50 })
           const raw = Array.isArray(results)
             ? results
@@ -397,7 +366,6 @@ export default function MarketDetailPage() {
 
         if (!marketId || cancelled) return
 
-        // Запрашиваем полные данные по UUID (включая analysis)
         const fresh = await api.getMarket(marketId) as Market & { analysis?: Analysis; price_history?: HistoryPoint[]; siblings?: { id: string; question: string; price: number; resolution_date?: string; slug?: string }[] }
         if (!cancelled && fresh) {
           setMarket(fresh)
@@ -406,7 +374,6 @@ export default function MarketDetailPage() {
             markAnalyzed('market', marketId)
             clearAnalyzing('market', marketId)
           } else if (isAnalyzing('market', marketId)) {
-            // Resume polling after page reload
             setAnalyzing(true)
             ;(async () => {
               for (let i = 0; i < 12; i++) {
@@ -459,51 +426,6 @@ export default function MarketDetailPage() {
     return () => { cancelled = true }
   }, [slug])
 
-  // Fetch (or auto-analyze) event AI when market analysis is ready
-  useEffect(() => {
-    if (!market?.event?.id || !isPro || !analysis) return
-    let cancelled = false
-    const eventId = market.event.id
-    ;(async () => {
-      try {
-        const ev = await api.getEvent(eventId) as { ai_summary?: EventAiSummary }
-        if (cancelled) return
-        if (ev?.ai_summary) {
-          if (userTriggeredAnalysis.current) {
-            // Первый раз у пользователя — прогоняем анимацию (6 сцен × 5с = 30с)
-            userTriggeredAnalysis.current = false
-            setEventAnalyzing(true)
-            await new Promise(r => setTimeout(r, 30000))
-            if (!cancelled) { setEventAi(ev.ai_summary); setEventAnalyzing(false) }
-          } else {
-            // Уже видел — показываем сразу
-            if (!cancelled) setEventAi(ev.ai_summary)
-          }
-          return
-        }
-
-        // Событие не проанализировано — запускаем анализ автоматически
-        setEventAnalyzing(true)
-        try {
-          await analyzeEventAction(eventId)
-          for (let i = 0; i < 20; i++) {
-            await new Promise(r => setTimeout(r, 3000))
-            if (cancelled) break
-            const fresh = await api.getEvent(eventId) as { ai_summary?: EventAiSummary }
-            if (fresh?.ai_summary) {
-              if (!cancelled) setEventAi(fresh.ai_summary)
-              return
-            }
-          }
-        } catch { /* ignore */ } finally {
-          if (!cancelled) setEventAnalyzing(false)
-        }
-      } catch { /* ignore */ }
-    })()
-    return () => { cancelled = true }
-  }, [market?.event?.id, analysis, isPro])
-
-  // Filter price history from market object by selected interval
   useEffect(() => {
     const fullHistory = (market as (Market & { price_history?: HistoryPoint[] }) | undefined)?.price_history
     if (!fullHistory?.length) return
@@ -524,7 +446,6 @@ export default function MarketDetailPage() {
       const marketQuestion = market.question!
       const result = await analyzeMarketAction(marketId) as Record<string, unknown>
 
-      // Всегда перечитываем из GET — данные правильно форматированы и гарантированно из БД
       const pollForAnalysis = async () => {
         const MAX_ATTEMPTS = 12
         for (let i = 0; i < MAX_ATTEMPTS; i++) {
@@ -543,7 +464,6 @@ export default function MarketDetailPage() {
         return false
       }
 
-      // Если анализ уже был в БД — перечитываем, но ждём минимум полный цикл анимации (4 сцены × 5с)
       if (result.analysis) {
         const [fresh] = await Promise.all([
           api.getMarket(marketId) as Promise<Market & { analysis?: Analysis }>,
@@ -560,17 +480,16 @@ export default function MarketDetailPage() {
         return
       }
 
-      // Анализ поставлен в очередь — поллим каждые 10 секунд
       if (result.queued) {
         const found = await pollForAnalysis()
-        if (!found) setAnalyzeError('Analysis is taking too long. Refresh the page in a moment.')
+        if (!found) setAnalyzeError('Анализ занимает дольше обычного. Обновите страницу через минуту.')
       }
     } catch (err: unknown) {
       const e = err as { type?: string; limit?: number }
       if (e?.type === 'limit_reached') {
-        setAnalyzeError(`Daily limit reached (${e.limit ?? 3} analyses/day). Upgrade to Pro for unlimited.`)
+        setAnalyzeError(`Дневной лимит исчерпан (${e.limit ?? 3} анализа/день). Pro — безлимит.`)
       } else {
-        setAnalyzeError(err instanceof Error ? err.message : 'Analysis failed')
+        setAnalyzeError(err instanceof Error ? err.message : 'Анализ не удался')
       }
     } finally {
       clearAnalyzing('market', marketId)
@@ -582,32 +501,19 @@ export default function MarketDetailPage() {
   if (marketLoading) {
     return (
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6 animate-pulse">
-        {/* Back */}
-        <div className="h-3 w-10 bg-bg-elevated rounded mb-5" />
-        {/* Event context */}
-        <div className="bg-bg-surface border border-bg-border rounded-xl overflow-hidden mb-4">
-          <div className="w-full h-36 bg-bg-elevated" />
-          <div className="px-4 py-3 space-y-2">
-            <div className="h-2 w-24 bg-bg-elevated rounded" />
-            <div className="h-4 w-2/3 bg-bg-elevated rounded" />
-            <div className="h-3 w-full bg-bg-elevated rounded" />
-          </div>
-        </div>
-        {/* Header card */}
+        <div className="h-3 w-48 bg-bg-elevated rounded mb-4" />
         <div className="bg-bg-surface border border-bg-border rounded-lg p-5 mb-4 space-y-3">
-          <div className="flex gap-2"><div className="h-5 w-20 bg-bg-elevated rounded" /><div className="h-5 w-16 bg-bg-elevated rounded" /></div>
+          <div className="flex gap-2"><div className="h-4 w-20 bg-bg-elevated rounded" /><div className="h-4 w-16 bg-bg-elevated rounded" /></div>
           <div className="h-5 w-4/5 bg-bg-elevated rounded" />
-          <div className="h-4 w-2/3 bg-bg-elevated rounded" />
-          <div className="grid grid-cols-4 gap-3 pt-1">
-            {[...Array(4)].map((_, i) => <div key={i} className="h-16 bg-bg-elevated rounded" />)}
+          <div className="h-3 w-2/3 bg-bg-elevated rounded" />
+          <div className="grid grid-cols-3 gap-3 pt-1">
+            {[...Array(3)].map((_, i) => <div key={i} className="h-20 bg-bg-elevated rounded" />)}
           </div>
         </div>
-        {/* Price chart */}
         <div className="bg-bg-surface border border-bg-border rounded-lg p-4 mb-4">
           <div className="h-3 w-24 bg-bg-elevated rounded mb-3" />
           <div className="h-40 bg-bg-elevated rounded" />
         </div>
-        {/* AI Analysis */}
         <div className="bg-bg-surface border border-bg-border rounded-lg p-6 mb-4 space-y-3">
           <div className="h-3 w-20 bg-bg-elevated rounded" />
           <div className="h-4 w-1/2 bg-bg-elevated rounded" />
@@ -621,10 +527,10 @@ export default function MarketDetailPage() {
   if (!market) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-4">
-        <p className="text-sm font-mono text-text-muted">MARKET NOT FOUND</p>
+        <p className="text-sm font-mono text-text-muted">Маркет не найден</p>
         <button onClick={() => router.push('/markets')}
           className="px-4 py-2 text-xs font-mono border border-bg-border text-text-secondary rounded hover:border-text-muted transition-colors">
-          BACK TO MARKETS
+          К списку маркетов
         </button>
       </div>
     )
@@ -634,7 +540,9 @@ export default function MarketDetailPage() {
   const prob = market.yesPrice != null
     ? (market.yesPrice > 1 ? market.yesPrice : market.yesPrice * 100)
     : (analysis?.marketProb ?? null)
-  const absEdge = analysis ? Math.abs(analysis.edge) : 0
+  const noProb = market.noPrice != null
+    ? (market.noPrice > 1 ? market.noPrice : market.noPrice * 100)
+    : prob != null ? (100 - prob) : null
   const confScore = analysis
     ? (typeof analysis.confidenceScore === 'number' ? analysis.confidenceScore
       : analysis.confidence === 'high' ? 75
@@ -644,227 +552,155 @@ export default function MarketDetailPage() {
     ? confScore >= 70 ? 'bg-accent' : confScore >= 40 ? 'bg-watch' : 'bg-text-muted'
     : 'bg-text-muted'
 
-  const SENTIMENT_CFG: Record<string, { label: string; cls: string }> = {
-    BULLISH: { label: 'BULLISH', cls: 'text-accent bg-accent/10 border-accent/30' },
-    BEARISH: { label: 'BEARISH', cls: 'text-danger bg-danger/10 border-danger/30' },
-    NEUTRAL: { label: 'NEUTRAL', cls: 'text-text-muted bg-bg-elevated border-bg-border' },
+  const liq = liquidityTier(analysis?.liquidity)
+  const liqToneCls = liq.tone === 'accent'
+    ? 'text-accent border-accent/30 bg-accent/5'
+    : liq.tone === 'watch'
+    ? 'text-watch border-watch/30 bg-watch/5'
+    : 'text-danger border-danger/30 bg-danger/5'
+
+  const resInfo = resolutionLabel(market.resolutionDate, days)
+  const resInfoCls = !resInfo ? '' :
+    resInfo.tone === 'danger' ? 'text-danger'
+    : resInfo.tone === 'warning' ? 'text-watch'
+    : 'text-text-muted'
+
+  const categoryText = catLabel(analysis?.category ?? market.category)
+
+  const crumbs: { label: string; href?: string }[] = [
+    { label: 'Маркеты', href: '/markets' },
+  ]
+  if (categoryText) crumbs.push({ label: categoryText })
+  if (market.event?.title) {
+    const tokenize = (s: string) => new Set(
+      s.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, ' ').split(/\s+/).filter(w => w.length >= 3)
+    )
+    const evWords = tokenize(market.event.title)
+    const qWords = tokenize(market.question)
+    let overlap = 0
+    evWords.forEach(w => { if (qWords.has(w)) overlap++ })
+    const ratio = evWords.size > 0 ? overlap / evWords.size : 0
+    if (ratio < 0.7) {
+      crumbs.push({ label: market.event.title, href: `/events/${market.event.id}` })
+    }
   }
-  const UNCERT_CFG: Record<string, { label: string; cls: string }> = {
-    LOW:    { label: 'LOW uncertainty',  cls: 'text-accent/80 border-accent/20' },
-    MEDIUM: { label: 'MED uncertainty',  cls: 'text-watch border-watch/30' },
-    HIGH:   { label: 'HIGH uncertainty', cls: 'text-danger border-danger/25' },
-  }
-  const sentCfg = eventAi ? SENTIMENT_CFG[eventAi.overall_sentiment] : null
-  const uncertCfg = eventAi ? UNCERT_CFG[eventAi.uncertainty_level] : null
+  crumbs.push({ label: market.question })
+  while (crumbs.length > 3) crumbs.splice(1, 1)
+
+  const actionVal = (analysis?.action ?? '').toUpperCase()
+  const actionBannerCfg =
+    actionVal.includes('BUY') || actionVal.includes('YES') || actionVal.includes('ENTER')
+      ? { label: actionVal || 'BUY YES', banner: 'bg-accent/10 border-accent/30 text-accent' }
+    : actionVal.includes('SELL') || (actionVal.includes('NO') && !actionVal.includes('KNOW'))
+      ? { label: actionVal || 'SELL', banner: 'bg-danger/10 border-danger/30 text-danger' }
+    : actionVal.includes('SKIP') || actionVal.includes('PASS')
+      ? { label: actionVal || 'SKIP', banner: 'bg-bg-elevated border-bg-border text-text-secondary' }
+    : actionVal.includes('WATCH')
+      ? { label: actionVal, banner: 'bg-watch/10 border-watch/30 text-watch' }
+    : { label: actionVal || 'HOLD', banner: 'bg-bg-elevated border-bg-border text-text-secondary' }
+
+  const hintEdge = market.ai?.edge ?? null
+  const hintFair = market.ai?.fairProb ?? null
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
-      {/* Back */}
-      <button onClick={() => router.back()}
-        className="flex items-center gap-1.5 text-xs font-mono text-text-muted hover:text-text-secondary transition-colors mb-5">
-        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M19 12H5M12 19l-7-7 7-7" />
-        </svg>
-        BACK
-      </button>
+      <Breadcrumbs items={crumbs} />
 
-      {/* ── Event context card ── */}
-      {market.event && (
-        <div className="bg-bg-surface border border-bg-border rounded-xl overflow-hidden mb-4">
-          {market.event.enrichment_status === 'ready' && market.event.image_url ? (
-            <div className="w-full h-36 overflow-hidden">
-              <img src={market.event.image_url} alt={market.event.title} className="w-full h-full object-cover" />
-            </div>
-          ) : market.event.enrichment_status === 'pending' ? (
-            <div className="w-full h-36 bg-bg-elevated animate-pulse" />
-          ) : null}
-          <div className="px-4 py-3">
-            <p className="text-[10px] font-mono text-text-muted tracking-widest mb-1">EVENT CONTEXT</p>
-            <p className="text-sm font-mono font-bold text-text-primary leading-snug mb-1">{market.event.title}</p>
-            {market.event.description && (
-              <p className="text-xs font-mono text-text-muted leading-relaxed line-clamp-2">{market.event.description}</p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ── Header card ── */}
+      {/* ── HERO ── */}
       <div className="bg-bg-surface border border-bg-border rounded-lg p-5 mb-4">
+        {/* Meta bar */}
         <div className="flex items-center gap-2 mb-3 flex-wrap">
-          <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded uppercase ${platformColor(market.platform)}`}>
-            {market.platform}
-          </span>
-          {analysis?.category && (
-            <span className="text-[10px] font-mono text-text-muted border border-bg-border px-1.5 py-0.5 rounded uppercase">
-              {analysis.category}
+          <SourceBadge source={market.platform.toLowerCase()} size="md" />
+          {resInfo && (
+            <span className={`text-[11px] font-mono font-bold uppercase tracking-wider ${resInfoCls}`}>
+              {resInfo.text}
             </span>
           )}
-          {days !== null && (
-            <span className="text-[10px] font-mono text-text-muted">
-              {days <= 0 ? 'RESOLVES TODAY' : `RESOLVES IN ${days}D`} · {formatDate(market.resolutionDate)}
-            </span>
-          )}
-          {analysis?.liquidity && <LiquidityBars level={analysis.liquidity} />}
           {market.url && (
             <a href={market.url} target="_blank" rel="noopener noreferrer"
-              className="ml-auto text-[10px] font-mono text-text-muted hover:text-accent transition-colors">
-              VIEW MARKET →
+              className="ml-auto text-[10px] font-mono text-text-muted hover:text-accent transition-colors uppercase tracking-wider">
+              Открыть рынок →
             </a>
           )}
         </div>
 
-        <h1 className="text-base font-semibold text-text-primary leading-snug mb-4">
+        {/* Title */}
+        <h1 className="text-[16px] font-semibold text-text-primary leading-snug mb-3">
           {market.question}
         </h1>
 
-        {/* Key metrics */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="bg-bg-elevated border border-bg-border rounded p-3">
-            <p className="text-[9px] font-mono text-text-muted mb-1 tracking-wider">MARKET PRICE</p>
-            <p className="text-lg font-mono font-bold text-text-primary leading-none">
-              {prob != null ? formatProb(prob) : '—'}
+        {/* Resolution criteria preview */}
+        {market.resolutionCriteria && (
+          <p className="text-[12px] font-mono text-text-muted leading-relaxed mb-4 line-clamp-2">
+            {market.resolutionCriteria}
+            {market.resolutionCriteria.length > 140 && (
+              <>
+                {' '}
+                <button
+                  onClick={(e) => { e.preventDefault(); setResOpen(true); document.getElementById('resolution-details')?.scrollIntoView({ behavior: 'smooth' }) }}
+                  className="text-accent hover:underline"
+                >
+                  Подробнее
+                </button>
+              </>
+            )}
+          </p>
+        )}
+
+        {/* 3 metric cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="bg-bg-elevated border border-accent/30 rounded-lg p-3">
+            <p className="text-[9px] font-mono text-text-muted mb-1.5 tracking-wider uppercase">Рыночная цена</p>
+            <p className="text-[22px] font-mono font-bold text-accent leading-none">
+              {prob != null ? `${Math.round(prob)}%` : '—'}
             </p>
-            <p className="text-[9px] font-mono text-text-muted mt-1">current yes</p>
+            <p className="text-[10px] font-mono text-text-muted mt-1.5">
+              {noProb != null ? `YES / NO ${Math.round(noProb)}%` : 'Текущая YES'}
+            </p>
           </div>
 
-          {analysis ? (
-            <>
-              <div className="bg-bg-elevated border border-accent/20 rounded p-3">
-                <p className="text-[9px] font-mono text-text-muted mb-1 tracking-wider">FAIR VALUE</p>
-                <p className="text-lg font-mono font-bold text-accent leading-none">
-                  {formatProb(analysis.fairProb)}
-                </p>
-                <p className="text-[9px] font-mono text-text-muted mt-1">AI estimate</p>
-              </div>
-              <div className="bg-bg-elevated border border-bg-border rounded p-3">
-                <p className="text-[9px] font-mono text-text-muted mb-1 tracking-wider">EDGE</p>
-                <p className={`text-lg font-mono font-bold leading-none ${edgeColor(analysis.edge)}`}>
-                  {formatEdge(analysis.edge)}
-                </p>
-                <p className="text-[9px] font-mono text-text-muted mt-1">opportunity</p>
-              </div>
-            </>
-          ) : (
-            <div className="col-span-2 bg-bg-elevated border border-accent/10 rounded p-3 flex items-center justify-center">
-              <p className="text-[10px] font-mono text-text-muted text-center leading-relaxed">
-                Run AI analysis<br />to see Fair Value & Edge
-              </p>
-            </div>
-          )}
-
-          <div className="bg-bg-elevated border border-bg-border rounded p-3">
-            <p className="text-[9px] font-mono text-text-muted mb-1 tracking-wider">VOLUME</p>
-            <p className="text-lg font-mono font-bold text-text-primary leading-none">
+          <div className="bg-bg-elevated border border-bg-border rounded-lg p-3">
+            <p className="text-[9px] font-mono text-text-muted mb-1.5 tracking-wider uppercase">Объём</p>
+            <p className="text-[22px] font-mono font-bold text-text-primary leading-none">
               {formatVolume(market.volume)}
             </p>
-            <p className="text-[9px] font-mono text-text-muted mt-1">total traded</p>
+            <p className="text-[10px] font-mono text-text-muted mt-1.5">Всего торгов</p>
           </div>
-        </div>
 
-        {/* Extra market stats */}
-        <div className="flex flex-wrap gap-4 mt-4 pt-4 border-t border-bg-border">
-          {market.volume24h != null && market.volume24h > 0 && (
-            <div>
-              <span className="text-[9px] font-mono text-text-muted tracking-wider">24H VOL </span>
-              <span className="text-xs font-mono text-text-secondary">{formatVolume(market.volume24h)}</span>
+          <div className={`bg-bg-elevated rounded-lg p-3 border ${liqToneCls.split(' ').filter(c => c.startsWith('border-')).join(' ')}`}>
+            <p className="text-[9px] font-mono text-text-muted mb-1.5 tracking-wider uppercase">Ликвидность</p>
+            <div className="flex items-end gap-2">
+              <p className={`text-[22px] font-mono font-bold leading-none ${liqToneCls.split(' ').filter(c => c.startsWith('text-')).join(' ')}`}>
+                {liq.label}
+              </p>
+              <div className="inline-flex items-end gap-0.5 pb-1">
+                {[1, 2, 3].map(n => {
+                  const active = (liq.tier === 'high' ? 3 : liq.tier === 'medium' ? 2 : 1) >= n
+                  return (
+                    <div
+                      key={n}
+                      className={`w-1.5 rounded-sm ${active ? liqToneCls.split(' ').filter(c => c.startsWith('text-')).map(c => c.replace('text-', 'bg-')).join(' ') : 'bg-bg-border'}`}
+                      style={{ height: `${n * 4 + 4}px` }}
+                    />
+                  )
+                })}
+              </div>
             </div>
-          )}
-          {market.liquidity != null && market.liquidity > 0 && (
-            <div>
-              <span className="text-[9px] font-mono text-text-muted tracking-wider">LIQUIDITY </span>
-              <span className="text-xs font-mono text-text-secondary">{formatVolume(market.liquidity)}</span>
-            </div>
-          )}
-          {market.noPrice != null && (
-            <div>
-              <span className="text-[9px] font-mono text-text-muted tracking-wider">NO </span>
-              <span className="text-xs font-mono text-text-secondary">
-                {formatProb(market.noPrice > 1 ? market.noPrice : market.noPrice * 100)}
-              </span>
-            </div>
-          )}
-          {analysis?.horizon && (
-            <div>
-              <span className="text-[9px] font-mono text-text-muted tracking-wider">HORIZON </span>
-              <span className="text-xs font-mono text-text-secondary">{analysis.horizon}</span>
-            </div>
-          )}
+            <p className="text-[10px] font-mono text-text-muted mt-1.5">
+              {market.liquidity != null ? formatVolume(market.liquidity) : 'Сигнал рынка'}
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* ── Related market variants (siblings) ── */}
-      {siblings.length > 0 && (
-        <div className="bg-bg-surface border border-bg-border rounded-lg p-4 mb-4">
-          <p className="text-[10px] font-mono font-bold text-text-muted tracking-widest mb-3">OTHER OUTCOMES</p>
-          <div className="flex flex-col gap-1">
-            {/* Current market — active row */}
-            {(() => {
-              const curProb = prob != null ? Math.round(prob) : 50
-              const curNo = 100 - curProb
-              return (
-                <div className="rounded-md bg-bg-elevated border border-accent/20 px-3 py-2.5">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-sm font-mono text-text-primary flex-1 pr-3 truncate">{market.question}</span>
-                    <span className="text-sm font-mono font-bold text-accent shrink-0">{curProb}%</span>
-                  </div>
-                  <div className="w-full h-1 bg-bg-border rounded-full overflow-hidden mb-2">
-                    <div className="h-full bg-accent rounded-full" style={{ width: `${curProb}%` }} />
-                  </div>
-                  <div className="flex gap-1.5">
-                    <button className="flex-1 py-1 text-xs font-mono font-bold rounded bg-accent/15 text-accent border border-accent/30 hover:bg-accent/25 transition-colors">
-                      YES {curProb}¢
-                    </button>
-                    <button className="flex-1 py-1 text-xs font-mono font-bold rounded bg-bg-border/60 text-text-secondary border border-bg-border hover:bg-bg-border transition-colors">
-                      NO {curNo}¢
-                    </button>
-                  </div>
-                </div>
-              )
-            })()}
-            {/* Siblings */}
-            {siblings.map(s => {
-              const noP = s.no_price ?? (100 - s.price)
-              return (
-                <div
-                  key={s.id}
-                  className="rounded-md px-3 py-2.5 cursor-pointer hover:bg-bg-elevated/50 transition-colors border border-transparent hover:border-bg-border"
-                  onClick={() => router.push(`/markets/${s.id}`)}
-                >
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-sm font-mono text-text-secondary flex-1 pr-3 truncate">{s.question}</span>
-                    <span className="text-sm font-mono font-bold text-text-primary shrink-0">{s.price}%</span>
-                  </div>
-                  <div className="w-full h-1 bg-bg-border rounded-full overflow-hidden mb-2">
-                    <div className="h-full bg-text-muted/50 rounded-full" style={{ width: `${s.price}%` }} />
-                  </div>
-                  <div className="flex gap-1.5">
-                    <button
-                      className="flex-1 py-1 text-xs font-mono font-bold rounded bg-bg-elevated text-text-secondary border border-bg-border hover:bg-accent/10 hover:text-accent hover:border-accent/30 transition-colors"
-                      onClick={e => { e.stopPropagation(); router.push(`/markets/${s.id}`) }}
-                    >
-                      YES {s.price}¢
-                    </button>
-                    <button
-                      className="flex-1 py-1 text-xs font-mono font-bold rounded bg-bg-elevated text-text-secondary border border-bg-border hover:bg-bg-border transition-colors"
-                      onClick={e => { e.stopPropagation(); router.push(`/markets/${s.id}`) }}
-                    >
-                      NO {noP}¢
-                    </button>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* ── Price chart ── */}
+      {/* ── PRICE HISTORY ── */}
+      {((market as Market & { price_history?: HistoryPoint[] }).price_history?.length ?? 0) > 0 && (
       <div className="bg-bg-surface border border-bg-border rounded-lg p-4 mb-4">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xs font-mono font-bold text-text-muted tracking-widest">PRICE HISTORY</h2>
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <h2 className="text-[11px] font-mono font-bold text-text-muted tracking-widest uppercase">История цены</h2>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-0.5">
-              {(['1w', '1m', '6m', 'max'] as const).map(iv => (
+              {([['1w', '1Н'], ['1m', '1М'], ['6m', '6М'], ['max', 'MAX']] as const).map(([iv, lbl]) => (
                 <button
                   key={iv}
                   onClick={() => setHistoryInterval(iv)}
@@ -874,25 +710,25 @@ export default function MarketDetailPage() {
                       : 'text-text-muted hover:text-text-secondary'
                   }`}
                 >
-                  {iv.toUpperCase()}
+                  {lbl}
                 </button>
               ))}
             </div>
             <span className={`text-[10px] font-mono ${
               historyLoading ? 'text-text-muted animate-pulse' :
-              historyReal ? 'text-accent/60' : 'text-text-muted'
+              historyReal ? 'text-accent/70' : 'text-text-muted'
             }`}>
-              {historyLoading ? 'LOADING...' : historyReal ? '● LIVE' : 'NO DATA'}
+              {historyLoading ? 'ЗАГРУЗКА...' : historyReal ? '● LIVE' : 'НЕТ ДАННЫХ'}
             </span>
           </div>
         </div>
 
         <PriceChart history={history} loading={historyLoading} />
       </div>
+      )}
 
-      {/* ── AI Analysis — tiered access ── */}
+      {/* ── AI ANALYSIS ── */}
 
-      {/* Fresh fetch in progress — skeleton placeholder */}
       {freshLoading && !analyzing && !analysis && (
         <div className="bg-bg-surface border border-bg-border rounded-lg p-6 mb-4 animate-pulse space-y-3">
           <div className="h-2.5 w-20 bg-bg-elevated rounded" />
@@ -902,44 +738,88 @@ export default function MarketDetailPage() {
         </div>
       )}
 
-      {/* Analyzing in progress: show loader inside the block */}
       {analyzing && (
         <div className="bg-bg-surface border border-bg-border rounded-lg p-6 mb-4">
-          <p className="text-[10px] font-mono text-text-muted tracking-widest mb-4">AI ANALYSIS</p>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-[11px] font-mono font-bold text-text-muted tracking-widest uppercase">AI анализ</p>
+            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-watch/40 bg-watch/10 text-watch animate-pulse uppercase">
+              Идёт анализ
+            </span>
+          </div>
           <AnalysisLoader height={300} />
         </div>
       )}
 
-      {/* FREE: locked paywall block */}
-      {!freshLoading && !isPro && (
-        <div className="bg-bg-surface border border-bg-border rounded-lg p-6 mb-4 relative overflow-hidden">
-          <p className="text-[10px] font-mono font-bold text-text-muted tracking-widest mb-3">AI ANALYSIS</p>
-          <div className="space-y-2 blur-[3px] opacity-60 pointer-events-none select-none">
-            <div className="h-3 w-full bg-bg-elevated rounded" />
-            <div className="h-3 w-5/6 bg-bg-elevated rounded" />
-            <div className="h-3 w-4/5 bg-bg-elevated rounded" />
-            <div className="h-3 w-3/4 bg-bg-elevated rounded" />
+      {/* LOCKED (not Pro) */}
+      {!freshLoading && !analyzing && !isPro && (
+        <div className="bg-bg-surface border border-bg-border rounded-lg p-5 mb-4 relative overflow-hidden">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-[11px] font-mono font-bold text-text-muted tracking-widest uppercase">AI анализ</p>
+            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-accent/40 bg-accent/10 text-accent uppercase tracking-wider">
+              Только Pro
+            </span>
           </div>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <button
-              onClick={() => { setPaywallVariant('pro'); setShowPaywall(true) }}
-              className="px-4 py-2 bg-accent text-bg-base text-xs font-mono font-bold rounded-lg hover:bg-accent/90 transition-colors"
-            >
-              Unlock AI Analysis
-            </button>
+
+          <div className="space-y-2.5 mb-5">
+            {(() => {
+              const recRaw = (market.ai?.recommendation ?? '').toString().toLowerCase()
+              const recHint = recRaw.includes('enter') || recRaw.includes('buy_yes') || recRaw === 'yes' ? 'ПОКУПАТЬ YES'
+                : recRaw.includes('avoid') || recRaw === 'no' || recRaw.includes('sell') ? 'ПОКУПАТЬ NO'
+                : recRaw.includes('watch') ? 'НАБЛЮДАТЬ'
+                : recRaw.includes('skip') || recRaw.includes('pass') ? 'ПРОПУСТИТЬ'
+                : null
+              const fairHint = hintFair != null ? `~${Math.round(hintFair > 1 ? hintFair : hintFair * 100)}%` : null
+              const edgeHint = hintEdge != null ? `${hintEdge > 0 ? '+' : ''}${Math.round(hintEdge)}pp` : null
+              const rows: { label: string; kind: 'rec' | 'hint' | 'blur'; hint?: string | null; tone?: 'accent' | 'danger' | null }[] = [
+                { label: 'Рекомендация', kind: 'rec', hint: recHint },
+                { label: 'Справедливая цена AI', kind: 'hint', hint: fairHint },
+                { label: 'Edge vs рынок', kind: 'hint', hint: edgeHint, tone: hintEdge != null ? (hintEdge > 0 ? 'accent' : 'danger') : null },
+                { label: 'Тезис анализа', kind: 'blur' },
+                { label: 'Размер позиции (Kelly)', kind: 'blur' },
+              ]
+              return rows.map((row, i) => (
+                <div key={i} className="flex items-center justify-between gap-3 py-1.5 border-b border-bg-border last:border-0">
+                  <span className="text-[12px] font-mono text-text-secondary">{row.label}</span>
+                  {row.kind === 'rec' && row.hint ? (
+                    <span className="text-[11px] font-mono font-bold text-text-muted uppercase tracking-wider select-none"
+                      style={{ filter: 'blur(4px)' }}>
+                      {row.hint}
+                    </span>
+                  ) : row.kind === 'rec' ? (
+                    <span className="text-[12px] font-mono font-bold text-text-muted blur-[4px] select-none">●●●●</span>
+                  ) : row.kind === 'hint' && row.hint ? (
+                    <span className={`text-[12px] font-mono italic ${
+                      row.tone === 'accent' ? 'text-accent/70' : row.tone === 'danger' ? 'text-danger/70' : 'text-text-muted'
+                    }`}>
+                      {row.hint}
+                    </span>
+                  ) : (
+                    <span className="text-[12px] font-mono font-bold text-text-muted blur-[4px] select-none">●●●●</span>
+                  )}
+                </div>
+              ))
+            })()}
           </div>
+
+          <button
+            onClick={() => { setPaywallVariant('pro'); setShowPaywall(true) }}
+            className="w-full py-2.5 bg-accent text-bg-base text-[12px] font-mono font-bold rounded-lg
+              hover:bg-accent/90 transition-colors uppercase tracking-wider"
+          >
+            Разблокировать Pro — $14.99/мес
+          </button>
         </div>
       )}
 
-      {/* PRO / ALPHA: no analysis yet → analyze button */}
+      {/* PRO, no analysis → Analyze button */}
       {!freshLoading && !analyzing && isPro && !analysis && (
         <div className="bg-bg-surface border border-bg-border rounded-lg p-6 mb-4 text-center">
-          <p className="text-sm font-mono text-text-secondary mb-1">{t('markets.no_ai_analysis')}</p>
-          <p className="text-xs font-mono text-text-muted mb-4">
-            {isAlpha ? 'Alpha · Unlimited analyses' : 'Pro · Unlimited analyses'}
+          <p className="text-[13px] font-mono text-text-secondary mb-1">{t('markets.no_ai_analysis')}</p>
+          <p className="text-[11px] font-mono text-text-muted mb-4">
+            {isAlpha ? 'Alpha · безлимит анализов' : 'Pro · безлимит анализов'}
           </p>
           {analyzeError && (
-            <div className="text-xs font-mono text-danger bg-danger/5 border border-danger/20 rounded px-3 py-2 mb-4">
+            <div className="text-[11px] font-mono text-danger bg-danger/5 border border-danger/20 rounded px-3 py-2 mb-4">
               {analyzeError}
             </div>
           )}
@@ -947,353 +827,227 @@ export default function MarketDetailPage() {
             onClick={handleAnalyze}
             disabled={analyzing}
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-accent text-bg-base
-              text-xs font-mono font-bold rounded hover:bg-accent/90 transition-colors disabled:opacity-50"
+              text-[11px] font-mono font-bold rounded hover:bg-accent/90 transition-colors disabled:opacity-50 uppercase tracking-wider"
           >
-            {analyzing ? <><SpinnerIcon /> ANALYZING...</> : (
+            {analyzing ? <><SpinnerIcon /> Анализ...</> : (
               <>
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M12 2a10 10 0 1 0 10 10" /><path d="M12 6v6l4 2" />
                 </svg>
-                ANALYZE WITH AI
+                Запустить AI анализ
               </>
             )}
           </button>
         </div>
       )}
 
-      {/* PRO / ALPHA with analysis */}
+      {/* UNLOCKED */}
       {!analyzing && isPro && !freshLoading && analysis && (
-        <>
-          {/* Single unified AI Analysis card */}
-          <div className="bg-bg-surface border border-accent/15 rounded-xl p-5 mb-4">
-
-            {/* Header: label + badges + action buttons */}
-            <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
-              <p className="text-[10px] font-mono font-bold text-text-muted tracking-widest">AI ANALYSIS</p>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {analysis.action && (
-                  <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${actionColor(analysis.action)}`}>
-                    {analysis.action}
-                  </span>
-                )}
-                {confScore != null && (
-                  <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${
-                    confScore >= 70 ? 'text-accent border-accent/30 bg-accent/5'
-                    : confScore >= 40 ? 'text-watch border-watch/30 bg-watch/5'
-                    : 'text-text-muted border-bg-border'
-                  }`}>
-                    {confScore}% CONF
-                  </span>
-                )}
-                {sentCfg && (
-                  <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${sentCfg.cls}`}>
-                    {sentCfg.label}
-                  </span>
-                )}
-                {uncertCfg && (
-                  <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${uncertCfg.cls}`}>
-                    {uncertCfg.label}
-                  </span>
-                )}
-                {eventAi?.next_key_date && (
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded border border-bg-border text-text-muted">
-                    {new Date(eventAi.next_key_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                  </span>
-                )}
-              </div>
+        <div className="bg-bg-surface border border-accent/20 rounded-lg p-5 mb-4">
+          {/* Header row */}
+          <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-accent/40 bg-accent/10 text-accent uppercase tracking-wider">
+                {isAlpha ? 'Alpha' : 'Pro'}
+              </span>
+              <p className="text-[11px] font-mono font-bold text-text-muted tracking-widest uppercase">AI анализ</p>
             </div>
+            {/* TODO(backend): add analysis.generated_at to show freshness */}
+            <span className="text-[10px] font-mono text-text-muted">
+              Обновлено недавно
+            </span>
+          </div>
 
-            {/* Action reason */}
+          {/* RECOMMENDATION banner */}
+          <div className={`rounded-lg border p-3 mb-4 ${actionBannerCfg.banner}`}>
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-widest opacity-70">Рекомендация</span>
+              <span className="text-[14px] font-mono font-bold uppercase tracking-wider">{actionBannerCfg.label}</span>
+              {confScore != null && (
+                <span className="ml-auto text-[10px] font-mono opacity-80">
+                  Уверенность {confScore}%
+                </span>
+              )}
+            </div>
             {analysis.actionReason && (
-              <p className="text-sm font-mono text-text-secondary leading-relaxed mb-4">
+              <p className="text-[12px] font-mono leading-relaxed opacity-90">
                 {analysis.actionReason}
               </p>
             )}
-
-            {/* Edge + Fair Value row */}
-            {isAlpha && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
-                <div className="bg-bg-elevated rounded-lg p-3">
-                  <p className="text-[9px] font-mono text-text-muted mb-1 tracking-wider">EDGE SCORE</p>
-                  <p className={`text-lg font-mono font-bold leading-none ${edgeColor(analysis.edge)}`}>
-                    {formatEdge(analysis.edge)}
-                  </p>
-                </div>
-                {analysis.fairProb != null && (
-                  <div className="bg-bg-elevated rounded-lg p-3">
-                    <p className="text-[9px] font-mono text-text-muted mb-1 tracking-wider">FAIR VALUE</p>
-                    <p className="text-lg font-mono font-bold text-accent leading-none">{formatProb(analysis.fairProb)}</p>
-                  </div>
-                )}
-                {analysis.kellySizing && typeof analysis.kellySizing === 'object' && (
-                  <div className="bg-bg-elevated rounded-lg p-3">
-                    <p className="text-[9px] font-mono text-text-muted mb-1 tracking-wider">KELLY</p>
-                    <p className="text-lg font-mono font-bold text-text-primary leading-none">
-                      {analysis.kellySizing.kellyUsed?.toFixed(1)}%
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {!isAlpha && (
-              <div
-                className="flex items-center gap-2 mb-4 cursor-pointer group"
-                onClick={() => { setPaywallVariant('alpha'); setShowPaywall(true) }}
-              >
-                <div className="grid grid-cols-3 gap-3 flex-1">
-                  {['EDGE SCORE', 'FAIR VALUE', 'KELLY'].map(label => (
-                    <div key={label} className="bg-bg-elevated rounded-lg p-3">
-                      <p className="text-[9px] font-mono text-text-muted mb-1 tracking-wider">{label}</p>
-                      <p className="text-lg font-mono font-bold text-text-primary leading-none blur-sm select-none">XX</p>
-                    </div>
-                  ))}
-                </div>
-                <span className="text-base shrink-0">🔒</span>
-              </div>
-            )}
-
-            {/* Thesis / Crowd Bias / Resolution Note */}
-            {(analysis.thesis || analysis.crowdBias || analysis.resolutionNote) && (
-              <div className="space-y-3 mb-4">
-                {analysis.thesis && (
-                  <div>
-                    <p className="text-[10px] font-mono text-text-muted mb-1 tracking-wider">THESIS</p>
-                    <p className="text-sm font-mono text-text-secondary leading-relaxed">{analysis.thesis}</p>
-                  </div>
-                )}
-                {analysis.crowdBias && (
-                  <div>
-                    <p className="text-[10px] font-mono text-text-muted mb-1 tracking-wider">CROWD BIAS</p>
-                    <p className="text-sm font-mono text-text-secondary leading-relaxed">{analysis.crowdBias}</p>
-                  </div>
-                )}
-                {analysis.resolutionNote && (
-                  <div>
-                    <p className="text-[10px] font-mono text-text-muted mb-1 tracking-wider">RESOLUTION NOTE</p>
-                    <p className="text-sm font-mono text-text-secondary leading-relaxed">{analysis.resolutionNote}</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Kelly sizing detail (Alpha only) */}
-            {isAlpha && analysis.kellySizing && typeof analysis.kellySizing === 'object' && (
-              <p className="text-xs font-mono text-text-muted mb-4">
-                Bet ${analysis.kellySizing.betSize} · Potential +${analysis.kellySizing.potentialWin}
-              </p>
-            )}
-
-            {/* Event-level AI analysis loading */}
-            {eventAnalyzing && !eventAi && (
-              <div className="border-t border-bg-border mt-4 pt-4">
-                <AnalysisLoader height={180} startPhase={2} />
-              </div>
-            )}
-
-            {/* Event-level AI analysis */}
-            {eventAi && (
-              <div className="border-t border-bg-border mt-4 pt-4 space-y-4">
-                {/* Situation summary */}
-                <div>
-                  <p className="text-[10px] font-mono text-text-muted tracking-wider mb-2">SITUATION</p>
-                  <p className="text-sm font-mono text-text-secondary leading-relaxed">{eventAi.situation_summary}</p>
-                </div>
-
-                {/* Key factors */}
-                {eventAi.key_factors?.length > 0 && (
-                  <div>
-                    <p className="text-[10px] font-mono text-text-muted tracking-wider mb-3">KEY FACTORS</p>
-                    <div className="flex flex-col gap-3">
-                      {eventAi.key_factors.map((f, i) => {
-                        const impact = f.impact ?? 'neutral'
-                        const weight = f.weight ?? 0.5
-                        const impactCls = impact === 'bullish' ? 'text-accent' : impact === 'bearish' ? 'text-danger' : 'text-text-muted/60'
-                        const barCls   = impact === 'bullish' ? 'bg-accent' : impact === 'bearish' ? 'bg-danger' : 'bg-text-muted/30'
-                        const icon     = impact === 'bullish' ? '↑' : impact === 'bearish' ? '↓' : '→'
-                        return (
-                          <div key={i}>
-                            <div className="flex items-center gap-2 mb-0.5">
-                              <span className={`text-[12px] font-mono font-bold shrink-0 w-4 ${impactCls}`}>{icon}</span>
-                              <span className="text-[12px] font-mono font-bold text-text-primary flex-1">{f.factor}</span>
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                <div className="w-16 h-1 bg-bg-elevated rounded-full overflow-hidden">
-                                  <div className={`h-full rounded-full transition-all ${barCls}`} style={{ width: `${Math.round(weight * 100)}%` }} />
-                                </div>
-                                <span className="text-[10px] font-mono text-text-muted w-5 text-right">{Math.round(weight * 10)}</span>
-                              </div>
-                            </div>
-                            {f.description && <p className="text-[11px] font-mono text-text-muted leading-relaxed pl-6">{f.description}</p>}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Scenarios */}
-                {eventAi.scenarios?.length ? (
-                  <div>
-                    <p className="text-[10px] font-mono text-text-muted tracking-wider mb-3">SCENARIOS</p>
-                    {isAlpha ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        {eventAi.scenarios.map((s, i) => {
-                          const cfg = s.label === 'bull'
-                            ? { border: 'border-accent/30 bg-accent/5', lbl: 'text-accent', prob: 'text-accent' }
-                            : s.label === 'bear'
-                            ? { border: 'border-danger/30 bg-danger/5', lbl: 'text-danger', prob: 'text-danger' }
-                            : { border: 'border-bg-border bg-bg-elevated/20', lbl: 'text-text-muted', prob: 'text-text-secondary' }
-                          return (
-                            <div key={i} className={`rounded-lg border p-3 ${cfg.border}`}>
-                              <div className="flex items-center justify-between mb-1.5">
-                                <span className={`text-[10px] font-mono font-bold uppercase tracking-wider ${cfg.lbl}`}>{s.label}</span>
-                                <span className={`text-sm font-mono font-bold ${cfg.prob}`}>{s.probability}%</span>
-                              </div>
-                              <p className="text-[11px] font-mono font-bold text-text-primary mb-1 leading-snug">{s.title}</p>
-                              <p className="text-[10px] font-mono text-text-muted leading-relaxed">{s.description}</p>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    ) : (
-                      <div className="relative">
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 blur-sm opacity-40 pointer-events-none select-none">
-                          {['BULL', 'BASE', 'BEAR'].map((lbl) => (
-                            <div key={lbl} className="rounded-lg border border-bg-border p-3">
-                              <div className="flex items-center justify-between mb-1.5">
-                                <div className="h-2.5 w-8 bg-bg-elevated rounded" />
-                                <div className="h-3 w-6 bg-bg-elevated rounded" />
-                              </div>
-                              <div className="h-2.5 w-full bg-bg-elevated rounded mb-1" />
-                              <div className="h-2 w-4/5 bg-bg-elevated rounded" />
-                            </div>
-                          ))}
-                        </div>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <button
-                            onClick={() => { setPaywallVariant('alpha'); setShowPaywall(true) }}
-                            className="px-3 py-1.5 bg-bg-surface border border-bg-border text-[10px] font-mono font-bold text-text-muted hover:border-text-muted/40 hover:text-text-secondary rounded-lg transition-colors"
-                          >
-                            Alpha only
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : null}
-              </div>
-            )}
-
           </div>
 
-        </>
+          {/* EDGE РАСЧЁТ */}
+          <div className="mb-4">
+            <p className="text-[10px] font-mono text-text-muted tracking-widest uppercase mb-2">Edge расчёт</p>
+            <div className="grid grid-cols-3 gap-3 mb-3">
+              <div>
+                <p className="text-[10px] font-mono text-text-muted mb-0.5">Рыночная</p>
+                <p className="text-[16px] font-mono font-bold text-text-primary leading-none">
+                  {prob != null ? `${Math.round(prob)}%` : '—'}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] font-mono text-text-muted mb-0.5">Справедливая AI</p>
+                <p className="text-[16px] font-mono font-bold text-watch leading-none">
+                  {formatProb(analysis.fairProb)}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] font-mono text-text-muted mb-0.5">Edge</p>
+                <p className={`text-[16px] font-mono font-bold leading-none ${analysis.edge > 0 ? 'text-accent' : analysis.edge < 0 ? 'text-danger' : 'text-text-muted'}`}>
+                  {formatEdge(analysis.edge)}
+                </p>
+                <p className={`text-[9px] font-mono mt-0.5 ${analysis.edge > 0 ? 'text-accent/70' : analysis.edge < 0 ? 'text-danger/70' : 'text-text-muted'}`}>
+                  {analysis.edge > 2 ? 'YES недооценён' : analysis.edge < -2 ? 'YES переоценён' : 'Цена справедливая'}
+                </p>
+              </div>
+            </div>
+
+            {confScore != null && (
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] font-mono text-text-muted uppercase tracking-wider">Уверенность AI</span>
+                  <span className="text-[10px] font-mono font-bold text-text-secondary">{confScore}%</span>
+                </div>
+                <div className="w-full h-1 bg-bg-elevated rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full transition-all ${confBarColor}`} style={{ width: `${confScore}%` }} />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* THESIS */}
+          {analysis.thesis && (
+            <div className="mb-4 bg-bg-elevated/60 border-l-2 border-accent/50 pl-3 py-2 rounded-r">
+              <p className="text-[10px] font-mono text-text-muted tracking-widest uppercase mb-1.5">Тезис</p>
+              <p className="text-[13px] font-mono text-text-secondary leading-relaxed">{analysis.thesis}</p>
+            </div>
+          )}
+
+          {/* CROWD BIAS */}
+          {analysis.crowdBias && (
+            <div className="mb-4">
+              <p className="text-[10px] font-mono text-text-muted tracking-widest uppercase mb-1.5">Толпа склоняется к</p>
+              <p className="text-[13px] font-mono text-text-secondary leading-relaxed">{analysis.crowdBias}</p>
+            </div>
+          )}
+
+          {/* KELLY SIZING */}
+          {analysis.kellySizing && typeof analysis.kellySizing === 'object' && (
+            <div className="mb-4 bg-bg-elevated rounded-lg p-3">
+              <p className="text-[10px] font-mono text-text-muted tracking-widest uppercase mb-1.5">
+                Рекомендуемый размер позиции
+              </p>
+              {isAlpha ? (
+                <div className="flex items-end gap-3 flex-wrap">
+                  <span className="text-[20px] font-mono font-bold text-text-primary leading-none">
+                    {analysis.kellySizing.kellyUsed?.toFixed(1)}%
+                  </span>
+                  <span className="text-[11px] font-mono text-text-muted pb-0.5">
+                    от банка · ставка ${analysis.kellySizing.betSize} · потенциал +${analysis.kellySizing.potentialWin}
+                  </span>
+                </div>
+              ) : (
+                <div
+                  className="flex items-end gap-3 cursor-pointer group"
+                  onClick={() => { setPaywallVariant('alpha'); setShowPaywall(true) }}
+                >
+                  <span className="text-[20px] font-mono font-bold text-text-primary leading-none blur-[4px] select-none">
+                    XX%
+                  </span>
+                  <span className="text-[11px] font-mono text-text-muted pb-0.5 group-hover:text-accent transition-colors">
+                    Только Alpha →
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Resolution note */}
+          {analysis.resolutionNote && (
+            <div className="mb-3">
+              <p className="text-[10px] font-mono text-text-muted tracking-widest uppercase mb-1.5">Примечание по резолюции</p>
+              <p className="text-[12px] font-mono text-text-muted leading-relaxed">{analysis.resolutionNote}</p>
+            </div>
+          )}
+
+          {/* TODO(backend): replace with analysis.generated_at timestamp */}
+          <p className="text-[10px] font-mono text-text-muted/70 pt-3 border-t border-bg-border mt-3">
+            Анализ основан на актуальных данных. Точная отметка времени будет добавлена позже.
+          </p>
+        </div>
+      )}
+
+      {/* ── ДРУГИЕ РЫНКИ СОБЫТИЯ (siblings) ── */}
+      {siblings.length > 0 && (
+        <div className="bg-bg-surface border border-bg-border rounded-lg p-4 mb-4">
+          <p className="text-[11px] font-mono font-bold text-text-muted tracking-widest uppercase mb-3">
+            Другие рынки события
+          </p>
+          <div className="flex flex-col gap-1">
+            {siblings.slice(0, 8).map(s => {
+              const pct = Math.round(s.price)
+              return (
+                <div
+                  key={s.id}
+                  onClick={() => router.push(`/markets/${s.id}`)}
+                  className="flex items-center justify-between gap-3 px-3 py-2 rounded-md cursor-pointer
+                    hover:bg-bg-elevated/60 transition-colors border border-transparent hover:border-bg-border"
+                >
+                  <span className="text-[13px] font-mono text-text-secondary flex-1 truncate">
+                    {s.question}
+                  </span>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <div className="w-20 h-1 bg-bg-elevated rounded-full overflow-hidden hidden sm:block">
+                      <div className="h-full bg-accent/70 rounded-full" style={{ width: `${pct}%` }} />
+                    </div>
+                    <span className="text-[13px] font-mono font-bold text-accent w-10 text-right">{pct}%</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── ПОХОЖИЕ РЫНКИ ── */}
+      {analysis?.similarMarkets && analysis.similarMarkets.length > 0 && (
+        <div className="bg-bg-surface border border-bg-border rounded-lg p-4 mb-4">
+          <p className="text-[11px] font-mono font-bold text-text-muted tracking-widest uppercase mb-3">
+            Похожие рынки
+          </p>
+          <div className="flex flex-col gap-2.5">
+            {analysis.similarMarkets.slice(0, 5).map((m, i) => (
+              <div key={i} className="flex items-start gap-2.5">
+                <SourceBadge source={m.platform.toLowerCase()} size="sm" />
+                <p className="text-[12px] font-mono text-text-secondary leading-snug flex-1">{m.question}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── RESOLUTION CRITERIA (expandable) ── */}
+      {market.resolutionCriteria && (
+        <details
+          id="resolution-details"
+          open={resOpen}
+          onToggle={(e) => setResOpen((e.currentTarget as HTMLDetailsElement).open)}
+          className="bg-bg-surface border border-bg-border rounded-lg mb-4 group"
+        >
+          <summary className="flex items-center justify-between p-4 cursor-pointer list-none">
+            <h2 className="text-[11px] font-mono font-bold text-text-muted tracking-widest uppercase">Критерий резолюции</h2>
+            <span className="text-text-muted text-xs font-mono group-open:rotate-180 transition-transform">▾</span>
+          </summary>
+          <div className="px-4 pb-4">
+            <p className="text-[12px] font-mono text-text-muted leading-relaxed">{market.resolutionCriteria}</p>
+          </div>
+        </details>
       )}
 
       {showPaywall && (
         <PaywallModal variant={paywallVariant} onClose={() => setShowPaywall(false)} />
       )}
-
-      {/* ── Tags ── */}
-      {market.tags && market.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-4">
-          {market.tags.slice(0, 8).map((tag, i) => (
-            <span key={i} className="text-[10px] font-mono text-text-muted border border-bg-border
-              px-2 py-0.5 rounded-full bg-bg-surface">
-              {tag}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {/* ── Resolution criteria ── */}
-      {market.resolutionCriteria && (
-        <details className="bg-bg-surface border border-bg-border rounded-lg mb-4 group">
-          <summary className="flex items-center justify-between p-5 cursor-pointer list-none">
-            <h2 className="text-xs font-mono font-bold text-text-muted tracking-widest">RESOLUTION CRITERIA</h2>
-            <span className="text-text-muted text-xs font-mono group-open:rotate-180 transition-transform">▾</span>
-          </summary>
-          <div className="px-5 pb-5">
-            <p className="text-xs text-text-muted leading-relaxed">{market.resolutionCriteria}</p>
-          </div>
-        </details>
-      )}
-
-      {/* ── Similar markets ── */}
-      {analysis?.similarMarkets && analysis.similarMarkets.length > 0 && (
-        <div className="bg-bg-surface border border-bg-border rounded-lg p-4 mb-4">
-          <h2 className="text-xs font-mono font-bold text-text-muted tracking-widest mb-3">RELATED MARKETS</h2>
-          <div className="space-y-2.5">
-            {analysis.similarMarkets.slice(0, 4).map((m, i) => (
-              <div key={i} className="flex items-start gap-2">
-                <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded uppercase shrink-0 mt-0.5 ${platformColor(m.platform)}`}>
-                  {m.platform}
-                </span>
-                <p className="text-xs text-text-secondary leading-snug">{m.question}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── Metaculus ── */}
-      {metaculusMatch && (
-        <div className="bg-bg-surface border border-purple-400/20 rounded-lg p-4 mb-4">
-          <h2 className="text-xs font-mono font-bold text-text-muted tracking-widest mb-3">METACULUS COMMUNITY</h2>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-mono text-text-muted">COMMUNITY PROBABILITY</p>
-              <p className="text-xl font-mono font-bold text-purple-400">
-                {metaculusMatch.communityProb !== null ? formatProb(metaculusMatch.communityProb) : '—'}
-              </p>
-              <p className="text-xs font-mono text-text-muted mt-1">{metaculusMatch.numForecasters} forecasters</p>
-            </div>
-            {metaculusMatch.url && (
-              <a href={metaculusMatch.url} target="_blank" rel="noopener noreferrer"
-                className="text-xs font-mono text-purple-400 border border-purple-400/30 px-3 py-1.5 rounded hover:bg-purple-400/10 transition-colors">
-                VIEW →
-              </a>
-            )}
-          </div>
-          {metaculusMatch.question && (
-            <p className="text-xs font-mono text-text-muted mt-3 leading-relaxed">"{metaculusMatch.question}"</p>
-          )}
-        </div>
-      )}
-
-      {/* ── News ── */}
-      {news && news.length > 0 && (
-        <div className="bg-bg-surface border border-bg-border rounded-lg p-5 mb-4">
-          <h2 className="text-xs font-mono font-bold text-text-muted tracking-widest mb-3">
-            RELEVANT NEWS ({news.length})
-          </h2>
-          <div className="space-y-3">
-            {news.map((n, i) => (
-              <div key={i} className="border-b border-bg-border last:border-0 pb-3 last:pb-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-mono text-text-muted uppercase">{n.source}</span>
-                  {n.publishedAt && (
-                    <span className="text-[10px] font-mono text-text-muted/60">
-                      · {new Date(n.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                    </span>
-                  )}
-                </div>
-                {n.url ? (
-                  <a href={n.url} target="_blank" rel="noopener noreferrer"
-                    className="text-sm text-text-secondary hover:text-text-primary transition-colors leading-snug block">
-                    {n.title}
-                  </a>
-                ) : (
-                  <p className="text-sm text-text-secondary leading-snug">{n.title}</p>
-                )}
-                {n.summary && (
-                  <p className="text-xs text-text-muted mt-1 leading-relaxed">{n.summary}</p>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
     </div>
   )
 }

@@ -870,6 +870,9 @@
   filter: none;
   opacity: 1;
 }
+[data-theme="light"] .live-world-bg[data-discipline="football"] .football-art-light {
+  opacity: 0.04;
+}
 [data-theme="light"] .live-world-bg[data-discipline="football"] > div > div {
   mix-blend-mode: normal;
   opacity: 1;

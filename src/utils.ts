@@ -37,9 +37,11 @@ export function formatDate(dateStr: string): string {
 export function daysUntil(dateStr: string): number | null {
   if (!dateStr) return null
   try {
-    const now = Date.now()
-    const target = new Date(dateStr).getTime()
-    return Math.ceil((target - now) / 86_400_000)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const target = new Date(dateStr)
+    target.setHours(0, 0, 0, 0)
+    return Math.round((target.getTime() - today.getTime()) / 86_400_000)
   } catch {
     return null
   }

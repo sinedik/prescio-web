@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, type ReactNode } from 'react'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { useParams, useRouter } from 'next/navigation'
 import { usePolling } from '../hooks/usePolling'
@@ -13,6 +13,8 @@ import AnalysisLoader from '../AnalysisLoader'
 import { markAnalyzing, clearAnalyzing, isAnalyzing, markAnalyzed } from '../lib/activeAnalyses'
 import { useLang } from '../contexts/LanguageContext'
 import { useT } from '../lib/i18n'
+import { Breadcrumbs } from '../components/Breadcrumbs'
+import { SourceBadge } from '../components/feed/SourceBadge'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -38,6 +40,8 @@ interface RelatedMarket {
   slug?: string
   price: number
   volume: number
+  resolves_at?: string | null
+  external_url?: string | null
   analysis?: {
     recommendation?: string
     confidence_score?: number
@@ -59,6 +63,8 @@ interface EventDetail {
   image_url?: string | null
   context?: string | null
   enrichment_status?: 'pending' | 'ready' | 'failed'
+  resolves_at?: string | null
+  source_name?: string | null
   category: string
   severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
   status: 'active' | 'resolved'
@@ -85,24 +91,74 @@ function formatVolume(v: number): string {
   return `$${v}`
 }
 
+function formatResolveDate(iso: string): string {
+  const d = new Date(iso)
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+function formatCountdown(iso: string): string {
+  const now = Date.now()
+  const target = new Date(iso).getTime()
+  const diffMs = target - now
+  if (diffMs < 0) return 'завершено'
+  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  if (days === 0) return 'сегодня'
+  if (days === 1) return 'завтра'
+  if (days < 5) return `через ${days} дня`
+  return `через ${days} дней`
+}
+
+const CATEGORY_LABELS: Record<string, string> = {
+  POLITICS: 'Политика',
+  US_POLITICS: 'Политика США',
+  GEOPOLITICS: 'Геополитика',
+  ELECTIONS: 'Выборы',
+  POLICY: 'Политика',
+  SPORT: 'Спорт',
+  SPORTS: 'Спорт',
+  CRYPTO: 'Крипто',
+  ESPORTS: 'Киберспорт',
+  ECONOMICS: 'Экономика',
+  SCIENCE_TECH: 'Наука',
+}
+
+function catLabel(cat?: string | null): string | null {
+  if (!cat) return null
+  const key = cat.toUpperCase()
+  return CATEGORY_LABELS[key] ?? key.replace(/_/g, ' ').toLowerCase()
+}
+
+const SEVERITY_LABELS: Record<string, string> = {
+  CRITICAL: 'КРИТ',
+  HIGH: 'ВЫСОКИЙ',
+  MEDIUM: 'СРЕДНИЙ',
+  LOW: 'НИЗКИЙ',
+}
+
 const SENTIMENT_CONFIG: Record<string, { label: string; cls: string }> = {
-  BULLISH: { label: 'BULLISH', cls: 'text-accent bg-accent/10 border-accent/30' },
-  BEARISH: { label: 'BEARISH', cls: 'text-danger bg-danger/10 border-danger/30' },
-  NEUTRAL: { label: 'NEUTRAL', cls: 'text-text-muted bg-bg-elevated border-bg-border' },
+  BULLISH: { label: 'БЫЧИЙ',      cls: 'text-accent border-accent/30 bg-accent/10' },
+  BEARISH: { label: 'МЕДВЕЖИЙ',   cls: 'text-danger border-danger/30 bg-danger/10' },
+  NEUTRAL: { label: 'НЕЙТРАЛЬНЫЙ', cls: 'text-text-muted border-bg-border bg-bg-elevated' },
 }
 
 const UNCERTAINTY_CONFIG: Record<string, { label: string; cls: string }> = {
-  LOW:    { label: 'LOW uncertainty',  cls: 'text-accent/80 border-accent/20' },
-  MEDIUM: { label: 'MED uncertainty',  cls: 'text-watch border-watch/30' },
-  HIGH:   { label: 'HIGH uncertainty', cls: 'text-danger border-danger/25' },
+  LOW:    { label: 'НИЗКАЯ НЕОПРЕД.',  cls: 'text-accent/80 border-accent/20' },
+  MEDIUM: { label: 'СРЕДНЯЯ НЕОПРЕД.', cls: 'text-watch border-watch/30' },
+  HIGH:   { label: 'ВЫСОКАЯ НЕОПРЕД.', cls: 'text-danger border-danger/25' },
 }
 
 const REC_CONFIG: Record<string, { label: string; cls: string }> = {
-  strong_enter: { label: 'STRONG ENTER', cls: 'text-accent border-accent/60 bg-accent/15' },
-  enter:        { label: 'ENTER',        cls: 'text-accent border-accent/40 bg-accent/10' },
-  watch:        { label: 'WATCH',        cls: 'text-watch border-watch/40 bg-watch/10' },
-  skip:         { label: 'SKIP',         cls: 'text-text-muted border-bg-border' },
-  avoid:        { label: 'AVOID',        cls: 'text-danger border-danger/40 bg-danger/10' },
+  strong_enter: { label: 'СИЛЬНЫЙ ВХОД', cls: 'text-accent border-accent/60 bg-accent/15' },
+  enter:        { label: 'ВХОД',         cls: 'text-accent border-accent/40 bg-accent/10' },
+  watch:        { label: 'НАБЛЮДЕНИЕ',   cls: 'text-watch border-watch/40 bg-watch/10' },
+  skip:         { label: 'ПРОПУСК',      cls: 'text-text-muted border-bg-border' },
+  avoid:        { label: 'ИЗБЕГАТЬ',     cls: 'text-danger border-danger/40 bg-danger/10' },
+}
+
+const SCENARIO_LABELS: Record<string, string> = {
+  bull: 'БЫК',
+  base: 'БАЗА',
+  bear: 'МЕДВ',
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -117,6 +173,8 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
   const [analyzing, setAnalyzing] = useState(false)
   const [analyzeError, setAnalyzeError] = useState<string | null>(null)
   const [localAnalysis, setLocalAnalysis] = useState<Pick<EventDetail, 'ai_summary' | 'sentiment' | 'uncertainty_level'> | null>(null)
+  const [imgFailed, setImgFailed] = useState(false)
+  const [descExpanded, setDescExpanded] = useState(false)
   const prevIsAlpha = useRef(isAlpha)
   const { lang } = useLang()
   const t = useT(lang)
@@ -124,7 +182,7 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
   const { data: event, loading } = usePolling<EventDetail>(
     () => api.getEvent(id!) as Promise<EventDetail>,
     5 * 60 * 1000,
-    id, // refetch when id changes
+    id,
     ...(initialData ? [{ initialData }] : []),
   )
 
@@ -180,42 +238,6 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
     prevIsAlpha.current = isAlpha
   }, [isAlpha, id])
 
-  // Enrichment polling: poll every 3s until status = ready
-  const enrichTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [enrichedEvent, setEnrichedEvent] = useState<Partial<EventDetail> | null>(null)
-
-  useEffect(() => {
-    if (!event || !id) return
-    if (event.enrichment_status === 'ready' || event.enrichment_status === 'failed') return
-
-    const poll = async () => {
-      try {
-        const fresh = await api.getEvent(id) as EventDetail
-        if (fresh.enrichment_status === 'ready') {
-          setEnrichedEvent({
-            description: fresh.description,
-            image_url: fresh.image_url,
-            context: fresh.context,
-            enrichment_status: fresh.enrichment_status,
-          })
-          return
-        }
-        if (fresh.enrichment_status === 'failed') {
-          setEnrichedEvent({ enrichment_status: 'failed' })
-          return
-        }
-        enrichTimerRef.current = setTimeout(poll, 3000)
-      } catch {
-        enrichTimerRef.current = setTimeout(poll, 5000)
-      }
-    }
-
-    enrichTimerRef.current = setTimeout(poll, 3000)
-    return () => {
-      if (enrichTimerRef.current) clearTimeout(enrichTimerRef.current)
-    }
-  }, [event?.id, event?.enrichment_status, id])
-
   usePageTitle(event?.title ?? '')
 
   async function handleAnalyze() {
@@ -240,13 +262,13 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
           return
         }
       }
-      setAnalyzeError('Analysis is taking too long. Refresh the page in a moment.')
+      setAnalyzeError('Анализ занимает слишком много времени. Обновите страницу через минуту.')
     } catch (err: unknown) {
       const e = err as { type?: string; limit?: number }
       if (e?.type === 'limit_reached') {
         setPaywallVariant('pro')
       } else {
-        setAnalyzeError(err instanceof Error ? err.message : 'Analysis failed')
+        setAnalyzeError(err instanceof Error ? err.message : 'Ошибка анализа')
       }
     } finally {
       clearAnalyzing('event', id)
@@ -268,7 +290,7 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
     return (
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
         <div className="space-y-4 animate-pulse">
-          <div className="h-3 w-20 bg-bg-elevated rounded" />
+          <div className="h-3 w-40 bg-bg-elevated rounded" />
           <div className="h-48 w-full bg-bg-elevated rounded-xl" />
           <div className="h-6 w-3/4 bg-bg-elevated rounded" />
           <div className="h-3 w-full bg-bg-elevated rounded" />
@@ -280,10 +302,10 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
 
   if (!event) {
     return (
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6 text-center py-20">
-        <p className="text-sm font-mono text-text-muted">EVENT NOT FOUND</p>
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-20 text-center">
+        <p className="text-sm font-mono text-text-muted">СОБЫТИЕ НЕ НАЙДЕНО</p>
         <button onClick={() => router.push('/markets')} className="mt-4 text-xs font-mono text-accent hover:text-accent/80">
-          Back to markets
+          К маркетам
         </button>
       </div>
     )
@@ -296,80 +318,152 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
   const sentCfg = effectiveSentiment ? SENTIMENT_CONFIG[effectiveSentiment] : null
   const uncertCfg = effectiveUncertainty ? UNCERTAINTY_CONFIG[effectiveUncertainty] : null
 
-  // Merge enrichment data from polling into event fields
-  const enrichStatus = enrichedEvent?.enrichment_status ?? event.enrichment_status ?? 'pending'
-  const imageUrl = enrichedEvent?.image_url ?? event.image_url ?? null
-  const description = enrichedEvent?.description ?? event.description ?? null
-  const context = enrichedEvent?.context ?? event.context ?? null
-  const enrichPending = enrichStatus === 'pending'
+  const imageUrl = event.image_url ?? null
+  const description = event.description ?? event.summary ?? null
+  const context = event.context ?? null
+
+  const firstMarket = event.markets?.[0]
+  const sourcePlatform = event.source_name ?? firstMarket?.platform ?? null
+  const resolveIso = event.resolves_at ?? firstMarket?.resolves_at ?? null
+  const marketUrl = firstMarket?.external_url ?? null
+  const DESC_LIMIT = 120
+  const descNeedsCollapse = !!description && description.length > DESC_LIMIT
+  const descCollapsed = descNeedsCollapse && !descExpanded
+
+  const cLabel = catLabel(event.category)
+  const severityLabel = SEVERITY_LABELS[event.severity] ?? event.severity
+  const crumbs = [
+    { label: 'Маркеты', href: '/markets' },
+    ...(cLabel ? [{ label: cLabel, href: `/markets?category=${encodeURIComponent(event.category)}` }] : []),
+    { label: event.title },
+  ]
+
+  const nextKeyDate = aiSummary?.next_key_date
+    ? new Date(aiSummary.next_key_date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }).replace('.', '')
+    : null
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
-      {/* Back */}
-      <button
-        onClick={() => router.push('/markets')}
-        className="flex items-center gap-1.5 text-[11px] font-mono text-text-muted hover:text-text-secondary transition-colors mb-5"
-      >
-        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M19 12H5M12 5l-7 7 7 7" />
-        </svg>
-        MARKETS
-      </button>
+      <Breadcrumbs items={crumbs} />
 
       {/* ── 1. Hero image ── */}
-      {enrichPending ? (
-        <div className="w-full h-48 bg-bg-elevated rounded-xl mb-5 animate-pulse" />
-      ) : imageUrl ? (
+      {imageUrl && !imgFailed ? (
         <div className="w-full h-48 rounded-xl mb-5 overflow-hidden">
-          <img src={imageUrl} alt={event.title} className="w-full h-full object-cover" />
+          <img
+            src={imageUrl}
+            alt={event.title}
+            className="w-full h-full object-cover"
+            onError={() => setImgFailed(true)}
+          />
         </div>
       ) : null}
 
-      {/* ── 2. Заголовок + статус ── */}
+      {/* ── 2. Hero: meta bar + title + description ── */}
       <div className="mb-6">
-        <div className="flex items-center gap-2 mb-3 flex-wrap">
-          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-bg-border bg-bg-elevated text-text-muted uppercase tracking-wider">
-            {event.category}
-          </span>
-          <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${
-            event.severity === 'CRITICAL' ? 'text-danger border-danger/60' :
-            event.severity === 'HIGH'     ? 'text-danger border-danger/40' :
-            event.severity === 'MEDIUM'   ? 'text-watch border-watch/30' :
-            'text-text-muted border-bg-border'
-          }`}>
-            {event.severity}
-          </span>
-          <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${
-            event.status === 'active'
-              ? 'text-accent border-accent/30 bg-accent/5'
-              : 'text-text-muted border-bg-border'
-          }`}>
-            {event.status}
-          </span>
+        <div className="flex items-center gap-1.5 mb-3 flex-wrap">
+          {(() => {
+            const parts: ReactNode[] = []
+            if (event.severity) {
+              parts.push(
+                <span key="sev" className={`text-[10px] font-mono font-bold uppercase tracking-wider ${
+                  event.severity === 'CRITICAL' ? 'text-danger' :
+                  event.severity === 'HIGH'     ? 'text-danger' :
+                  event.severity === 'MEDIUM'   ? 'text-watch' :
+                  'text-text-muted'
+                }`}>
+                  {severityLabel}
+                </span>
+              )
+            }
+            parts.push(
+              <span key="status" className={`text-[10px] font-mono font-bold uppercase tracking-wider ${
+                event.status === 'active' ? 'text-accent' : 'text-text-muted'
+              }`}>
+                {event.status === 'active' ? 'АКТИВНО' : 'ЗАВЕРШЕНО'}
+              </span>
+            )
+            if (nextKeyDate) {
+              parts.push(
+                <span key="date" className="text-[10px] font-mono uppercase tracking-wider text-text-muted">
+                  Ключевая дата <span className="text-text-secondary font-bold">{nextKeyDate}</span>
+                </span>
+              )
+            }
+            return parts.reduce<ReactNode[]>((acc, el, i) => {
+              if (i > 0) acc.push(<span key={`sep-${i}`} className="text-text-muted/40 text-[10px]">·</span>)
+              acc.push(el)
+              return acc
+            }, [])
+          })()}
         </div>
 
-        <h1 className="text-xl font-mono font-bold text-text-primary leading-snug mb-2">
+        {/* Source / resolve / external link meta row */}
+        {(sourcePlatform || resolveIso || marketUrl) && (
+          <div className="flex items-center gap-1.5 mb-3 flex-wrap">
+            <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
+              {sourcePlatform && <SourceBadge source={sourcePlatform} size="sm" />}
+              {resolveIso && (
+                <>
+                  {sourcePlatform && <span className="text-text-muted/40 text-[10px]">·</span>}
+                  <span className="text-[10px] font-mono text-watch">
+                    Резолв: <span className="font-bold">{formatResolveDate(resolveIso)}</span>
+                  </span>
+                  <span className="text-text-muted/40 text-[10px]">·</span>
+                  <span className="text-[10px] font-mono text-text-muted">
+                    {formatCountdown(resolveIso)}
+                  </span>
+                </>
+              )}
+            </div>
+            {marketUrl && (
+              <a
+                href={marketUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[9px] font-mono text-accent hover:text-accent/80 transition-colors shrink-0 ml-auto"
+              >
+                Открыть рынок →
+              </a>
+            )}
+          </div>
+        )}
+
+        <h1 className="text-[22px] sm:text-[26px] font-mono font-bold text-text-primary leading-tight mb-3 tracking-tight">
           {event.title}
         </h1>
 
-        {/* Description (enriched) or summary fallback */}
-        {enrichPending ? (
-          <div className="space-y-1.5 animate-pulse">
-            <div className="h-3 w-full bg-bg-elevated rounded" />
-            <div className="h-3 w-5/6 bg-bg-elevated rounded" />
-            <div className="h-3 w-4/5 bg-bg-elevated rounded" />
+        {description && (
+          <div>
+            {descCollapsed ? (
+              <div
+                className="border-l-2 border-bg-border bg-bg-elevated/40 rounded-r-sm"
+                style={{ padding: '6px 10px' }}
+              >
+                <p className="text-[10px] text-text-secondary leading-relaxed">
+                  {description.slice(0, DESC_LIMIT)}...
+                </p>
+              </div>
+            ) : (
+              <p className="text-[14px] text-text-secondary leading-relaxed">
+                {description}
+              </p>
+            )}
+            {descNeedsCollapse && (
+              <button
+                onClick={() => setDescExpanded(v => !v)}
+                className="text-[9px] font-mono text-text-muted hover:text-text-secondary transition-colors mt-1.5"
+              >
+                {descExpanded ? 'Скрыть ↑' : 'Показать полное условие резолюции ↓'}
+              </button>
+            )}
           </div>
-        ) : (
-          <p className="text-sm font-mono text-text-muted leading-relaxed">
-            {description ?? event.summary}
-          </p>
         )}
       </div>
 
-      {/* ── 3. AI Summary (Pro/Alpha) ── */}
+      {/* ── 3. AI Analysis ── */}
       {isPro && analyzing ? (
         <div className="bg-bg-surface border border-bg-border rounded-xl p-5 mb-6">
-          <p className="text-[10px] font-mono font-bold text-text-muted tracking-widest mb-4">AI ANALYSIS</p>
+          <p className="text-[10px] font-mono font-bold text-text-muted tracking-widest mb-4">AI АНАЛИЗ</p>
           <AnalysisLoader height={300} />
         </div>
       ) : isPro && loading ? (
@@ -389,9 +483,18 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
         </div>
       ) : isPro && aiSummary ? (
         <div className="bg-bg-surface border border-accent/15 rounded-xl p-5 mb-6">
-          {/* Header: label + badges */}
+          {/* Header: tier badge + sentiment/uncertainty */}
           <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
-            <p className="text-[10px] font-mono font-bold text-text-muted tracking-widest">AI ANALYSIS</p>
+            <div className="flex items-center gap-2">
+              <p className="text-[10px] font-mono font-bold text-text-muted tracking-widest">AI АНАЛИЗ</p>
+              <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${
+                isAlpha ? 'text-accent border-accent/40 bg-accent/10' : 'text-text-secondary border-bg-border'
+              }`}>
+                {isAlpha ? 'ALPHA' : 'PRO'}
+              </span>
+              {/* TODO: backend должен отдавать generated_at для точного таймстемпа */}
+              <span className="text-[10px] font-mono text-text-muted">Обновлено недавно</span>
+            </div>
             <div className="flex items-center gap-1.5 flex-wrap">
               {sentCfg && (
                 <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${sentCfg.cls}`}>
@@ -403,23 +506,21 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
                   {uncertCfg.label}
                 </span>
               )}
-              {aiSummary.next_key_date && (
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded border border-bg-border text-text-muted">
-                  {new Date(aiSummary.next_key_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                </span>
-              )}
             </div>
           </div>
 
-          {/* Situation summary */}
-          <p className="text-sm font-mono text-text-secondary leading-relaxed mb-5">
-            {aiSummary.situation_summary}
-          </p>
+          {/* Situation summary — ведущая thesis-style */}
+          <div className="border-l-2 border-accent/30 pl-3 mb-5">
+            <p className="text-[10px] font-mono uppercase tracking-wider text-text-muted mb-1.5">СИТУАЦИЯ</p>
+            <p className="text-[13px] text-text-secondary leading-relaxed">
+              {aiSummary.situation_summary}
+            </p>
+          </div>
 
-          {/* Key factors */}
+          {/* ФАКТОРЫ */}
           {aiSummary.key_factors?.length > 0 && (
             <div className="mb-5">
-              <p className="text-[10px] font-mono text-text-muted tracking-wider mb-3">KEY FACTORS</p>
+              <p className="text-[10px] font-mono font-bold text-text-muted tracking-widest mb-3">ФАКТОРЫ</p>
               <div className="flex flex-col gap-3">
                 {aiSummary.key_factors.map((f, i) => {
                   const isObj = typeof f === 'object' && f !== null
@@ -432,17 +533,17 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
                   const icon     = impact === 'bullish' ? '↑' : impact === 'bearish' ? '↓' : '→'
                   return (
                     <div key={i}>
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className={`text-[12px] font-mono font-bold shrink-0 w-4 ${impactCls}`}>{icon}</span>
-                        <span className="text-[12px] font-mono font-bold text-text-primary flex-1">{factor}</span>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`text-[13px] font-mono font-bold shrink-0 w-4 ${impactCls}`}>{icon}</span>
+                        <span className="text-[12px] font-medium text-text-primary flex-1 leading-snug">{factor}</span>
                         <div className="flex items-center gap-1.5 shrink-0">
                           <div className="w-16 h-1 bg-bg-elevated rounded-full overflow-hidden">
                             <div className={`h-full rounded-full transition-all ${barCls}`} style={{ width: `${Math.round(weight * 100)}%` }} />
                           </div>
-                          <span className="text-[10px] font-mono text-text-muted w-5 text-right">{Math.round(weight * 10)}</span>
+                          <span className="text-[10px] font-mono text-text-muted w-6 text-right">{Math.round(weight * 10)}/10</span>
                         </div>
                       </div>
-                      {desc && <p className="text-[11px] font-mono text-text-muted leading-relaxed pl-6">{desc}</p>}
+                      {desc && <p className="text-[11px] text-text-muted leading-relaxed pl-6">{desc}</p>}
                     </div>
                   )
                 })}
@@ -450,9 +551,16 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
             </div>
           )}
 
-          {/* Scenarios */}
+          {/* СЦЕНАРИИ — Alpha-gated */}
           <div>
-            <p className="text-[10px] font-mono text-text-muted tracking-wider mb-3">SCENARIOS</p>
+            <div className="flex items-center gap-2 mb-3">
+              <p className="text-[10px] font-mono font-bold text-text-muted tracking-widest">СЦЕНАРИИ</p>
+              {!isAlpha && (
+                <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border border-bg-border text-text-muted uppercase tracking-wider">
+                  Только Alpha
+                </span>
+              )}
+            </div>
             {isAlpha && aiSummary.scenarios?.length ? (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {aiSummary.scenarios.map((s, i) => {
@@ -460,36 +568,37 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
                     ? { border: 'border-accent/30 bg-accent/5', lbl: 'text-accent', prob: 'text-accent' }
                     : s.label === 'bear'
                     ? { border: 'border-danger/30 bg-danger/5', lbl: 'text-danger', prob: 'text-danger' }
-                    : { border: 'border-bg-border bg-bg-elevated/20', lbl: 'text-text-muted', prob: 'text-text-secondary' }
+                    : { border: 'border-bg-border bg-bg-elevated/30', lbl: 'text-text-muted', prob: 'text-text-secondary' }
+                  const scLabel = SCENARIO_LABELS[s.label] ?? s.label.toUpperCase()
                   return (
                     <div key={i} className={`rounded-lg border p-3 ${cfg.border}`}>
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className={`text-[10px] font-mono font-bold uppercase tracking-wider ${cfg.lbl}`}>{s.label}</span>
+                        <span className={`text-[10px] font-mono font-bold uppercase tracking-wider ${cfg.lbl}`}>{scLabel}</span>
                         <span className={`text-sm font-mono font-bold ${cfg.prob}`}>{s.probability}%</span>
                       </div>
-                      <p className="text-[11px] font-mono font-bold text-text-primary mb-1 leading-snug">{s.title}</p>
-                      <p className="text-[10px] font-mono text-text-muted leading-relaxed">{s.description}</p>
+                      <p className="text-[11px] font-medium text-text-primary mb-1 leading-snug">{s.title}</p>
+                      <p className="text-[10px] text-text-muted leading-relaxed">{s.description}</p>
                     </div>
                   )
                 })}
               </div>
             ) : isAlpha ? (
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between bg-bg-elevated/30 border border-bg-border rounded-lg px-3 py-2">
                 <p className="text-[11px] font-mono text-text-muted">
-                  Re-analyze to generate scenario breakdown.
+                  Перезапустите анализ, чтобы получить сценарии.
                 </p>
                 <button
                   onClick={handleAnalyze}
                   disabled={analyzing}
-                  className="text-[10px] font-mono font-bold text-accent/70 hover:text-accent transition-colors disabled:opacity-50 shrink-0 ml-3"
+                  className="text-[10px] font-mono font-bold text-accent/80 hover:text-accent transition-colors disabled:opacity-50 shrink-0 ml-3"
                 >
-                  {analyzing ? 'Analyzing...' : '↻ Re-analyze'}
+                  {analyzing ? 'Анализ...' : '↻ Перезапустить'}
                 </button>
               </div>
             ) : (
               <div className="relative">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 blur-sm opacity-40 pointer-events-none select-none">
-                  {['BULL', 'BASE', 'BEAR'].map((lbl) => (
+                  {['БЫК', 'БАЗА', 'МЕДВ'].map((lbl) => (
                     <div key={lbl} className="rounded-lg border border-bg-border p-3">
                       <div className="flex items-center justify-between mb-1.5">
                         <div className="h-2.5 w-8 bg-bg-elevated rounded" />
@@ -503,9 +612,9 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
                 <div className="absolute inset-0 flex items-center justify-center">
                   <button
                     onClick={() => setPaywallVariant('alpha')}
-                    className="px-3 py-1.5 bg-bg-surface border border-bg-border text-[10px] font-mono font-bold text-text-muted hover:border-text-muted/40 hover:text-text-secondary rounded-lg transition-colors"
+                    className="px-3 py-1.5 bg-bg-surface border border-accent/30 text-[10px] font-mono font-bold text-accent hover:border-accent/60 rounded-lg transition-colors"
                   >
-                    Alpha only
+                    Разблокировать Alpha
                   </button>
                 </div>
               </div>
@@ -514,8 +623,8 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
         </div>
       ) : isPro && !aiSummary ? (
         <div className="bg-bg-surface border border-bg-border rounded-xl p-5 mb-6">
-          <p className="text-[10px] font-mono font-bold text-text-muted tracking-widest mb-2">AI ANALYSIS</p>
-          <p className="text-xs font-mono text-text-muted mb-4">{t('markets.no_analysis')}</p>
+          <p className="text-[10px] font-mono font-bold text-text-muted tracking-widest mb-2">AI АНАЛИЗ</p>
+          <p className="text-xs text-text-muted mb-4">{t('markets.no_analysis')}</p>
           {analyzeError && (
             <p className="text-xs font-mono text-danger mb-3">{analyzeError}</p>
           )}
@@ -524,12 +633,17 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
             disabled={analyzing}
             className="px-4 py-2 bg-accent text-bg-base text-xs font-mono font-bold rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-50"
           >
-            {analyzing ? 'Analyzing...' : 'Analyze with AI'}
+            {analyzing ? 'Анализ...' : 'Анализировать'}
           </button>
         </div>
       ) : !isPro ? (
         <div className="bg-bg-surface border border-bg-border rounded-xl p-5 mb-6 relative overflow-hidden">
-          <p className="text-[10px] font-mono font-bold text-text-muted tracking-widest mb-3">AI ANALYSIS</p>
+          <div className="flex items-center gap-2 mb-3">
+            <p className="text-[10px] font-mono font-bold text-text-muted tracking-widest">AI АНАЛИЗ</p>
+            <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border border-bg-border text-text-muted uppercase tracking-wider">
+              Только Pro
+            </span>
+          </div>
           <div className="space-y-2 blur-[3px] opacity-60 pointer-events-none select-none">
             <div className="h-3 w-full bg-bg-elevated rounded" />
             <div className="h-3 w-5/6 bg-bg-elevated rounded" />
@@ -541,62 +655,72 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
               onClick={() => setPaywallVariant('pro')}
               className="px-4 py-2 bg-accent text-bg-base text-xs font-mono font-bold rounded-lg hover:bg-accent/90 transition-colors"
             >
-              Unlock AI Analysis
+              Разблокировать Pro — $14.99/мес
             </button>
           </div>
         </div>
       ) : null}
 
-      {/* ── 4. Context (enriched background) ── */}
-      {enrichPending ? (
-        <div className="bg-bg-surface border border-bg-border rounded-xl p-5 mb-6 animate-pulse">
-          <div className="h-2.5 w-24 bg-bg-elevated rounded mb-3" />
-          <div className="space-y-2">
-            <div className="h-3 w-full bg-bg-elevated rounded" />
-            <div className="h-3 w-full bg-bg-elevated rounded" />
-            <div className="h-3 w-3/4 bg-bg-elevated rounded" />
-          </div>
-        </div>
-      ) : context ? (
+      {/* ── 4. Context / Background ── */}
+      {context ? (
         <div className="bg-bg-surface border border-bg-border rounded-xl p-5 mb-6">
-          <p className="text-[10px] font-mono font-bold text-text-muted tracking-widest mb-3">BACKGROUND</p>
-          <p className="text-sm font-mono text-text-muted leading-relaxed">{context}</p>
+          <p className="text-[10px] font-mono font-bold text-text-muted tracking-widest mb-3">КОНТЕКСТ</p>
+          <p className="text-[13px] text-text-muted leading-relaxed">{context}</p>
         </div>
       ) : null}
 
       {/* ── 5. Связанные рынки ── */}
       {event.markets?.length > 0 && (
         <div className="mb-6">
-          <p className="text-[10px] font-mono font-bold text-text-muted tracking-widest mb-3">RELATED MARKETS</p>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[10px] font-mono font-bold text-text-muted tracking-widest">СВЯЗАННЫЕ РЫНКИ</p>
+            <span className="text-[10px] font-mono text-text-muted">{event.markets.length}</span>
+          </div>
           <div className="flex flex-col gap-2">
             {event.markets.map((m) => {
               const a = m.analysis
               const recCfg = a?.recommendation ? (REC_CONFIG[a.recommendation] ?? REC_CONFIG.skip) : null
               const hasEdge = isAlpha && a?.fair_prob != null && a?.edge_score != null
               const edgePos = (a?.edge_score ?? 0) >= 0
+              const prob = m.price != null ? Math.round(m.price) : null
+              const isClosed = prob == null
               return (
                 <div
                   key={m.id}
                   onClick={() => router.push(`/markets/${m.id}`)}
-                  className="bg-bg-surface border border-bg-border rounded-lg px-4 py-3 cursor-pointer hover:border-text-muted/30 transition-colors"
+                  className={`bg-bg-surface border border-bg-border rounded-lg px-4 py-3 cursor-pointer
+                    hover:bg-bg-elevated/60 hover:border-text-muted/30 transition-colors${isClosed ? ' opacity-50' : ''}`}
                 >
-                  {/* Top row: question + price */}
                   <div className="flex items-start gap-3">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
                         {m.outcome_label && (
                           <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border border-accent/30 bg-accent/5 text-accent uppercase tracking-wider">
                             {m.outcome_label}
                           </span>
                         )}
-                        <p className="text-[13px] font-mono text-text-secondary leading-snug">{m.question}</p>
+                        <p className="text-[13px] font-medium text-text-primary leading-snug line-clamp-2">{m.question}</p>
                       </div>
-                      <p className="text-[10px] font-mono text-text-muted mt-0.5">{m.platform}{m.volume > 0 ? ` · ${formatVolume(m.volume)}` : ''}</p>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-[10px] font-mono uppercase tracking-wider text-text-muted">
+                          {m.platform}
+                        </span>
+                        {m.volume > 0 && (
+                          <>
+                            <span className="text-text-muted/40 text-[10px]">·</span>
+                            <span className="text-[10px] font-mono text-text-muted">
+                              VOL <span className="text-text-secondary">{formatVolume(m.volume)}</span>
+                            </span>
+                          </>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-sm font-mono font-bold text-text-primary">{m.price != null ? `${m.price.toFixed(0)}%` : '—'}</p>
+                    <div className="text-right shrink-0 min-w-[64px]">
+                      <p className="text-[18px] font-mono font-bold text-accent leading-none">
+                        {prob != null ? `${prob}%` : '—'}
+                      </p>
                       {hasEdge && (
-                        <p className={`text-[10px] font-mono font-bold ${edgePos ? 'text-accent' : 'text-danger'}`}>
+                        <p className={`text-[10px] font-mono font-bold mt-1 ${edgePos ? 'text-accent' : 'text-danger'}`}>
                           {edgePos ? '+' : ''}{a!.edge_score}pp
                         </p>
                       )}
@@ -604,9 +728,9 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
                   </div>
 
                   {/* Analysis row (Pro+) */}
-                  {isPro && a && (
+                  {isPro && a && (recCfg || hasEdge || a.confidence_score != null) && (
                     <div className="mt-2.5 pt-2.5 border-t border-bg-border">
-                      <div className="flex items-center gap-2 flex-wrap mb-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         {recCfg && (
                           <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${recCfg.cls}`}>
                             {recCfg.label}
@@ -636,7 +760,7 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
                         )}
                       </div>
                       {isAlpha && a.thesis && (
-                        <p className="text-[11px] font-mono text-text-muted leading-relaxed line-clamp-2">{a.thesis}</p>
+                        <p className="text-[11px] text-text-muted leading-relaxed line-clamp-2 mt-2">{a.thesis}</p>
                       )}
                     </div>
                   )}
@@ -650,15 +774,15 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
       {/* ── 6. Timeline ── */}
       {event.timeline && event.timeline.length > 0 && (
         <div className="mb-6">
-          <p className="text-[10px] font-mono font-bold text-text-muted tracking-widest mb-3">TIMELINE</p>
+          <p className="text-[10px] font-mono font-bold text-text-muted tracking-widest mb-3">ХРОНОЛОГИЯ</p>
           <div className="relative pl-4 border-l border-bg-border flex flex-col gap-4">
             {event.timeline.map((entry, i) => (
               <div key={i} className="relative">
                 <div className="absolute -left-[17px] top-1.5 w-2 h-2 rounded-full bg-bg-border border border-bg-elevated" />
-                <p className="text-[10px] font-mono text-text-muted mb-0.5">
-                  {new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                <p className="text-[10px] font-mono uppercase tracking-wider text-text-muted mb-0.5">
+                  {new Date(entry.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' }).replace('.', '')}
                 </p>
-                <p className="text-xs font-mono text-text-secondary">{entry.text}</p>
+                <p className="text-[12px] text-text-secondary leading-snug">{entry.text}</p>
               </div>
             ))}
           </div>
@@ -680,7 +804,7 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
             <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
           </svg>
-          {watchAdded ? 'Watching' : 'Watch Event'}
+          {watchAdded ? 'В списке' : 'Следить'}
         </button>
       </div>
 

@@ -45,7 +45,53 @@ function formatMemberSince(dateStr: string): string {
   } catch { return '—' }
 }
 
-// ── Section layout ───────────────────────────────────────────────────────────
+// ── Inline SVG icons ──────────────────────────────────────────────────────────
+
+function IconLock({ size = 12 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'inline-block', flexShrink: 0 }}>
+      <rect x="3" y="8" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M5.5 8V5.5a2.5 2.5 0 015 0V8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function IconPencil({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'inline-block', flexShrink: 0 }}>
+      <path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+// ── Tooltip ───────────────────────────────────────────────────────────────────
+
+function Tooltip({ text, children }: { text: string; children: ReactNode }) {
+  const [show, setShow] = useState(false)
+  return (
+    <div
+      className="relative inline-flex items-center"
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+    >
+      {children}
+      {show && (
+        <div
+          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-[9px] font-mono rounded whitespace-nowrap z-20 pointer-events-none"
+          style={{
+            background: 'rgb(var(--bg-elevated))',
+            color: 'rgb(var(--text-muted))',
+            border: '0.5px solid rgb(var(--bg-border))',
+          }}
+        >
+          {text}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Section layout ────────────────────────────────────────────────────────────
 
 function ProfileSection({
   id,
@@ -59,20 +105,19 @@ function ProfileSection({
   children: ReactNode
 }) {
   return (
-    <section id={id}>
-      <div className="flex items-baseline gap-3 mb-4">
-        <span className="text-[11px] font-mono font-bold tracking-[0.15em]" style={{ color: 'rgb(var(--text-muted))' }}>
-          {number}
-        </span>
-        <span className="text-[11px] font-mono" style={{ color: 'rgb(var(--bg-border))' }}>/</span>
-        <span className="text-[11px] font-mono font-bold tracking-[0.15em]" style={{ color: 'rgb(var(--text-primary))' }}>
-          {title}
+    <section id={id} className="max-w-[640px]">
+      <div className="mb-3">
+        <span
+          className="font-mono tracking-[0.1em]"
+          style={{ fontSize: '10px', color: 'rgb(var(--text-muted))' }}
+        >
+          {number} / {title}
         </span>
       </div>
       <div
         className="rounded-xl p-5 sm:p-6"
         style={{
-          border: '1px solid rgb(var(--bg-border))',
+          border: '0.5px solid rgb(var(--bg-border))',
           background: 'rgb(var(--bg-surface) / 0.4)',
         }}
       >
@@ -82,21 +127,37 @@ function ProfileSection({
   )
 }
 
+// ── SubSection ────────────────────────────────────────────────────────────────
+
 function SubSection({
   label,
   children,
   last,
+  first,
 }: {
   label: string
   children: ReactNode
   last?: boolean
+  first?: boolean
 }) {
   return (
     <div
-      className={last ? '' : 'pb-5 mb-5'}
-      style={last ? undefined : { borderBottom: '1px solid rgb(var(--bg-border))' }}
+      style={{
+        paddingTop: first ? undefined : '16px',
+        borderTop: first ? undefined : '0.5px solid rgb(var(--bg-border))',
+        paddingBottom: last ? undefined : '0',
+        marginBottom: last ? undefined : '0',
+      }}
     >
-      <p className="text-[10px] font-mono uppercase tracking-[0.12em] mb-3" style={{ color: 'rgb(var(--text-muted))' }}>
+      <p
+        className="font-mono uppercase tracking-[0.12em] mb-3"
+        style={{
+          fontSize: '9px',
+          color: 'rgb(var(--text-muted))',
+          paddingBottom: '8px',
+          borderBottom: '0.5px solid rgb(var(--bg-border))',
+        }}
+      >
         {label}
       </p>
       {children}
@@ -104,14 +165,57 @@ function SubSection({
   )
 }
 
-// ── Sidebar ──────────────────────────────────────────────────────────────────
+// ── Segmented control ─────────────────────────────────────────────────────────
+
+function SegmentedControl({
+  options,
+  value,
+  onChange,
+}: {
+  options: { value: string; label: ReactNode }[]
+  value: string
+  onChange: (v: string) => void
+}) {
+  return (
+    <div
+      className="flex w-fit rounded-md"
+      style={{
+        background: 'rgb(var(--bg-surface))',
+        border: '0.5px solid rgb(var(--bg-border))',
+        padding: '2px',
+      }}
+    >
+      {options.map((opt) => {
+        const isActive = opt.value === value
+        return (
+          <button
+            key={opt.value}
+            onClick={() => onChange(opt.value)}
+            className="transition-colors rounded-[5px]"
+            style={{
+              padding: '5px 14px',
+              fontSize: '10px',
+              fontFamily: 'monospace',
+              background: isActive ? 'rgb(var(--bg-elevated))' : 'transparent',
+              color: isActive ? 'rgb(var(--text-primary))' : 'rgb(var(--text-muted))',
+            }}
+          >
+            {opt.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
 
 function SidebarNav({
   items,
   active,
   onSelect,
 }: {
-  items: { id: string; number: string; label: string }[]
+  items: { id: string; number: string; label: string; sidebarLabel?: string }[]
   active: string
   onSelect: (id: string) => void
 }) {
@@ -126,12 +230,18 @@ function SidebarNav({
             onClick={() => onSelect(item.id)}
             className="group flex items-baseline gap-2 px-3 py-2 rounded transition-colors text-left"
             style={{
-              background: isActive ? 'rgb(var(--accent) / 0.08)' : 'transparent',
+              background: isActive ? 'rgb(var(--accent) / 0.12)' : 'transparent',
               color: isActive ? 'rgb(var(--accent))' : 'rgb(var(--text-muted))',
+            }}
+            onMouseEnter={(e) => {
+              if (!isActive) (e.currentTarget as HTMLElement).style.background = 'rgb(var(--bg-surface))'
+            }}
+            onMouseLeave={(e) => {
+              if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent'
             }}
           >
             <span className="text-[10px] font-mono font-bold tracking-[0.1em] shrink-0">{item.number}</span>
-            <span className="text-[11px] font-mono tracking-wider truncate">{item.label}</span>
+            <span className="text-[11px] font-mono tracking-wider leading-tight">{item.label}</span>
           </button>
         )
       })}
@@ -139,7 +249,7 @@ function SidebarNav({
   )
 }
 
-// ── Mobile horizontal tabs ───────────────────────────────────────────────────
+// ── Mobile horizontal tabs ────────────────────────────────────────────────────
 
 function MobileTabs({
   items,
@@ -356,11 +466,11 @@ export default function ProfilePage() {
   }
 
   const navItems = [
-    { id: 'sec-profile',      number: '01', label: tr('profile.section.profile') },
-    { id: 'sec-subscription', number: '02', label: tr('profile.section.subscription') },
-    { id: 'sec-stats',        number: '03', label: tr('profile.section.stats') },
-    { id: 'sec-settings',     number: '04', label: tr('profile.section.settings') },
-    { id: 'sec-account',      number: '05', label: tr('profile.section.account') },
+    { id: 'sec-profile',      number: '01', label: tr('profile.section.profile'),      sidebarLabel: lang === 'ru' ? 'Профиль' : 'Profile' },
+    { id: 'sec-subscription', number: '02', label: tr('profile.section.subscription'), sidebarLabel: lang === 'ru' ? 'Подписка' : 'Subscription' },
+    { id: 'sec-stats',        number: '03', label: tr('profile.section.stats'),         sidebarLabel: lang === 'ru' ? 'Статистика' : 'Stats' },
+    { id: 'sec-settings',     number: '04', label: tr('profile.section.settings'),      sidebarLabel: lang === 'ru' ? 'Настройки' : 'Settings' },
+    { id: 'sec-account',      number: '05', label: tr('profile.section.account'),       sidebarLabel: lang === 'ru' ? 'Безопасность' : 'Security' },
   ]
 
   return (
@@ -403,20 +513,21 @@ export default function ProfilePage() {
             {/* Mobile horizontal tabs */}
             <MobileTabs items={navItems} active={activeSection} onSelect={setActiveSection} />
 
-            {/* ── 01 PROFILE ── */}
+            {/* ── 01 ПРОФИЛЬ ── */}
             {activeSection === 'sec-profile' && (
             <ProfileSection id="sec-profile" number="01" title={tr('profile.section.profile')}>
-              {/* Header row */}
-              <div className="flex items-start gap-4">
+              {/* Avatar + info row */}
+              <div className="flex items-start gap-3">
                 {profile.avatar_url ? (
                   <img
                     src={profile.avatar_url}
                     alt=""
-                    className="w-16 h-16 rounded-full object-cover shrink-0 border border-bg-border"
+                    className="w-12 h-12 rounded-full object-cover shrink-0"
+                    style={{ border: '0.5px solid rgb(var(--bg-border))' }}
                   />
                 ) : (
                   <div
-                    className="w-16 h-16 rounded-full flex items-center justify-center shrink-0 text-2xl font-mono font-bold"
+                    className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 text-lg font-mono font-bold"
                     style={{ background: avatarColor, color: 'rgb(var(--bg-base))' }}
                   >
                     {initials}
@@ -424,80 +535,114 @@ export default function ProfilePage() {
                 )}
 
                 <div className="flex-1 min-w-0">
-                  <p className="text-[20px] font-mono font-bold text-text-primary leading-tight truncate">
-                    {profile.display_name || email}
-                  </p>
-                  {profile.display_name && (
-                    <p className="text-xs font-mono text-text-muted mt-0.5">{email}</p>
-                  )}
-                  <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    {(profile.country || profile.trading_experience) && (
-                      <span className="flex items-center gap-1 text-[11px] font-mono text-text-muted">
-                        {profile.country && <IconMapPin size={11} />}
-                        {COUNTRY_LABELS[profile.country ?? ''] ?? profile.country ?? ''}
-                        {profile.country && profile.trading_experience && ' · '}
-                        {profile.trading_experience ? expLabel(profile.trading_experience) : ''}
-                      </span>
-                    )}
+                  {/* Name row */}
+                  <div className="flex items-center gap-2">
+                    <p className="font-mono font-medium leading-tight truncate"
+                      style={{ fontSize: '16px', color: 'rgb(var(--text-primary))' }}>
+                      {profile.display_name || email}
+                    </p>
+                    <button
+                      onClick={() => setShowEdit(true)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                      style={{ color: 'rgb(var(--text-muted))' }}
+                      title={tr('profile.edit')}
+                    >
+                      <IconPencil size={14} />
+                    </button>
                   </div>
-                  <p className="text-[11px] font-mono text-text-muted mt-1">
+
+                  {/* Email */}
+                  {profile.display_name && (
+                    <p className="font-mono mt-0.5 truncate"
+                      style={{ fontSize: '11px', color: 'rgb(var(--text-muted))' }}>
+                      {email}
+                    </p>
+                  )}
+
+                  {/* Location · Role */}
+                  {(profile.country || profile.trading_experience) && (
+                    <p className="font-mono mt-0.5"
+                      style={{ fontSize: '11px', color: 'rgb(var(--text-muted))' }}>
+                      {profile.country && <IconMapPin size={10} />}
+                      {' '}
+                      {COUNTRY_LABELS[profile.country ?? ''] ?? profile.country ?? ''}
+                      {profile.country && profile.trading_experience && ' · '}
+                      {profile.trading_experience ? expLabel(profile.trading_experience) : ''}
+                    </p>
+                  )}
+
+                  {/* Member since */}
+                  <p className="font-mono mt-0.5"
+                    style={{ fontSize: '10px', color: 'rgb(var(--text-muted))' }}>
                     {tr('profile.member_since')} {formatMemberSince(profile.created_at)}
                   </p>
-                </div>
 
-                <button
-                  onClick={() => setShowEdit(true)}
-                  className="text-[10px] font-mono font-bold tracking-wider px-3 py-1.5 rounded border
-                    text-text-muted border-bg-border hover:text-text-primary hover:border-text-muted
-                    transition-colors shrink-0"
-                >
-                  {tr('profile.edit')}
-                </button>
+                  {/* Edit button inline */}
+                  <button
+                    onClick={() => setShowEdit(true)}
+                    className="mt-2 font-mono transition-colors"
+                    style={{ fontSize: '10px', color: 'rgb(var(--text-muted))' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = 'rgb(var(--text-secondary))')}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = 'rgb(var(--text-muted))')}
+                  >
+                    {tr('profile.edit')}
+                  </button>
+                </div>
               </div>
 
-              {/* Interests */}
-              <div className="mt-6 pt-5" style={{ borderTop: '1px solid rgb(var(--bg-border))' }}>
-                <p className="text-[10px] font-mono uppercase tracking-[0.12em] mb-3" style={{ color: 'rgb(var(--text-muted))' }}>
-                  {tr('profile.interests_title')}
-                </p>
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {INTEREST_IDS.map((id) => {
-                    const isActive = selectedInterests.includes(id)
-                    return (
-                      <button
-                        key={id}
-                        onClick={() => toggleInterest(id)}
-                        className={`py-1.5 px-3 rounded-full border text-xs font-mono font-medium transition-all ${
-                          isActive
-                            ? 'bg-accent/10 border-accent text-accent'
-                            : 'bg-bg-surface border-bg-border text-text-secondary hover:border-text-muted'
-                        }`}
-                      >
-                        {interestLabel(id)}
-                      </button>
-                    )
-                  })}
-                </div>
-                <div className="flex items-center gap-3 h-7">
-                  {interestsDirty && (
+              {/* Interests — directly below, no divider */}
+              <div className="mt-5 flex flex-wrap gap-2">
+                {INTEREST_IDS.map((id) => {
+                  const isActive = selectedInterests.includes(id)
+                  return (
                     <button
-                      onClick={saveInterests}
-                      disabled={savingInterests}
-                      className="px-3 py-1.5 bg-accent text-bg-base text-[11px] font-mono font-bold rounded
-                        hover:bg-accent/90 transition-colors disabled:opacity-50"
+                      key={id}
+                      onClick={() => toggleInterest(id)}
+                      className="rounded-full transition-all"
+                      style={{
+                        fontSize: '9px',
+                        fontFamily: 'monospace',
+                        padding: '4px 10px',
+                        border: isActive
+                          ? '0.5px solid rgb(var(--accent))'
+                          : '0.5px solid rgb(var(--text-muted) / 0.5)',
+                        background: isActive ? 'rgb(var(--accent) / 0.1)' : 'rgb(var(--bg-surface))',
+                        color: isActive ? 'rgb(var(--accent))' : 'rgb(var(--text-secondary))',
+                      }}
                     >
-                      {savingInterests ? tr('profile.saving') : tr('profile.save')}
+                      {interestLabel(id)}
                     </button>
-                  )}
-                  {savedToast && !interestsDirty && (
-                    <span className="flex items-center gap-1 text-[11px] font-mono text-accent animate-fade-in"><IconCheck size={13} /> {tr('profile.saved')}</span>
-                  )}
-                </div>
+                  )
+                })}
+              </div>
+
+              {/* Save interests */}
+              <div className="flex items-center gap-3 h-7 mt-3">
+                {interestsDirty && (
+                  <button
+                    onClick={saveInterests}
+                    disabled={savingInterests}
+                    className="px-3 py-1.5 font-mono font-bold rounded transition-colors disabled:opacity-50"
+                    style={{
+                      fontSize: '11px',
+                      background: 'rgb(var(--accent))',
+                      color: 'rgb(var(--bg-base))',
+                    }}
+                  >
+                    {savingInterests ? tr('profile.saving') : tr('profile.save')}
+                  </button>
+                )}
+                {savedToast && !interestsDirty && (
+                  <span className="flex items-center gap-1 font-mono animate-fade-in"
+                    style={{ fontSize: '11px', color: 'rgb(var(--accent))' }}>
+                    <IconCheck size={13} /> {tr('profile.saved')}
+                  </span>
+                )}
               </div>
             </ProfileSection>
             )}
 
-            {/* ── 02 SUBSCRIPTION ── */}
+            {/* ── 02 ПОДПИСКА ── */}
             {activeSection === 'sec-subscription' && (
             <ProfileSection id="sec-subscription" number="02" title={tr('profile.section.subscription')}>
               <div
@@ -505,10 +650,10 @@ export default function ProfilePage() {
                 style={{
                   background: 'rgb(var(--bg-surface))',
                   border: isAlpha
-                    ? '1px solid rgb(var(--alpha) / 0.2)'
+                    ? '0.5px solid rgb(var(--alpha) / 0.2)'
                     : isPro
-                      ? '1px solid rgb(var(--accent) / 0.2)'
-                      : '1px solid rgb(var(--bg-border))',
+                      ? '0.5px solid rgb(var(--accent) / 0.2)'
+                      : '0.5px solid rgb(var(--bg-border))',
                   borderLeft: isAlpha
                     ? '3px solid rgb(var(--alpha))'
                     : isPro
@@ -608,11 +753,13 @@ export default function ProfilePage() {
                 ) : (
                   /* ─ FREE ─ */
                   <div>
-                    <div className="flex items-center gap-2 mb-3">
+                    <div className="flex items-center gap-2 mb-4">
                       <span className="text-sm font-mono font-bold text-text-primary">FREE PLAN</span>
                       <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-bg-elevated border border-bg-border text-text-muted">{tr('profile.current')}</span>
                     </div>
-                    <div className="flex flex-col gap-1 mb-4">
+
+                    {/* Feature list */}
+                    <div className="flex flex-col gap-1.5 mb-4">
                       {[
                         { ok: true,  key: 'profile.f_analyses' },
                         { ok: true,  key: 'profile.f_sports' },
@@ -621,14 +768,41 @@ export default function ProfilePage() {
                         { ok: false, key: 'profile.f_priority' },
                       ].map(({ ok, key }) => (
                         <div key={key} className="flex items-center gap-2">
-                          <span className={`text-[11px] font-bold ${ok ? 'text-accent' : 'text-text-muted/40'}`}>{ok ? '✓' : '✗'}</span>
-                          <span className={`text-[11px] font-mono ${ok ? 'text-text-secondary' : 'text-text-muted/50'}`}>
-                            {key === 'profile.f_analyses_unlimited' ? tr('profile.unlimited_analyses') : tr(key as Parameters<typeof tr>[0])}
-                          </span>
+                          {ok ? (
+                            <>
+                              <span className="text-[11px] font-bold text-accent">✓</span>
+                              <span className="text-[11px] font-mono text-text-secondary">
+                                {key === 'profile.f_analyses_unlimited' ? tr('profile.unlimited_analyses') : tr(key as Parameters<typeof tr>[0])}
+                              </span>
+                            </>
+                          ) : (
+                            <Tooltip text="Доступно в Pro">
+                              <div className="flex items-center gap-2 w-full">
+                                <span style={{ color: 'rgb(var(--text-muted))' }}>
+                                  <IconLock size={12} />
+                                </span>
+                                <span className="text-[11px] font-mono" style={{ color: 'rgb(var(--text-muted))' }}>
+                                  {key === 'profile.f_analyses_unlimited' ? tr('profile.unlimited_analyses') : tr(key as Parameters<typeof tr>[0])}
+                                </span>
+                                <span
+                                  className="ml-1 px-1.5 py-0.5 rounded-full font-mono font-bold"
+                                  style={{
+                                    fontSize: '8px',
+                                    background: 'rgb(var(--accent) / 0.12)',
+                                    color: 'rgb(var(--accent))',
+                                  }}
+                                >
+                                  Pro
+                                </span>
+                              </div>
+                            </Tooltip>
+                          )}
                         </div>
                       ))}
                     </div>
-                    <div className="mb-3">
+
+                    {/* Progress bar */}
+                    <div className="mb-1">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-[10px] font-mono text-text-muted">{tr('profile.today_analyses')}</span>
                         <span className="text-[10px] font-mono text-text-muted">{analysesToday} / 3</span>
@@ -640,6 +814,16 @@ export default function ProfilePage() {
                         />
                       </div>
                     </div>
+                    <p className="font-mono mb-4" style={{ fontSize: '9px', color: 'rgb(var(--text-muted))' }}>
+                      Лимит обновится в полночь по UTC
+                    </p>
+
+                    {/* Value proposition */}
+                    <p className="font-mono text-center mb-3" style={{ fontSize: '10px', color: 'rgb(var(--text-muted))' }}>
+                      Pro: безлимитные анализы · edge alerts · приоритет AI
+                    </p>
+
+                    {/* CTAs */}
                     <div className="flex flex-col gap-2">
                       <button
                         onClick={async () => {
@@ -647,8 +831,12 @@ export default function ProfilePage() {
                           try { await openCheckout(user.email, 'pro') } catch { /* */ } finally { setUpgradeLoading(false) }
                         }}
                         disabled={upgradeLoading}
-                        className="w-full py-2.5 bg-accent text-bg-base text-sm font-mono font-bold rounded-lg
-                          hover:bg-accent/90 transition-colors disabled:opacity-50"
+                        className="w-full py-2.5 font-mono font-semibold rounded-lg transition-colors disabled:opacity-50"
+                        style={{
+                          background: 'rgb(var(--accent))',
+                          color: 'rgb(var(--bg-base))',
+                          fontSize: '14px',
+                        }}
                       >
                         {upgradeLoading ? tr('profile.loading') : 'Upgrade to Pro — $14.99/mo'}
                       </button>
@@ -658,8 +846,13 @@ export default function ProfilePage() {
                           try { await openCheckout(user.email, 'alpha') } catch { /* */ } finally { setUpgradeLoading(false) }
                         }}
                         disabled={upgradeLoading}
-                        className="w-full py-2.5 border text-xs font-mono font-bold rounded-lg transition-colors disabled:opacity-50"
-                        style={{ color: 'rgb(var(--alpha))', borderColor: 'rgb(var(--alpha) / 0.3)', background: 'rgb(var(--alpha) / 0.05)' }}
+                        className="w-full py-2.5 font-mono font-bold rounded-lg transition-colors disabled:opacity-50"
+                        style={{
+                          fontSize: '12px',
+                          color: 'rgb(var(--accent))',
+                          border: '0.5px solid rgb(var(--accent))',
+                          background: 'transparent',
+                        }}
                       >
                         {upgradeLoading ? tr('profile.loading') : 'Upgrade to Alpha — $39.99/mo'}
                       </button>
@@ -670,89 +863,136 @@ export default function ProfilePage() {
             </ProfileSection>
             )}
 
-            {/* ── 03 STATS ── */}
+            {/* ── 03 СТАТИСТИКА ── */}
             {activeSection === 'sec-stats' && (
             <ProfileSection id="sec-stats" number="03" title={tr('profile.section.stats')}>
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl p-4 bg-bg-surface border border-bg-border">
-                  <p className="text-[9px] font-mono text-text-muted tracking-widest mb-1">{tr('profile.total_analyses')}</p>
-                  <p className="text-2xl font-mono font-bold text-text-primary">{totalAnalyses}</p>
+
+                {/* Total analyses */}
+                <div className="rounded-lg p-3" style={{ background: 'rgb(var(--bg-elevated))' }}>
+                  <p className="font-mono uppercase tracking-[0.1em] mb-1"
+                    style={{ fontSize: '8px', color: 'rgb(var(--text-muted))' }}>
+                    {tr('profile.total_analyses')}
+                  </p>
+                  {totalAnalyses > 0 ? (
+                    <p className="font-mono font-medium" style={{ fontSize: '22px', color: 'rgb(var(--text-primary))' }}>
+                      {totalAnalyses}
+                    </p>
+                  ) : (
+                    <>
+                      <p className="font-mono font-medium" style={{ fontSize: '16px', color: 'rgb(var(--text-muted))' }}>0</p>
+                      <a href="/markets" className="font-mono mt-1 block" style={{ fontSize: '9px', color: 'rgb(var(--accent))' }}>
+                        Начни первый анализ →
+                      </a>
+                    </>
+                  )}
                 </div>
-                <div className="rounded-xl p-4 bg-bg-surface border border-bg-border">
-                  <p className="text-[9px] font-mono text-text-muted tracking-widest mb-1">{tr('profile.current_streak')}</p>
-                  <p className="text-2xl font-mono font-bold text-text-primary">
-                    {streakDays > 0 ? <span className="flex items-center gap-1">{streakDays} <IconFlame size={16} color="var(--watch)" /></span> : '—'}
+
+                {/* Streak */}
+                <div className="rounded-lg p-3" style={{ background: 'rgb(var(--bg-elevated))' }}>
+                  <p className="font-mono uppercase tracking-[0.1em] mb-1"
+                    style={{ fontSize: '8px', color: 'rgb(var(--text-muted))' }}>
+                    СЕРИЯ ДНЕЙ
+                  </p>
+                  {streakDays > 0 ? (
+                    <p className="font-mono font-medium flex items-center gap-1"
+                      style={{ fontSize: '22px', color: 'rgb(var(--text-primary))' }}>
+                      {streakDays} <IconFlame size={16} color="var(--watch)" />
+                    </p>
+                  ) : (
+                    <>
+                      <p className="font-mono font-medium" style={{ fontSize: '16px', color: 'rgb(var(--text-muted))' }}>—</p>
+                      <p className="font-mono mt-1" style={{ fontSize: '9px', color: 'rgb(var(--text-muted))' }}>
+                        Появится после 1 анализа
+                      </p>
+                    </>
+                  )}
+                </div>
+
+                {/* Top topic */}
+                <div className="rounded-lg p-3" style={{ background: 'rgb(var(--bg-elevated))' }}>
+                  <p className="font-mono uppercase tracking-[0.1em] mb-1"
+                    style={{ fontSize: '8px', color: 'rgb(var(--text-muted))' }}>
+                    {tr('profile.top_topic')}
+                  </p>
+                  {profile.top_category ? (
+                    <p className="font-mono font-medium capitalize"
+                      style={{ fontSize: '20px', color: 'rgb(var(--text-primary))' }}>
+                      {profile.top_category.replace('_', ' ').toLowerCase()}
+                    </p>
+                  ) : (
+                    <>
+                      <p className="font-mono font-medium" style={{ fontSize: '16px', color: 'rgb(var(--text-muted))' }}>—</p>
+                      <p className="font-mono mt-1" style={{ fontSize: '9px', color: 'rgb(var(--text-muted))' }}>
+                        Формируется автоматически
+                      </p>
+                    </>
+                  )}
+                </div>
+
+                {/* Member since */}
+                <div className="rounded-lg p-3" style={{ background: 'rgb(var(--bg-elevated))' }}>
+                  <p className="font-mono uppercase tracking-[0.1em] mb-1"
+                    style={{ fontSize: '8px', color: 'rgb(var(--text-muted))' }}>
+                    ЧЛЕН СООБЩЕСТВА
+                  </p>
+                  <p className="font-mono font-medium" style={{ fontSize: '13px', color: 'rgb(var(--text-primary))' }}>
+                    {formatMemberSince(profile.created_at)}
+                  </p>
+                  <p className="font-mono mt-1" style={{ fontSize: '9px', color: 'rgb(var(--accent))' }}>
+                    Ранний участник ✓
                   </p>
                 </div>
-                <div className="rounded-xl p-4 bg-bg-surface border border-bg-border">
-                  <p className="text-[9px] font-mono text-text-muted tracking-widest mb-1">{tr('profile.top_topic')}</p>
-                  <p className="text-sm font-mono font-bold text-text-primary capitalize">
-                    {profile.top_category ? profile.top_category.replace('_', ' ').toLowerCase() : '—'}
-                  </p>
-                </div>
-                <div className="rounded-xl p-4 bg-bg-surface border border-bg-border">
-                  <p className="text-[9px] font-mono text-text-muted tracking-widest mb-1">{tr('profile.member_since')}</p>
-                  <p className="text-sm font-mono font-bold text-text-primary">{formatMemberSince(profile.created_at)}</p>
-                </div>
+
               </div>
             </ProfileSection>
             )}
 
-            {/* ── 04 SETTINGS ── */}
+            {/* ── 04 НАСТРОЙКИ ── */}
             {activeSection === 'sec-settings' && (
             <ProfileSection id="sec-settings" number="04" title={tr('profile.section.settings')}>
 
-              {/* DISPLAY */}
-              <SubSection label={tr('profile.settings.display')}>
+              {/* ОТОБРАЖЕНИЕ */}
+              <SubSection label={tr('profile.settings.display')} first>
                 <div className="flex flex-col gap-5">
                   {/* Theme */}
                   <div>
-                    <p className="text-[10px] font-mono text-text-muted tracking-wider mb-2">{tr('profile.theme')}</p>
-                    <div className="flex items-center gap-0.5 bg-bg-surface border border-bg-border rounded p-1 w-fit">
-                      {(['dark', 'light'] as const).map((t) => (
-                        <button
-                          key={t}
-                          onClick={() => { setTheme(t); savePreference({ theme: t }) }}
-                          className={`px-3 py-1 text-[10px] font-mono font-bold rounded transition-colors ${
-                            theme === t
-                              ? 'text-accent border border-accent/30 bg-accent/5'
-                              : 'text-text-muted hover:text-text-secondary'
-                          }`}
-                        >
-                          {t === 'dark'
-                            ? <span className="flex items-center gap-1.5"><IconMoon size={12} /> {tr('profile.dark')}</span>
-                            : <span className="flex items-center gap-1.5"><IconSun size={12} /> {tr('profile.light')}</span>}
-                        </button>
-                      ))}
-                    </div>
+                    <p className="font-mono tracking-wider mb-2"
+                      style={{ fontSize: '10px', color: 'rgb(var(--text-muted))' }}>
+                      {tr('profile.theme')}
+                    </p>
+                    <SegmentedControl
+                      value={theme}
+                      onChange={(t) => { setTheme(t as 'dark' | 'light'); savePreference({ theme: t as 'dark' | 'light' }) }}
+                      options={[
+                        { value: 'dark', label: <span className="flex items-center gap-1.5"><IconMoon size={11} /> {tr('profile.dark')}</span> },
+                        { value: 'light', label: <span className="flex items-center gap-1.5"><IconSun size={11} /> {tr('profile.light')}</span> },
+                      ]}
+                    />
                   </div>
 
                   {/* Language */}
                   <div>
-                    <p className="text-[10px] font-mono text-text-muted tracking-wider mb-2">{tr('profile.lang')}</p>
-                    <div className="flex items-center gap-0.5 bg-bg-surface border border-bg-border rounded p-1 w-fit">
-                      {['en', 'ru'].map((l) => (
-                        <button
-                          key={l}
-                          onClick={() => {
-                            setLanguage(l)
-                            savePreference({ language: l })
-                          }}
-                          className={`px-4 py-1 text-[10px] font-mono font-bold rounded transition-colors ${
-                            language === l
-                              ? 'text-accent border border-accent/30 bg-accent/5'
-                              : 'text-text-muted hover:text-text-secondary'
-                          }`}
-                        >
-                          {l.toUpperCase()}
-                        </button>
-                      ))}
-                    </div>
+                    <p className="font-mono tracking-wider mb-2"
+                      style={{ fontSize: '10px', color: 'rgb(var(--text-muted))' }}>
+                      {tr('profile.lang')}
+                    </p>
+                    <SegmentedControl
+                      value={language}
+                      onChange={(l) => { setLanguage(l); savePreference({ language: l }) }}
+                      options={[
+                        { value: 'en', label: 'EN' },
+                        { value: 'ru', label: 'RU' },
+                      ]}
+                    />
                   </div>
 
                   {/* Timezone */}
                   <div>
-                    <p className="text-[10px] font-mono text-text-muted tracking-wider mb-2">{tr('profile.timezone')}</p>
+                    <p className="font-mono tracking-wider mb-2"
+                      style={{ fontSize: '10px', color: 'rgb(var(--text-muted))' }}>
+                      {tr('profile.timezone')}
+                    </p>
                     <select
                       value={timezone}
                       onChange={(e) => {
@@ -760,8 +1000,11 @@ export default function ProfilePage() {
                         setTimezone(v)
                         savePreference({ timezone: v || undefined })
                       }}
-                      className="bg-bg-surface border border-bg-border rounded px-2 py-1.5 text-xs font-mono
-                        text-text-primary focus:outline-none focus:border-accent/40 transition-colors"
+                      className="rounded px-2 py-1.5 text-xs font-mono text-text-primary focus:outline-none transition-colors"
+                      style={{
+                        background: 'rgb(var(--bg-surface))',
+                        border: '0.5px solid rgb(var(--bg-border))',
+                      }}
                     >
                       <option value="">{tr('profile.tz_auto')} ({Intl.DateTimeFormat().resolvedOptions().timeZone})</option>
                       <option value="UTC">UTC</option>
@@ -781,35 +1024,46 @@ export default function ProfilePage() {
                 </div>
               </SubSection>
 
-              {/* DATA */}
+              {/* ДАННЫЕ */}
               <SubSection label={tr('profile.settings.data')}>
                 <div className="flex flex-col gap-5">
                   {/* Default platform */}
                   <div>
-                    <p className="text-[10px] font-mono text-text-muted tracking-wider mb-2">{tr('profile.default_platform')}</p>
-                    <div className="flex items-center gap-0.5 bg-bg-surface border border-bg-border rounded p-1 w-fit">
-                      {['all', 'polymarket', 'kalshi'].map((p) => (
-                        <button
-                          key={p}
-                          onClick={() => {
-                            setDefaultPlatform(p)
-                            savePreference({ default_platform: p })
-                          }}
-                          className={`px-3 py-1 text-[10px] font-mono font-bold rounded transition-colors ${
-                            defaultPlatform === p
-                              ? 'text-accent border border-accent/30 bg-accent/5'
-                              : 'text-text-muted hover:text-text-secondary'
-                          }`}
-                        >
-                          {p === 'all' ? 'All' : p === 'polymarket' ? 'Polymarket' : 'Kalshi'}
-                        </button>
-                      ))}
-                    </div>
+                    <p className="font-mono tracking-wider mb-2"
+                      style={{ fontSize: '10px', color: 'rgb(var(--text-muted))' }}>
+                      {tr('profile.default_platform')}
+                    </p>
+                    <SegmentedControl
+                      value={defaultPlatform}
+                      onChange={(p) => { setDefaultPlatform(p); savePreference({ default_platform: p }) }}
+                      options={[
+                        { value: 'all', label: 'All' },
+                        { value: 'polymarket', label: 'Polymarket' },
+                        { value: 'kalshi', label: 'Kalshi' },
+                      ]}
+                    />
                   </div>
 
                   {/* Resolution reminder */}
                   <div>
-                    <p className="text-[10px] font-mono text-text-muted tracking-wider mb-2">{tr('profile.resolution_reminder')}</p>
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <p className="font-mono tracking-wider"
+                        style={{ fontSize: '10px', color: 'rgb(var(--text-muted))' }}>
+                        {tr('profile.resolution_reminder')}
+                      </p>
+                      <Tooltip text="Резолюция — закрытие рынка предсказания. Мы напомним тебе заранее.">
+                        <span
+                          className="flex items-center justify-center w-3.5 h-3.5 rounded-full font-mono cursor-default"
+                          style={{
+                            fontSize: '9px',
+                            color: 'rgb(var(--text-muted))',
+                            border: '0.5px solid rgb(var(--text-muted) / 0.5)',
+                          }}
+                        >
+                          ?
+                        </span>
+                      </Tooltip>
+                    </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-mono text-text-secondary">{tr('profile.remind_before')}</span>
                       <select
@@ -819,8 +1073,11 @@ export default function ProfilePage() {
                           setResolutionDays(v)
                           savePreference({ alert_resolution_days: v })
                         }}
-                        className="bg-bg-surface border border-bg-border rounded px-2 py-1 text-xs font-mono
-                          text-text-primary focus:outline-none focus:border-accent/40 transition-colors"
+                        className="rounded px-2 py-1 text-xs font-mono text-text-primary focus:outline-none transition-colors"
+                        style={{
+                          background: 'rgb(var(--bg-surface))',
+                          border: '0.5px solid rgb(var(--bg-border))',
+                        }}
                       >
                         <option value={3}>{tr('profile.days_3')}</option>
                         <option value={7}>{tr('profile.days_7')}</option>
@@ -831,18 +1088,35 @@ export default function ProfilePage() {
                 </div>
               </SubSection>
 
-              {/* NOTIFICATIONS */}
+              {/* УВЕДОМЛЕНИЯ */}
               <SubSection label={tr('profile.notifications')} last>
-                <div
-                  className="rounded-xl overflow-hidden"
-                  style={{ border: '1px solid rgb(var(--bg-border))' }}
-                >
-                  {/* Edge alerts */}
-                  <div className="flex items-center justify-between px-4 py-3.5" style={{ borderBottom: '1px solid rgb(var(--bg-border))' }}>
+                <div className="rounded-xl overflow-hidden"
+                  style={{ border: '0.5px solid rgb(var(--bg-border))' }}>
+
+                  {/* Edge alerts — Pro only */}
+                  <div className="flex items-center justify-between px-4 py-3.5"
+                    style={{ borderBottom: '0.5px solid rgb(var(--bg-border))' }}>
                     <div>
-                      <p className="text-sm font-mono text-text-primary">{tr('profile.edge_alerts')}</p>
-                      <p className="text-[10px] font-mono text-text-muted mt-0.5">{tr('profile.edge_alerts_desc')}</p>
-                      {!isPro && <p className="text-[10px] font-mono mt-0.5 text-accent/40">{tr('profile.pro_only')}</p>}
+                      <div className="flex items-center gap-2">
+                        <p className="font-mono" style={{ fontSize: '11px', color: 'rgb(var(--text-secondary))' }}>
+                          {tr('profile.edge_alerts')}
+                        </p>
+                        {!isPro && (
+                          <span
+                            className="px-1.5 py-0.5 rounded-full font-mono font-bold"
+                            style={{
+                              fontSize: '8px',
+                              background: 'rgb(var(--watch) / 0.15)',
+                              color: 'rgb(var(--watch))',
+                            }}
+                          >
+                            Только Pro
+                          </span>
+                        )}
+                      </div>
+                      <p className="font-mono mt-0.5" style={{ fontSize: '10px', color: 'rgb(var(--text-muted))' }}>
+                        {tr('profile.edge_alerts_desc')}
+                      </p>
                     </div>
                     <Toggle
                       enabled={notifEdge && isPro}
@@ -857,10 +1131,15 @@ export default function ProfilePage() {
                   </div>
 
                   {/* Resolution reminders */}
-                  <div className="flex items-center justify-between px-4 py-3.5" style={{ borderBottom: '1px solid rgb(var(--bg-border))' }}>
+                  <div className="flex items-center justify-between px-4 py-3.5"
+                    style={{ borderBottom: '0.5px solid rgb(var(--bg-border))' }}>
                     <div>
-                      <p className="text-sm font-mono text-text-primary">{tr('profile.resolution_reminders')}</p>
-                      <p className="text-[10px] font-mono text-text-muted mt-0.5">{tr('profile.resolution_reminders_desc')}</p>
+                      <p className="font-mono" style={{ fontSize: '11px', color: 'rgb(var(--text-secondary))' }}>
+                        {tr('profile.resolution_reminders')}
+                      </p>
+                      <p className="font-mono mt-0.5" style={{ fontSize: '10px', color: 'rgb(var(--text-muted))' }}>
+                        {tr('profile.resolution_reminders_desc')}
+                      </p>
                     </div>
                     <Toggle
                       enabled={notifResolution}
@@ -875,8 +1154,12 @@ export default function ProfilePage() {
                   {/* Weekly digest */}
                   <div className="flex items-center justify-between px-4 py-3.5">
                     <div>
-                      <p className="text-sm font-mono text-text-primary">{tr('profile.weekly_digest')}</p>
-                      <p className="text-[10px] font-mono text-text-muted mt-0.5">{tr('profile.weekly_digest_desc')}</p>
+                      <p className="font-mono" style={{ fontSize: '11px', color: 'rgb(var(--text-secondary))' }}>
+                        {tr('profile.weekly_digest')}
+                      </p>
+                      <p className="font-mono mt-0.5" style={{ fontSize: '10px', color: 'rgb(var(--text-muted))' }}>
+                        {tr('profile.weekly_digest_desc')}
+                      </p>
                     </div>
                     <Toggle
                       enabled={notifDigest}
@@ -892,14 +1175,28 @@ export default function ProfilePage() {
             </ProfileSection>
             )}
 
-            {/* ── 05 ACCOUNT & SECURITY ── */}
+            {/* ── 05 АККАУНТ И БЕЗОПАСНОСТЬ ── */}
             {activeSection === 'sec-account' && (
-            <ProfileSection id="sec-account" number="05" title={tr('profile.section.account')}>
+            <div id="sec-account" className="max-w-[640px] flex flex-col gap-4">
+              {/* Section header */}
+              <div>
+                <span className="font-mono tracking-[0.1em]"
+                  style={{ fontSize: '10px', color: 'rgb(var(--text-muted))' }}>
+                  05 / {tr('profile.section.account')}
+                </span>
+              </div>
 
-              {/* LOGIN & ACCESS */}
-              <SubSection label={tr('profile.account.login')}>
-                <div className="flex flex-col gap-4">
-                  <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'rgb(var(--bg-border))' }}>
+              {/* Main security card */}
+              <div className="rounded-xl p-5 sm:p-6"
+                style={{
+                  border: '0.5px solid rgb(var(--bg-border))',
+                  background: 'rgb(var(--bg-surface) / 0.4)',
+                }}>
+
+                {/* Subsection 1: ВХОД И ДОСТУП */}
+                <SubSection label={tr('profile.account.login')} first>
+                  <div className="rounded-xl overflow-hidden"
+                    style={{ border: '0.5px solid rgb(var(--bg-border))' }}>
                     <AccountRow
                       label={tr('profile.change_email')}
                       hint={email}
@@ -910,19 +1207,22 @@ export default function ProfilePage() {
                       onClick={() => setShowPassword(true)}
                     />
                   </div>
+                </SubSection>
+
+                {/* Subsection 2: ДВУХФАКТОРНАЯ АУТЕНТИФИКАЦИЯ */}
+                <SubSection label="ДВУХФАКТОРНАЯ АУТЕНТИФИКАЦИЯ">
                   <TwoFactorSection />
-                </div>
-              </SubSection>
+                </SubSection>
 
-              {/* LINKED ACCOUNTS */}
-              <SubSection label={tr('profile.linked_accounts')}>
-                <LinkedIdentities />
-              </SubSection>
+                {/* Subsection 3: ПРИВЯЗАННЫЕ АККАУНТЫ */}
+                <SubSection label={tr('profile.linked_accounts')}>
+                  <LinkedIdentities />
+                </SubSection>
 
-              {/* DATA & EXIT */}
-              <SubSection label={tr('profile.account.data_exit')} last>
-                <div className="flex flex-col gap-4">
-                  <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'rgb(var(--bg-border))' }}>
+                {/* Subsection 4: ДАННЫЕ И ВЫХОД */}
+                <SubSection label={tr('profile.account.data_exit')} last>
+                  <div className="rounded-xl overflow-hidden"
+                    style={{ border: '0.5px solid rgb(var(--bg-border))' }}>
                     <AccountRow
                       label={tr('profile.export_data')}
                       onClick={handleExport}
@@ -939,28 +1239,36 @@ export default function ProfilePage() {
                     <AccountRow
                       label={tr('profile.sign_out')}
                       onClick={handleSignOut}
-                      tone="warn"
                     />
                   </div>
+                </SubSection>
+              </div>
 
-                  <div
-                    className="rounded-xl border overflow-hidden"
-                    style={{ borderColor: 'rgb(var(--danger) / 0.25)', background: 'rgb(var(--danger) / 0.04)' }}
-                  >
-                    <AccountRow
-                      label={tr('profile.delete_account')}
-                      hint={tr('profile.delete_account_hint')}
-                      onClick={() => setShowDelete(true)}
-                      tone="danger"
-                    />
-                  </div>
+              {/* Danger zone — separate card */}
+              <div className="rounded-xl overflow-hidden"
+                style={{
+                  border: '0.5px solid rgb(var(--danger) / 0.4)',
+                  background: 'rgb(var(--danger) / 0.03)',
+                }}>
+                <div className="px-5 pt-4 pb-2">
+                  <p className="font-mono uppercase tracking-[0.12em]"
+                    style={{ fontSize: '9px', color: 'rgb(var(--danger))' }}>
+                    ОПАСНАЯ ЗОНА
+                  </p>
                 </div>
-              </SubSection>
-            </ProfileSection>
+                {/* TODO: Clicking "Удалить аккаунт" should require user to type their email in a confirmation modal before proceeding */}
+                <AccountRow
+                  label={tr('profile.delete_account')}
+                  hint={tr('profile.delete_account_hint')}
+                  onClick={() => setShowDelete(true)}
+                  tone="danger"
+                />
+              </div>
+            </div>
             )}
 
             {/* ── Legal footer ── */}
-            <div className="flex gap-4 flex-wrap pt-1 px-1">
+            <div className="flex gap-4 flex-wrap pt-1 px-1 max-w-[640px]">
               <a href="/privacy" className="text-[11px] font-mono text-text-muted hover:text-text-secondary transition-colors">
                 {tr('profile.privacy')}
               </a>
@@ -1006,33 +1314,33 @@ function AccountRow({
   success?: string
   tone?: 'default' | 'warn' | 'danger'
 }) {
-  const color =
-    tone === 'danger' ? 'rgb(var(--danger))'
-    : tone === 'warn' ? 'rgb(var(--danger))'
-    : 'rgb(var(--text-primary))'
+  const color = tone === 'danger' ? 'rgb(var(--danger))' : 'rgb(var(--text-primary))'
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      className="group w-full flex items-center justify-between gap-3 px-4 py-3 text-left
+      className="group w-full flex items-center justify-between gap-3 px-4 text-left
         transition-colors disabled:opacity-50 disabled:cursor-not-allowed
         hover:bg-bg-surface [&:not(:last-child)]:border-b"
-      style={{ borderColor: 'rgb(var(--bg-border))' }}
+      style={{
+        padding: '9px 16px',
+        borderColor: 'rgb(var(--bg-border))',
+      }}
     >
       <div className="min-w-0">
-        <p className="text-sm font-mono truncate" style={{ color }}>{label}</p>
+        <p className="font-mono truncate" style={{ fontSize: '11px', color }}>{label}</p>
         {hint && (
-          <p className="text-[10px] font-mono text-text-muted mt-0.5 truncate">{hint}</p>
+          <p className="font-mono mt-0.5 truncate" style={{ fontSize: '10px', color: 'rgb(var(--text-muted))' }}>{hint}</p>
         )}
       </div>
-      <span className="text-[11px] font-mono shrink-0" style={{ color: success ? 'rgb(var(--accent))' : 'rgb(var(--text-muted))' }}>
+      <span className="font-mono shrink-0" style={{ fontSize: '10px', color: success ? 'rgb(var(--accent))' : 'rgb(var(--text-muted))' }}>
         {loading ? '…' : success ? success : '›'}
       </span>
     </button>
   )
 }
 
-// ── Toggle component ──────────────────────────────────────────────────────────
+// ── Toggle ────────────────────────────────────────────────────────────────────
 
 function Toggle({ enabled, onToggle, disabled = false }: { enabled: boolean; onToggle: () => void; disabled?: boolean }) {
   return (
@@ -1040,8 +1348,9 @@ function Toggle({ enabled, onToggle, disabled = false }: { enabled: boolean; onT
       onClick={onToggle}
       disabled={disabled && !enabled}
       className={`relative w-10 h-5 rounded-full transition-colors shrink-0 ${
-        disabled ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'
+        disabled ? 'cursor-not-allowed' : 'cursor-pointer'
       } ${enabled ? 'bg-accent/30 border border-accent/50' : 'bg-bg-elevated border border-bg-border'}`}
+      style={{ opacity: disabled ? 0.4 : 1 }}
     >
       <div
         className={`absolute top-1 w-3 h-3 rounded-full transition-all ${

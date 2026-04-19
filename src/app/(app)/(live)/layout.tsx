@@ -10,13 +10,19 @@ import { LiveHero } from '@/components/LiveHero'
 import { LogoFootball, LogoBasketball, LogoTennis, LogoMMA, LogoCS2, LogoDota2 } from '@/components/icons/games'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+function isListPage(pathname: string): boolean {
+  const segs = pathname.split('/').filter(Boolean)
+  // list pages: /sport/<id>, /cybersport/<id>
+  if (segs.length === 2 && (segs[0] === 'sport' || segs[0] === 'cybersport')) return true
+  return false
+}
+
 function getDiscipline(pathname: string): Discipline {
   if (pathname.startsWith('/sport/football'))    return 'football'
   if (pathname.startsWith('/sport/basketball'))  return 'basketball'
   if (pathname.startsWith('/sport/tennis'))      return 'tennis'
   if (pathname.startsWith('/sport/mma'))         return 'mma'
   if (pathname.startsWith('/cybersport/dota2'))    return 'dota2'
-  if (pathname.startsWith('/cybersport/valorant')) return 'valorant'
   if (pathname.startsWith('/cybersport'))          return 'cs2'
   return 'football'
 }
@@ -144,6 +150,7 @@ function LiveSidebar({
               >
                 <button
                   onClick={() => handleLeagueFilter(l)}
+                  title={l.name}
                   className={`flex-1 flex items-center gap-2 px-3.5 py-[7px] text-left min-w-0
                     ${isActive ? '' : 'hover:text-text-secondary'}`}
                 >
@@ -257,7 +264,7 @@ function LiveLayoutInner({ children }: { children: React.ReactNode }) {
           )}
 
           <div className="max-w-[1280px] mx-auto w-full pt-3 sm:pt-4">
-            {!hideHero && (
+            {!hideHero && isListPage(pathname) && (
               <div style={{ position: 'sticky', top: 12, zIndex: 20 }}>
                 <div className="px-3 sm:px-4 md:px-6">
                   <LiveHero discipline={discipline} />
