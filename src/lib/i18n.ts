@@ -44,6 +44,34 @@ const translations = {
   'prediction_event_card.vol_24h':           { en: '24H',                   ru: '24Ч' },
   'prediction_event_card.final_vol':         { en: 'FINAL VOL',             ru: 'ИТОГО' },
 
+  // ── Shared PRX / match card ──────────────────────────────────────────────────
+  'card.prx':           { en: 'PRX',                  ru: 'PRX' },
+  'card.prx_detected':  { en: 'PRX DETECTED',         ru: 'PRX НАЙДЕН' },
+  'card.prx_upgrade':   { en: 'UPGRADE TO REVEAL',    ru: 'ОТКРЫТЬ В PRO' },
+  'card.pro_cta':       { en: 'PRO ↗',                ru: 'PRO ↗' },
+  'card.win_tag':       { en: 'WIN',                  ru: 'ПОБЕДА' },
+  'card.final':         { en: 'FINAL',                ru: 'ФИНАЛ' },
+  'card.resolved_yes':  { en: 'RESOLVED YES',         ru: 'РАЗРЕШЁН ДА' },
+  'card.resolved_no':   { en: 'RESOLVED NO',          ru: 'РАЗРЕШЁН НЕТ' },
+
+  // ── Sport match card ─────────────────────────────────────────────────────────
+  'sport_card.home':        { en: 'HOME',             ru: 'ДОМА' },
+  'sport_card.draw':        { en: 'DRAW',             ru: 'НИЧЬЯ' },
+  'sport_card.away':        { en: 'AWAY',             ru: 'В ГОСТЯХ' },
+  'sport_card.in_minutes':  { en: 'in {n}m',          ru: 'через {n}м' },
+  'sport_card.xg':          { en: 'xG',               ru: 'xG' },
+  'sport_card.shots':       { en: 'SHOTS',            ru: 'УДАРЫ' },
+  'sport_card.h2h':         { en: 'H2H',              ru: 'ЛИЧНЫЕ' },
+  'sport_card.form':        { en: 'FORM',             ru: 'ФОРМА' },
+
+  // ── Esports match card ───────────────────────────────────────────────────────
+  'esports_card.bo':               { en: 'BO{n}',             ru: 'BO{n}' },
+  'esports_card.net_lead':         { en: '+{delta} NET',      ru: '+{delta} NET' },
+  'esports_card.map_live_suffix':  { en: '(LIVE)',            ru: '(СЕЙЧАС)' },
+  'esports_card.kills':            { en: 'KILLS',             ru: 'УБ.' },
+  'esports_card.towers':           { en: 'TOWERS',            ru: 'БАШНИ' },
+  'esports_card.h2h':              { en: 'H2H {a}–{b} {team}', ru: 'H2H {a}–{b} {team}' },
+
   // ── Sport ────────────────────────────────────────────────────────────────────
   'sport.title':           { en: 'Sport',           ru: 'Спорт' },
   'sport.upcoming':        { en: 'Upcoming',        ru: 'Предстоящие' },
