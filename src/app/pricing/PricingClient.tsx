@@ -181,7 +181,7 @@ export default function PricingClient() {
         )}
 
         {/* Plan cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-20">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-24">
           {PLANS.map((plan) => {
             const isCurrentPlan = currentPlan === plan.id
             const isLoading = loadingPlan === plan.id
@@ -305,6 +305,95 @@ export default function PricingClient() {
               </div>
             )
           })}
+        </div>
+
+        {/* Compare plans table */}
+        <div className="mb-24">
+          <h2
+            className="font-bold text-center mb-10"
+            style={{ fontSize: '20px', color: 'rgb(var(--text-primary))' }}
+          >
+            {tr('pricing.compare.title')}
+          </h2>
+          <div
+            className="overflow-x-auto rounded-xl"
+            style={{ border: '1px solid rgb(var(--bg-border))', background: 'rgb(var(--bg-surface))' }}
+          >
+            <table className="w-full text-xs font-mono" style={{ borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid rgb(var(--bg-border))' }}>
+                  <th
+                    className="text-left font-bold tracking-wider"
+                    style={{
+                      fontSize: '10px',
+                      padding: '14px 20px',
+                      color: 'rgb(var(--text-muted))',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    {tr('pricing.compare.feature')}
+                  </th>
+                  {(['Free', 'Pro', 'Alpha'] as const).map((name) => (
+                    <th
+                      key={name}
+                      className="text-center font-bold tracking-wider"
+                      style={{
+                        fontSize: '10px',
+                        padding: '14px 20px',
+                        color: name === 'Pro' ? 'rgb(var(--accent))' : 'rgb(var(--text-muted))',
+                        textTransform: 'uppercase',
+                        minWidth: '90px',
+                      }}
+                    >
+                      {name}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { label: tr('pricing.compare.row.markets'),  free: true,  pro: true,  alpha: true  },
+                  { label: tr('pricing.compare.row.alerts'),   free: false, pro: true,  alpha: true  },
+                  { label: tr('pricing.compare.row.ai'),       free: false, pro: true,  alpha: true  },
+                  { label: tr('pricing.compare.row.ws'),       free: false, pro: true,  alpha: true  },
+                  { label: tr('pricing.compare.row.edge25'),   free: false, pro: false, alpha: true  },
+                  { label: tr('pricing.compare.row.export'),   free: false, pro: false, alpha: true  },
+                  { label: tr('pricing.compare.row.priority'), free: false, pro: false, alpha: true  },
+                ].map((row, i, arr) => (
+                  <tr
+                    key={row.label}
+                    style={{
+                      borderBottom: i === arr.length - 1 ? 'none' : '1px solid rgb(var(--bg-border) / 0.6)',
+                    }}
+                  >
+                    <td
+                      style={{
+                        padding: '14px 20px',
+                        color: 'rgb(var(--text-secondary))',
+                        fontFamily: 'Inter, ui-sans-serif, system-ui',
+                        fontSize: '13px',
+                      }}
+                    >
+                      {row.label}
+                    </td>
+                    {(['free', 'pro', 'alpha'] as const).map((plan) => (
+                      <td
+                        key={plan}
+                        className="text-center"
+                        style={{
+                          padding: '14px 20px',
+                          color: row[plan] ? 'rgb(var(--accent))' : 'rgb(var(--text-muted))',
+                          fontSize: '15px',
+                        }}
+                      >
+                        {row[plan] ? '✓' : '—'}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* FAQ */}
