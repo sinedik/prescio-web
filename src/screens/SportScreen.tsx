@@ -23,7 +23,7 @@ const SportEventPage = dynamic(() => import('./SportEventPage'), {
   ),
 })
 
-import { mix } from '../components/disciplines'
+import { EmptyHint } from '../components/EmptyHint'
 import { useLiveLayout } from '../contexts/LiveLayoutContext'
 import { useLang } from '../contexts/LanguageContext'
 import { t as tFn, useT } from '../lib/i18n'
@@ -495,16 +495,11 @@ export function SportScreen({ initialSport, eventId, initialEvents, initialEvent
             )}
 
             {!showSkeleton && filteredEvents.length === 0 && events.length > 0 && (
-              <div className="flex flex-col items-center justify-center py-16 text-center">
-                <p className="text-sm font-mono text-text-muted/60">{t('sport.no_matches_date')}</p>
-                <button
-                  onClick={() => setSelectedDate(today)}
-                  className="mt-3 text-[10px] font-mono px-3 py-1.5 rounded border transition-all"
-                  style={{ borderColor: mix(accent, 27), color: accent }}
-                >
-                  {t('sport.back_to_today')}
-                </button>
-              </div>
+              <EmptyHint
+                icon="calendar"
+                label={t('sport.no_matches_date')}
+                action={{ label: t('sport.back_to_today'), onClick: () => setSelectedDate(today) }}
+              />
             )}
 
             {!showSkeleton && filteredEvents.length > 0 && (

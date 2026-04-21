@@ -13,6 +13,7 @@ import { SearchOverlay } from './search/SearchOverlay'
 import { useLang } from '../contexts/LanguageContext'
 import { useT } from '../lib/i18n'
 import { BottomTabBar } from './BottomTabBar'
+import { EmptyHint } from './EmptyHint'
 
 interface Alert {
   id: string
@@ -337,9 +338,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   </div>
 
                   {alerts.length === 0 ? (
-                    <div className="px-4 py-6 text-center">
-                      <p className="text-xs font-mono" style={{ color: 'rgb(var(--text-muted))' }}>No alerts yet</p>
-                    </div>
+                    <EmptyHint size="sm" icon="bell" label="No alerts yet" />
                   ) : (
                     <div className="max-h-72 overflow-y-auto">
                       {alerts.slice(0, 20).map((alert) => {

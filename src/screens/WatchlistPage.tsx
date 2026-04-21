@@ -8,6 +8,7 @@ import { removeFromWatchlistAction } from '../actions/watchlist'
 import { useAuthContext } from '../contexts/AuthContext'
 import { useLang } from '../contexts/LanguageContext'
 import { useT } from '../lib/i18n'
+import { EmptyHint } from '../components/EmptyHint'
 
 type WatchlistTab = 'events' | 'markets'
 
@@ -32,33 +33,6 @@ function formatUpdated(dateStr: string): string {
   return `${Math.floor(hrs / 24)}d ago`
 }
 
-function EmptyState({ tab }: { tab: WatchlistTab }) {
-  const router = useRouter()
-  const { lang } = useLang()
-  const tr = useT(lang)
-  return (
-    <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="w-10 h-10 rounded-xl bg-bg-surface border border-bg-border flex items-center justify-center mb-4">
-        <svg className="w-5 h-5 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-        </svg>
-      </div>
-      <p className="text-sm font-mono text-text-secondary mb-1">
-        {tab === 'events' ? tr('watchlist.empty_events') : tr('watchlist.empty_markets')}
-      </p>
-      <p className="text-xs font-mono text-text-muted mb-5">
-        {tab === 'events' ? tr('watchlist.browse_feed') : tr('watchlist.open_market')}
-      </p>
-      <button
-        onClick={() => router.push('/markets')}
-        className="px-4 py-2 bg-accent/10 border border-accent/30 text-accent text-xs font-mono font-bold rounded hover:bg-accent/20 transition-colors"
-      >
-        {tr('watchlist.browse_markets')}
-      </button>
-    </div>
-  )
-}
 
 export default function WatchlistPage() {
   usePageTitle('Watchlist')
@@ -161,7 +135,14 @@ export default function WatchlistPage() {
       )}
 
       {/* Empty */}
-      {!loading && items.length === 0 && <EmptyState tab={tab} />}
+      {!loading && items.length === 0 && (
+        <EmptyHint
+          icon="eye"
+          label={tab === 'events' ? tr('watchlist.empty_events') : tr('watchlist.empty_markets')}
+          sublabel={tab === 'events' ? tr('watchlist.browse_feed') : tr('watchlist.open_market')}
+          action={{ label: tr('watchlist.browse_markets'), onClick: () => router.push('/markets') }}
+        />
+      )}
 
       {/* Items */}
       {!loading && items.length > 0 && (
