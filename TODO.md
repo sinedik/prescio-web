@@ -34,6 +34,21 @@ API / Market type, фронт форматирует в проценты для 
   шкале).
 - Для Esports: AI signal отсутствует полностью, требуется отдельная модель.
 
+**Фронт готов к приёму (Match Detail):** `SportEvent.ai` объявлен опциональным
+объектом в `src/types/index.ts`:
+```ts
+ai?: {
+  edge: number | null        // pp (threshold PRX_THRESHOLD=2)
+  confidence: number | null  // 0..1
+  fairProb: number | null    // 0..1
+  factors?: string[] | null  // ['home_rest_edge','h2h_dominance',...]
+  reasoning?: string | null  // "Home rest 7d vs away 3d, …"
+} | null
+```
+`SportMatchPrxSignal` блок на странице матча читает этот объект и
+graceful-degrade (не рендерится) до появления данных. Backend: заполнять
+`ai` в `/sport/events/:id` и `/sport/events/:id/full`.
+
 ### 4. Live win-probability time-series для sparkline
 Компоненты SportMatchCard / EsportsMatchCard предусматривают слот для
 sparkline в live-режиме (тренд вероятности команды A за последние ~15 минут),
@@ -54,3 +69,25 @@ EsportsMatchCard предусматривает показ importance stars (1�
 **Задача:** либо подключить GRID tier metadata, либо завести manual mapping
 major турниров (LAN/Tier 1/2/3) до появления данных. До тех пор stars-блок
 в карточках не рендерится, чтобы не показывать фейковые сигналы.
+
+### 6. Match Detail: probability time-series endpoint
+`SportMatchOddsMovement` (commit 5) отрисовывает движение линий из уже
+существующего `sportApi.getOddsHistory(eventId)` (реальный Tier 1).
+
+Дополнительно, для compact win-probability sparkline в hero/context хочется
+исторический ряд имплицитных вероятностей (derived из odds + AI). Сейчас
+фронт использует scaffold-хук `useProbabilityHistory` (`src/hooks/useProbabilityHistory.ts`),
+возвращающий `[]` до появления бэкенда.
+
+**Задача:** поднять endpoint `/sport/events/:id/probability-history`,
+возвращающий `[{ t, home, draw?, away }]` (значения 0..1, сумма = 1),
+чтобы хук получил реальные данные без изменения компонентов.
+
+### 7. Match Detail: factor tags для PRX reasoning
+В Commit 3 `SportMatchPrxSignal` рендерит `event.ai.factors[]` как чипы
+("home_rest_edge", "h2h_dominance", "injury_gap"). Пока бэкенд не отдаёт
+этот массив — блок просто не показывает чипы (рендерит только edge/conf/fairProb).
+
+**Задача:** наполнить `event.ai.factors` в том же эндпоинте что и `ai.edge`.
+Минимальный контракт — массив коротких slug-строк (snake_case, ≤3 слова),
+i18n резолвится на фронте.

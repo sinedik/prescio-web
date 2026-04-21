@@ -47,6 +47,15 @@ export interface SportEvent {
   raw_data?: Record<string, unknown> | null
   sport_odds?: SportOdds[]
   linked_prediction_markets?: { id: string; source_id: string; source_name: string; title: string }[]
+  // AI edge enrichment — scaffolded for PRX integration (see TODO.md entry 3).
+  // Backend will populate this once sport AI signal model is ready.
+  ai?: {
+    edge: number | null        // pp units (threshold PRX_THRESHOLD=2)
+    confidence: number | null  // 0..1
+    fairProb: number | null    // 0..1 — AI-derived fair probability for the aligned side
+    factors?: string[] | null  // short tags driving the edge
+    reasoning?: string | null  // one-sentence rationale
+  } | null
 }
 
 export interface SportOdds {
