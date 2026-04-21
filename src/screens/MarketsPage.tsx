@@ -5,7 +5,7 @@ import { usePageTitle } from '../hooks/usePageTitle'
 import { useRouter } from 'next/navigation'
 import { stashMarketNavItem } from '../lib/marketNavCache'
 import MarketCard from '../components/markets/MarketCard'
-import EventCard from '../components/markets/EventCard'
+import PredictionEventCard from '../components/markets/PredictionEventCard'
 import MarketSkeleton from '../components/markets/MarketSkeleton'
 const PaywallModal = dynamic(() => import('../components/PaywallModal'), { ssr: false })
 import { api } from '../lib/api'
@@ -416,7 +416,7 @@ export default function MarketsPage({ initialMarkets }: { initialMarkets?: Marke
           {groupedAndSorted.map((g, i) => {
             if (g.markets.length > 1 && g.eventId) {
               return (
-                <EventCard
+                <PredictionEventCard
                   key={g.key}
                   markets={g.markets}
                   rank={i}

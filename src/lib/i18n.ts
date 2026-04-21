@@ -34,6 +34,16 @@ const translations = {
   'market_card.resolved_no':  { en: 'RESOLVED · NO',     ru: 'РЕЗОЛВ · НЕТ' },
   'market_card.analyzing':    { en: 'ANALYZING…',        ru: 'АНАЛИЗ…' },
 
+  // ── Prediction event card (multi-outcome) ────────────────────────────────────
+  'prediction_event_card.outcomes_count':    { en: 'OUTCOMES',              ru: 'ИСХОДОВ' },
+  'prediction_event_card.more_outcomes':     { en: 'more outcomes',         ru: 'ещё исходов' },
+  'prediction_event_card.resolved_outcomes': { en: 'resolved outcomes',     ru: 'других исходов' },
+  'prediction_event_card.edge_prefix':       { en: 'EDGE',                  ru: 'ЭДЖ' },
+  'prediction_event_card.win_tag':           { en: 'WIN',                   ru: 'ПОБЕДА' },
+  'prediction_event_card.vol':               { en: 'VOL',                   ru: 'ОБЪЁМ' },
+  'prediction_event_card.vol_24h':           { en: '24H',                   ru: '24Ч' },
+  'prediction_event_card.final_vol':         { en: 'FINAL VOL',             ru: 'ИТОГО' },
+
   // ── Sport ────────────────────────────────────────────────────────────────────
   'sport.title':           { en: 'Sport',           ru: 'Спорт' },
   'sport.upcoming':        { en: 'Upcoming',        ru: 'Предстоящие' },
