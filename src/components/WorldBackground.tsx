@@ -1,204 +1,11 @@
 'use client'
 import React from 'react'
-import { TennisCourtArt } from './artwork/TennisCourtArt'
 import { ACCENT, mix, type Discipline } from './disciplines'
 
 export { ACCENT, type Discipline }
 
-// ─── Per-discipline SVG artwork ───────────────────────────────────────────────
-// viewBox 0 0 1440 900, artwork concentrated in top ~450px, fades below.
-
-function FootballArt(_: { a: string }) {
-  return (
-    <>
-      {/* Dark — original SVG (visible in dark theme via CSS toggle) */}
-      <g className="football-art-dark">
-        <image href="/football-background.svg" x="0" y="0" width="1440" height="900" preserveAspectRatio="xMidYMid slice" opacity="0.65" />
-      </g>
-
-      {/* Light — perspective stadium mirroring dark SVG geometry exactly.
-          Nested viewBox 680x430 matches /football-background.svg, so every
-          coordinate (stands, spotlights, field, markings) lines up 1:1 with
-          the dark variant — only the palette swaps to warm cream + dark amber. */}
-      <g className="football-art-light">
-        <svg x="0" y="0" width="1440" height="900" viewBox="0 0 680 430" preserveAspectRatio="xMidYMid slice">
-          <defs>
-            <radialGradient id="fLightStad" cx="50%" cy="0%" r="75%">
-              <stop offset="0%"   stopColor="#f6ecce"/>
-              <stop offset="45%"  stopColor="#f0e3bf"/>
-              <stop offset="100%" stopColor="#e8dcab"/>
-            </radialGradient>
-            <radialGradient id="fLightFglow" cx="340" cy="295" r="260" gradientUnits="userSpaceOnUse">
-              <stop offset="0%"   stopColor="#8B6914" stopOpacity="0.10"/>
-              <stop offset="100%" stopColor="#8B6914" stopOpacity="0"/>
-            </radialGradient>
-            <linearGradient id="fLightSky" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%"   stopColor="#f8f1d8"/>
-              <stop offset="100%" stopColor="#f8f1d8" stopOpacity="0"/>
-            </linearGradient>
-            <linearGradient id="fLightBot" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%"   stopColor="#f4ebd5" stopOpacity="0"/>
-              <stop offset="100%" stopColor="#f4ebd5" stopOpacity="0.7"/>
-            </linearGradient>
-          </defs>
-
-          {/* Sky base */}
-          <rect width="680" height="420" fill="#f4ebd5"/>
-          <rect width="680" height="420" fill="url(#fLightStad)"/>
-
-          {/* Spotlight cones */}
-          <polygon points="166,4 178,4 400,178 -60,178" fill="rgba(139,105,20,0.05)"/>
-          <polygon points="168,4 176,4 290,178 70,178"  fill="rgba(139,105,20,0.07)"/>
-          <polygon points="502,4 514,4 740,178 280,178" fill="rgba(139,105,20,0.05)"/>
-          <polygon points="504,4 512,4 610,178 390,178" fill="rgba(139,105,20,0.07)"/>
-          <circle cx="172" cy="5" r="5"  fill="rgba(139,105,20,0.85)"/>
-          <circle cx="172" cy="5" r="14" fill="rgba(139,105,20,0.16)"/>
-          <circle cx="508" cy="5" r="5"  fill="rgba(139,105,20,0.85)"/>
-          <circle cx="508" cy="5" r="14" fill="rgba(139,105,20,0.16)"/>
-
-          {/* Field base */}
-          <polygon points="200,178 480,178 630,415 50,415" fill="#ead8a8"/>
-
-          {/* Field stripes — perspective trapezoids alternating cream/lighter */}
-          <polygon points="200,178 480,178 491,196 189,196" fill="#f0e0b4"/>
-          <polygon points="189,196 491,196 504,217 176,217" fill="#ead8a8"/>
-          <polygon points="176,217 504,217 520,241 160,241" fill="#f0e0b4"/>
-          <polygon points="160,241 520,241 539,271 141,271" fill="#ead8a8"/>
-          <polygon points="141,271 539,271 562,308 118,308" fill="#f0e0b4"/>
-          <polygon points="118,308 562,308 591,355 89,355"  fill="#ead8a8"/>
-          <polygon points="89,355 591,355 630,415 50,415"   fill="#f0e0b4"/>
-
-          {/* Field glow */}
-          <polygon points="200,178 480,178 630,415 50,415" fill="url(#fLightFglow)"/>
-
-          {/* ======= FIELD MARKINGS (dark amber) ======= */}
-          {/* Outer boundary */}
-          <polygon points="200,178 480,178 630,415 50,415" fill="none" stroke="rgba(139,105,20,0.85)" strokeWidth="1.5"/>
-          {/* Halfway line */}
-          <line x1="151" y1="255" x2="529" y2="255" stroke="rgba(139,105,20,0.78)" strokeWidth="1.3"/>
-          {/* Center circle */}
-          <ellipse cx="340" cy="255" rx="51" ry="18" fill="none" stroke="rgba(139,105,20,0.72)" strokeWidth="1.3"/>
-          {/* Center spot */}
-          <circle cx="340" cy="255" r="3.5" fill="rgba(139,105,20,0.92)"/>
-
-          {/* FAR end */}
-          <polygon points="257,178 423,178 430,198 250,198" fill="none" stroke="rgba(139,105,20,0.55)" strokeWidth="1.1"/>
-          <polygon points="302,178 378,178 379,184 301,184" fill="none" stroke="rgba(139,105,20,0.45)" strokeWidth="0.9"/>
-          <circle cx="340" cy="191" r="2" fill="rgba(139,105,20,0.6)"/>
-          <path d="M 307 198 A 40 11 0 0 1 373 198" fill="none" stroke="rgba(139,105,20,0.5)" strokeWidth="1.0"/>
-
-          {/* NEAR end */}
-          <polygon points="193,349 487,349 512,415 168,415" fill="none" stroke="rgba(139,105,20,0.85)" strokeWidth="1.4"/>
-          <polygon points="266,391 414,391 418,415 262,415" fill="none" stroke="rgba(139,105,20,0.78)" strokeWidth="1.2"/>
-          <circle cx="340" cy="369" r="3.5" fill="rgba(139,105,20,0.9)"/>
-          <path d="M 287 349 A 70 35 0 0 0 393 349" fill="none" stroke="rgba(139,105,20,0.78)" strokeWidth="1.3"/>
-
-          {/* Corner arcs */}
-          <path d="M 58 415 A 8.5 4.7 0 0 0 50 410"  fill="none" stroke="rgba(139,105,20,0.78)" strokeWidth="1.2"/>
-          <path d="M 622 415 A 8.5 4.7 0 0 1 630 410" fill="none" stroke="rgba(139,105,20,0.78)" strokeWidth="1.2"/>
-          <path d="M 204 178 A 4.1 1.1 0 0 1 200 179" fill="none" stroke="rgba(139,105,20,0.55)" strokeWidth="1.0"/>
-          <path d="M 476 178 A 4.1 1.1 0 0 0 480 179" fill="none" stroke="rgba(139,105,20,0.55)" strokeWidth="1.0"/>
-
-          {/* Fades */}
-          <rect x="0" y="360" width="680" height="60" fill="url(#fLightBot)"/>
-          <rect width="680" height="96" fill="url(#fLightSky)"/>
-        </svg>
-      </g>
-    </>
-  )
-}
-
-function BasketballArt({ a }: { a: string }) {
-  const rim = '#c85010'
-  const rimHi = '#e87030'
-  return (
-    <svg x="0" y="0" width="1440" height="900" viewBox="0 0 900 480" preserveAspectRatio="xMidYMid slice">
-      <defs>
-        <radialGradient id="bb-floorGlow" cx="50%" cy="60%" r="55%">
-          <stop offset="0%"  stopColor={rim} stopOpacity="0.22"/>
-          <stop offset="60%" stopColor="#8b3a0a" stopOpacity="0.08"/>
-          <stop offset="100%" stopColor="#000" stopOpacity="0"/>
-        </radialGradient>
-        <linearGradient id="bb-rimGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor={rim}/>
-          <stop offset="50%" stopColor={rimHi}/>
-          <stop offset="100%" stopColor={rim}/>
-        </linearGradient>
-        <filter id="bb-rimBlur">
-          <feGaussianBlur stdDeviation="2.5" result="blur"/>
-          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
-        <clipPath id="bb-courtClip">
-          <polygon points="210,170 690,170 840,480 60,480"/>
-        </clipPath>
-      </defs>
-
-      {/* Court surface — narrower trapezoid */}
-      <polygon points="210,170 690,170 840,480 60,480" fill="#120b04"/>
-      <g clipPath="url(#bb-courtClip)">
-        {/* Parquet strips */}
-        <line x1="0" y1="185" x2="900" y2="185" stroke="#1a1006" strokeWidth="1"/>
-        <line x1="0" y1="200" x2="900" y2="200" stroke="#1a1006" strokeWidth="1"/>
-        <line x1="0" y1="215" x2="900" y2="215" stroke="#1a1006" strokeWidth="1"/>
-        <line x1="0" y1="230" x2="900" y2="230" stroke="#1a1006" strokeWidth="1"/>
-        <line x1="0" y1="248" x2="900" y2="248" stroke="#1a1006" strokeWidth="1.2"/>
-        <line x1="0" y1="268" x2="900" y2="268" stroke="#1a1006" strokeWidth="1.2"/>
-        <line x1="0" y1="290" x2="900" y2="290" stroke="#1a1006" strokeWidth="1.4"/>
-        <line x1="0" y1="315" x2="900" y2="315" stroke="#1a1006" strokeWidth="1.4"/>
-        <line x1="0" y1="345" x2="900" y2="345" stroke="#1a1006" strokeWidth="1.6"/>
-        <line x1="0" y1="380" x2="900" y2="380" stroke="#1a1006" strokeWidth="1.6"/>
-        <line x1="0" y1="422" x2="900" y2="422" stroke="#1a1006" strokeWidth="1.8"/>
-        <polygon points="210,170 690,170 840,480 60,480" fill="url(#bb-floorGlow)"/>
-        {/* Court markings */}
-        <ellipse cx="450" cy="370" rx="140" ry="44" fill="none" stroke={rim} strokeWidth="1.2" strokeOpacity="0.5"/>
-        <ellipse cx="450" cy="370" rx="52" ry="16" fill="none" stroke={rim} strokeWidth="0.8" strokeOpacity="0.4"/>
-        <circle cx="450" cy="370" r="4" fill={rim} fillOpacity="0.5"/>
-        <line x1="150" y1="370" x2="750" y2="370" stroke={rim} strokeWidth="0.8" strokeOpacity="0.35"/>
-        <path d="M 210,480 Q 450,255 690,480" fill="none" stroke={rim} strokeWidth="1.4" strokeOpacity="0.55"/>
-        <polygon points="330,170 570,170 620,370 280,370" fill="#0f0802" stroke={rim} strokeWidth="0.9" strokeOpacity="0.4"/>
-        <line x1="280" y1="370" x2="620" y2="370" stroke={rim} strokeWidth="1" strokeOpacity="0.5"/>
-        <path d="M 280,370 Q 450,315 620,370" fill="none" stroke={rim} strokeWidth="0.9" strokeOpacity="0.4"/>
-        <polygon points="370,170 530,170 565,300 335,300" fill="none" stroke={rim} strokeWidth="0.7" strokeOpacity="0.3"/>
-      </g>
-      {/* Sidelines */}
-      <line x1="210" y1="170" x2="60" y2="480" stroke={rim} strokeWidth="1" strokeOpacity="0.4"/>
-      <line x1="690" y1="170" x2="840" y2="480" stroke={rim} strokeWidth="1" strokeOpacity="0.4"/>
-      <line x1="210" y1="170" x2="690" y2="170" stroke={rim} strokeWidth="1" strokeOpacity="0.4"/>
-      {/* Pole */}
-      <rect x="440" y="50" width="20" height="130" fill="#1a1208" rx="2"/>
-      {/* Backboard */}
-      <rect x="410" y="55" width="80" height="56" rx="3" fill="#1a0e06" stroke="#2e2010" strokeWidth="1.5"/>
-      <rect x="418" y="75" width="64" height="28" rx="1" fill="none" stroke={rim} strokeWidth="1.2" strokeOpacity="0.6"/>
-      <rect x="410" y="55" width="80" height="8" rx="3" fill="#2a1a0a"/>
-      {/* Rim */}
-      <ellipse cx="450" cy="120" rx="28" ry="8" fill={rim} fillOpacity="0.15" filter="url(#bb-rimBlur)"/>
-      <ellipse cx="450" cy="112" rx="26" ry="7" fill="none" stroke="url(#bb-rimGrad)" strokeWidth="4"/>
-      <path d="M 424,112 Q 450,122 476,112" fill="none" stroke={rimHi} strokeWidth="4.5"/>
-      {/* Net */}
-      <line x1="432" y1="112" x2="427" y2="148" stroke={rim} strokeWidth="0.9" strokeOpacity="0.55"/>
-      <line x1="439" y1="114" x2="436" y2="152" stroke={rim} strokeWidth="0.9" strokeOpacity="0.5"/>
-      <line x1="446" y1="116" x2="444" y2="155" stroke={rim} strokeWidth="0.9" strokeOpacity="0.5"/>
-      <line x1="454" y1="116" x2="453" y2="155" stroke={rim} strokeWidth="0.9" strokeOpacity="0.5"/>
-      <line x1="461" y1="115" x2="461" y2="153" stroke={rim} strokeWidth="0.9" strokeOpacity="0.5"/>
-      <line x1="468" y1="113" x2="470" y2="149" stroke={rim} strokeWidth="0.9" strokeOpacity="0.55"/>
-      <path d="M 430,122 Q 450,126 471,122" fill="none" stroke={rim} strokeWidth="0.7" strokeOpacity="0.4"/>
-      <path d="M 429,132 Q 450,137 472,132" fill="none" stroke={rim} strokeWidth="0.7" strokeOpacity="0.35"/>
-      <path d="M 429,142 Q 450,148 472,142" fill="none" stroke={rim} strokeWidth="0.7" strokeOpacity="0.28"/>
-      <path d="M 427,148 Q 450,158 474,148" fill="none" stroke={rim} strokeWidth="0.6" strokeOpacity="0.22"/>
-      {/* Spotlight */}
-      <circle cx="450" cy="8" r="5" fill="#fff8e0" fillOpacity="0.6"/>
-      <circle cx="450" cy="8" r="10" fill="#ffe090" fillOpacity="0.1"/>
-      <polygon points="440,8 460,8 560,170 340,170" fill={rimHi} fillOpacity="0.04"/>
-      <polygon points="445,8 455,8 510,170 390,170" fill={rimHi} fillOpacity="0.05"/>
-    </svg>
-  )
-}
-
-function MMAArt(_: { a: string }) {
-  return (
-    <image href="/mma-background.svg" x="0" y="0" width="1440" height="900" preserveAspectRatio="xMidYMid slice" opacity="0.65" />
-  )
-}
+// ─── Per-discipline SVG artwork (esports only) ────────────────────────────────
+// Sport disciplines (football, basketball, tennis, mma) use clean --bg-base.
 
 function CS2Art(_: { a: string }) {
   return (
@@ -329,21 +136,19 @@ export function WorldBackground({ discipline }: { discipline: Discipline }) {
         background: `radial-gradient(ellipse 68% 58% at 50% 18%, ${mix(a, 11)} 0%, ${mix(a, 4)} 44%, transparent 70%)`,
       }} />
 
-      {/* SVG artwork */}
-      <svg
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
-        viewBox="0 0 1440 900"
-        preserveAspectRatio="xMidYMid slice"
-        fill="none"
-      >
-        {discipline === 'football'   && <FootballArt   a={a} />}
-        {discipline === 'basketball' && <BasketballArt a={a} />}
-        {discipline === 'tennis'     && <TennisCourtArt a={a} />}
-        {discipline === 'mma'        && <MMAArt        a={a} />}
-        {discipline === 'cs2'        && <CS2Art        a={a} />}
-        {discipline === 'dota2'      && <Dota2Art      a={a} />}
-        {discipline === 'valorant'   && <ValorantArt   a={a} />}
-      </svg>
+      {/* SVG artwork — esports only */}
+      {(discipline === 'cs2' || discipline === 'dota2' || discipline === 'valorant') && (
+        <svg
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+          viewBox="0 0 1440 900"
+          preserveAspectRatio="xMidYMid slice"
+          fill="none"
+        >
+          {discipline === 'cs2'      && <CS2Art      a={a} />}
+          {discipline === 'dota2'    && <Dota2Art    a={a} />}
+          {discipline === 'valorant' && <ValorantArt a={a} />}
+        </svg>
+      )}
 
     </div>
   )

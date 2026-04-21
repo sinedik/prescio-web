@@ -484,37 +484,6 @@
   mix-blend-mode: multiply;
 }
 
-/* MMA — stronger presence on light theme: higher contrast + saturation. */
-[data-theme="light"] .live-world-bg[data-discipline="mma"] image {
-  opacity: 1;
-  mix-blend-mode: multiply;
-  filter: saturate(1.6) contrast(1.5) brightness(0.88);
-}
-
-/* Tennis — multiply keeps dark court geometry visible on cream; boost contrast to punch through. */
-[data-theme="light"] .live-world-bg[data-discipline="tennis"] image {
-  opacity: 1;
-  mix-blend-mode: multiply;
-  filter: saturate(0.6) contrast(1.8) brightness(0.72) hue-rotate(4deg);
-}
-
-/* Tennis content area on light theme — mostly opaque cream to mask dark bg bleed. */
-[data-theme="light"] .live-content[data-discipline="tennis"] {
-  position: relative;
-  background:
-    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(94, 116, 34, 0.07), transparent 70%),
-    linear-gradient(180deg,
-      rgba(240, 234, 220, 0.92) 0%,
-      rgba(244, 238, 225, 0.94) 25%,
-      rgba(246, 240, 228, 0.96) 60%,
-      rgba(246, 240, 228, 0.98) 100%);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
-}
-[data-theme="light"] .live-content[data-discipline="tennis"] > * {
-  position: relative;
-  z-index: 2;
-}
 
 /* CS2 dark SVG (used in dark theme) — when light theme briefly mounts before
    the cs2-art-light overrides via display, scope adaptation only to the dark
@@ -854,28 +823,6 @@
   text-transform: uppercase;
   color: rgba(26, 20, 8, 0.5);
   text-align: center;
-}
-
-/* ── Football — separate dark/light SVG variants render side-by-side, CSS toggles. */
-.football-art-dark, .football-art-light { display: none; }
-[data-theme="dark"]  .football-art-dark  { display: block; }
-[data-theme="light"] .football-art-light { display: block; }
-
-/* Disable global mix-blend-mode adaptation for football light variant — the
-   hand-built perspective stadium uses theme-correct values directly,
-   blending it would muddy the amber pitch markings. */
-[data-theme="light"] .live-world-bg[data-discipline="football"] svg,
-[data-theme="light"] .live-world-bg[data-discipline="football"] image {
-  mix-blend-mode: normal;
-  filter: none;
-  opacity: 1;
-}
-[data-theme="light"] .live-world-bg[data-discipline="football"] .football-art-light {
-  opacity: 0.04;
-}
-[data-theme="light"] .live-world-bg[data-discipline="football"] > div > div {
-  mix-blend-mode: normal;
-  opacity: 1;
 }
 
 /* MMA content area on light theme — subtle blood-red warmth to match octagon hero. */
