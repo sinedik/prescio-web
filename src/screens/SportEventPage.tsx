@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { sportApi } from '../lib/api'
+import { normalizeOutcomeProbabilities } from '../lib/probabilities'
 import { getCached, setCached } from '../lib/clientCache'
 import { useAuthContext } from '../contexts/AuthContext'
 import { useSportWs } from '../hooks/useSportWs'
@@ -686,11 +687,16 @@ function AiInsightCard({ pred, odds, accent }: {
   const confidenceColor = maxPct >= 60 ? '#22c55e' : maxPct >= 50 ? '#D4A017' : 'rgba(var(--surface-tint-rgb),0.45)'
   const advice = pred.advice ?? (pred.winner_name ? `${pred.winner_name}. ${pred.winner_comment ?? ''}`.trim() : null)
 
-  const outcomes = [
-    { label: t('sport.home'), pct: pred.home_pct },
-    ...(pred.draw_pct != null ? [{ label: t('sport.draw'), pct: pred.draw_pct }] : []),
-    { label: t('sport.away'), pct: pred.away_pct },
+  const rawOutcomes = [
+    { label: t('sport.home'), raw: pred.home_pct },
+    ...(pred.draw_pct != null ? [{ label: t('sport.draw'), raw: pred.draw_pct }] : []),
+    { label: t('sport.away'), raw: pred.away_pct },
   ]
+  const outcomes = normalizeOutcomeProbabilities(
+    rawOutcomes,
+    o => o.raw,
+    `sport-prediction:${pred.id}`,
+  ).map(n => ({ label: n.outcome.label, pct: n.normalizedPct }))
   const maxOutcomePct = Math.max(...outcomes.map(o => o.pct))
 
   const srcLabel = lang === 'ru'

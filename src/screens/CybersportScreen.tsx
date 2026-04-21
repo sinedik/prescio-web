@@ -7,6 +7,7 @@ import { useSearchParams, usePathname, useRouter } from 'next/navigation'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { usePolling } from '../hooks/usePolling'
 import { api } from '../lib/api'
+import { normalizeBinary } from '../lib/probabilities'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import type { EsportsMatch } from '../types'
 import { useLiveLayout } from '../contexts/LiveLayoutContext'
@@ -562,11 +563,13 @@ const DotaRow = memo(function DotaRow({ match, href, lang, tomorrowLabel }: {
           })}
         </div>
       )}
-      {isUpcoming && match.yesPrice > 0 && match.yesPrice !== 0.5 && (
+      {isUpcoming && match.yesPrice > 0 && match.yesPrice !== 0.5 && (() => {
+        const normTeams = normalizeBinary(match.yesPrice, match.noPrice, `cybersport-match:${match.id}`)
+        return (
         <div className="shrink-0 hidden sm:flex flex-col justify-center gap-0.5 px-2">
           {([
-            { name: match.teamA.name, pct: Math.round(match.yesPrice * 100) },
-            { name: match.teamB.name, pct: Math.round(match.noPrice * 100) },
+            { name: match.teamA.name, pct: normTeams?.yes ?? 0 },
+            { name: match.teamB.name, pct: normTeams?.no ?? 0 },
           ] as const).map(({ name, pct }) => (
             <div key={name} className="flex items-center gap-1">
               <span className="text-[9px] font-mono truncate" style={{ maxWidth: 52, color: 'rgba(var(--surface-tint-rgb),0.4)' }}>{name}</span>
@@ -580,7 +583,8 @@ const DotaRow = memo(function DotaRow({ match, href, lang, tomorrowLabel }: {
             </div>
           ))}
         </div>
-      )}
+        )
+      })()}
 
       {/* 5. Arrow */}
       <div className="shrink-0 flex items-center px-2">
