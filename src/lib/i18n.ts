@@ -88,6 +88,13 @@ const translations = {
   'match_detail.ctx.m_goals': { en: 'GOALS',   ru: 'ГОЛЫ' },
   'match_detail.ctx.m_total': { en: 'TOTAL',   ru: 'ИТОГО' },
 
+  // ── Match detail: odds movement ──────────────────────────────────────────────
+  'match_detail.odds.title': { en: 'ODDS MOVEMENT', ru: 'ДВИЖЕНИЕ ЛИНИИ' },
+  'match_detail.odds.open':  { en: 'OPEN', ru: 'ОТК' },
+  'match_detail.odds.low':   { en: 'LOW',  ru: 'МИН' },
+  'match_detail.odds.high':  { en: 'HIGH', ru: 'МАКС' },
+  'match_detail.odds.now':   { en: 'NOW',  ru: 'СЕЙЧАС' },
+
   // ── Sport ────────────────────────────────────────────────────────────────────
   'sport.title':           { en: 'Sport',           ru: 'Спорт' },
   'sport.upcoming':        { en: 'Upcoming',        ru: 'Предстоящие' },
