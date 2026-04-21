@@ -305,7 +305,7 @@ export default function SportMatchHero({ event, homeLogo, awayLogo, leagueLogo }
           {isUpcoming ? (
             <div className="flex flex-col items-center gap-1">
               <span className="text-[9px] font-mono uppercase tracking-[0.12em] text-text-muted">
-                {tr('common.live') /* placeholder header, time shown in meta */}
+                {tr('match_detail.hero.kickoff')}
               </span>
               <span className="text-[22px] font-mono font-bold tabular-nums text-text-primary leading-none">
                 {formatKickoff(event.starts_at, lang)}
