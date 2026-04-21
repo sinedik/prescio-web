@@ -13,6 +13,13 @@ import { useLang } from '../contexts/LanguageContext'
 import { useT } from '../lib/i18n'
 import type { Lang } from '../lib/i18n'
 import { mix } from '../components/disciplines'
+import SportMatchHero from '../components/sport/SportMatchHero'
+import SportMatchPrxSignal from '../components/sport/SportMatchPrxSignal'
+import SportMatchContextGrid from '../components/sport/SportMatchContextGrid'
+import SportMatchOddsMovement from '../components/sport/SportMatchOddsMovement'
+import SportMatchLiveStats from '../components/sport/SportMatchLiveStats'
+import SportMatchEvents from '../components/sport/SportMatchEvents'
+import SportMatchResolvedSummary from '../components/sport/SportMatchResolvedSummary'
 
 export type EventFastCache = { event: SportEvent; form: { home_form: FormEntry[] | null; away_form: FormEntry[] | null } | null; prediction: SportPrediction | null | undefined }
 type EventDetailsCache = { standings: SportStanding[]; topScorers: SportTopScorer[]; homeInj: SportInjury[]; awayInj: SportInjury[]; lineups: SportLineup[]; matchStats: SportFixtureStat[]; matchEvents: SportMatchEvent[] }
@@ -1520,20 +1527,11 @@ export default function SportEventPage({ id: idProp, onBack, onLeagueLoad, initi
 
       {/* ── STICKY HERO + TABS ─────────────────────────────────────────────── */}
       <div className="-mx-3 sm:-mx-4 md:-mx-6" style={{ position: 'sticky', top: 0, zIndex: 20 }}>
-        <MatchHero
+        <SportMatchHero
           event={event}
-          elapsed={elapsed}
           homeLogo={homeLogo}
           awayLogo={awayLogo}
           leagueLogo={leagueLogo}
-          isLive={isLive}
-          isFinished={isFinished}
-          hasScore={hasScore}
-          accent={accent}
-          lang={lang}
-          raw={raw}
-          matchStats={matchStats}
-          homeForm={form?.home_form ?? null}
         />
         <MatchTabBar active={activeMainTab} onChange={setActiveMainTab} accent={accent} lang={lang} />
       </div>
@@ -1543,9 +1541,9 @@ export default function SportEventPage({ id: idProp, onBack, onLeagueLoad, initi
 
         {/* ── ОБЗОР ──────────────────────────────────────────────────────── */}
         {activeMainTab === 'overview' && (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col">
             {isBasicCard && (
-              <div className="flex items-start gap-3 px-4 py-3 rounded-xl border border-bg-border bg-bg-surface">
+              <div className="flex items-start gap-3 px-4 py-3 rounded-xl border border-bg-border bg-bg-surface mb-3">
                 <svg className="w-4 h-4 shrink-0 mt-0.5 text-text-muted/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                 </svg>
@@ -1553,68 +1551,42 @@ export default function SportEventPage({ id: idProp, onBack, onLeagueLoad, initi
               </div>
             )}
 
-            {sub !== 'football' && (
-              <AiInsightCard pred={prediction} odds={event.sport_odds ?? []} accent={accent} />
+            <SportMatchPrxSignal event={event} />
+
+            {isFinished && (
+              <SportMatchResolvedSummary event={event} prediction={prediction ?? null} />
             )}
 
-            {prediction === null && fixtureId && sub !== 'football' && (
-              <div className="flex items-center gap-2 px-4 py-3 rounded-xl border border-bg-border bg-bg-surface text-[11px] font-mono text-text-muted/45">
+            {isLive && matchStats.length >= 2 && (
+              <SportMatchLiveStats stats={matchStats} homeTeam={event.home_team} awayTeam={event.away_team} />
+            )}
+
+            {isLive && matchEvents.length > 0 && (
+              <SportMatchEvents
+                events={matchEvents}
+                homeTeamId={homeTeamId ?? null}
+                awayTeamId={awayTeamId ?? null}
+              />
+            )}
+
+            <SportMatchContextGrid
+              event={event}
+              prediction={prediction ?? null}
+              homeForm={form?.home_form ?? null}
+              awayForm={form?.away_form ?? null}
+            />
+
+            <SportMatchOddsMovement event={event} />
+
+            {prediction === null && fixtureId && (
+              <div className="flex items-center gap-2 px-4 py-3 rounded-xl border border-bg-border bg-bg-surface text-[11px] font-mono text-text-muted/45 mt-3">
                 <svg className="w-3 h-3 animate-spin shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>
                 {t('sport.forecast_updating')}
               </div>
             )}
 
-            {sub === 'football' ? (
-              <div className="flex flex-col gap-4">
-                <MatchEventsSection events={matchEvents} homeTeamId={homeTeamId} accent={accent} status={event.status} homeName={event.home_team} awayName={event.away_team} />
-                {matchStats.length >= 2 && (
-                  <MiniStatsBlock stats={matchStats} accent={accent} onMore={() => setActiveMainTab('stats')} homeName={event.home_team} awayName={event.away_team} />
-                )}
-                {(event.sport_odds?.length ?? 0) > 0 && (
-                  <OddsOverviewBlock odds={event.sport_odds!} accent={accent} sport={sub} onMore={() => setActiveMainTab('betting')} homeName={event.home_team} awayName={event.away_team} isLive={isLive} />
-                )}
-                {(form?.home_form || form?.away_form) && (
-                  <FormBlock
-                    home_form={form?.home_form ?? null}
-                    away_form={form?.away_form ?? null}
-                    homeName={event.home_team}
-                    awayName={event.away_team}
-                  />
-                )}
-                <AiInsightCard pred={prediction} odds={event.sport_odds ?? []} accent={accent} />
-                {prediction === null && fixtureId && (
-                  <div className="flex items-center gap-2 px-4 py-3 rounded-xl border border-bg-border bg-bg-surface text-[11px] font-mono text-text-muted/45">
-                    <svg className="w-3 h-3 animate-spin shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>
-                    {t('sport.forecast_updating')}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-4">
-                  <MatchEventsSection events={matchEvents} homeTeamId={homeTeamId} accent={accent} status={event.status} homeName={event.home_team} awayName={event.away_team} />
-                  {(form?.home_form || form?.away_form) && (
-                    <FormBlock
-                      home_form={form?.home_form ?? null}
-                      away_form={form?.away_form ?? null}
-                      homeName={event.home_team}
-                      awayName={event.away_team}
-                    />
-                  )}
-                </div>
-                <div className="flex flex-col gap-4">
-                  {matchStats.length >= 2 && (
-                    <MiniStatsBlock stats={matchStats} accent={accent} onMore={() => setActiveMainTab('stats')} homeName={event.home_team} awayName={event.away_team} />
-                  )}
-                  {(event.sport_odds?.length ?? 0) > 0 && (
-                    <OddsOverviewBlock odds={event.sport_odds!} accent={accent} sport={sub} onMore={() => setActiveMainTab('betting')} homeName={event.home_team} awayName={event.away_team} isLive={isLive} />
-                  )}
-                </div>
-              </div>
-            )}
-
             {dataError && (
-              <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-red-500/20 bg-red-500/5 text-[12px] font-mono text-red-400/70">
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-red-500/20 bg-red-500/5 text-[12px] font-mono text-red-400/70 mt-3">
                 <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                 </svg>

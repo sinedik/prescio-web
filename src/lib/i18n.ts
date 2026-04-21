@@ -108,6 +108,14 @@ const translations = {
   // ── Match detail: match events timeline ──────────────────────────────────────
   'match_detail.events.title': { en: 'KEY EVENTS', ru: 'КЛЮЧЕВЫЕ СОБЫТИЯ' },
 
+  // ── Match detail: resolved summary ───────────────────────────────────────────
+  'match_detail.resolved.title':      { en: 'MATCH SUMMARY', ru: 'ИТОГИ МАТЧА' },
+  'match_detail.resolved.winner':     { en: 'WINNER',        ru: 'ПОБЕДИТЕЛЬ' },
+  'match_detail.resolved.final':      { en: 'FINAL',         ru: 'ФИНАЛ' },
+  'match_detail.resolved.ht':         { en: 'HT',            ru: '1Т' },
+  'match_detail.resolved.ai_correct': { en: 'AI CORRECT',    ru: 'AI ВЕРНО' },
+  'match_detail.resolved.ai_miss':    { en: 'AI MISSED',     ru: 'AI МИМО' },
+
   // ── Sport ────────────────────────────────────────────────────────────────────
   'sport.title':           { en: 'Sport',           ru: 'Спорт' },
   'sport.upcoming':        { en: 'Upcoming',        ru: 'Предстоящие' },
