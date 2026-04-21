@@ -10,88 +10,88 @@
 
 /* ── Theme: CSS variable definitions (RGB channels for Tailwind opacity support) ── */
 :root {
-  /* Dark theme — default (GitHub-style lifted) */
-  --bg-base:     22 24 28;
-  --bg-surface:  30 33 38;
-  --bg-elevated: 42 46 53;
-  --bg-border:   60 66 76;
+  /* Dark theme — Midnight Club: deep indigo-black with blue-purple undertones, champagne text, antique gold accent */
+  --bg-base:     14 17 26;
+  --bg-surface:  20 24 36;
+  --bg-elevated: 28 34 48;
+  --bg-border:   52 58 78;
 
-  --text-primary:   240 243 248;
-  --text-secondary: 156 163 173;
-  --text-muted:     94 100 110;
+  --text-primary:   244 234 214;
+  --text-secondary: 176 166 146;
+  --text-muted:     110 104 92;
 
-  --accent:       0 255 136;
-  --accent-hover: 0 232 122;
-  --alpha:        34 197 94;
-  --watch:        245 158 11;
-  --danger:       239 68 68;
-  --poly:         96 165 250;
-  --kalshi:       251 191 36;
-  --metaculus:    167 139 250;
+  --accent:       184 146 74;
+  --accent-hover: 206 165 94;
+  --alpha:        52 134 92;
+  --watch:        204 156 60;
+  --danger:       176 48 54;
+  --poly:         120 138 180;
+  --kalshi:       196 154 68;
+  --metaculus:    142 122 186;
 
   /* Алиасы для совместимости компонентов */
-  --border:       rgb(60 66 76);
-  --bg-card:      rgb(30 33 38);
-  --bg-base-rgb:  22, 24, 28;
-  --accent-rgb:   0, 255, 136;
-  /* Surface tint — overlay colour for subtle dividers/cards (white on dark, black on light) */
-  --surface-tint-rgb: 255, 255, 255;
+  --border:       rgb(52 58 78);
+  --bg-card:      rgb(20 24 36);
+  --bg-base-rgb:  14, 17, 26;
+  --accent-rgb:   184, 146, 74;
+  /* Surface tint — overlay colour for subtle dividers/cards (champagne on dark, near-black on light) */
+  --surface-tint-rgb: 244, 234, 214;
 
-  /* Sport accent colours (dark-theme defaults) */
-  --sport-football:   #e8c032;
-  --sport-basketball: #e66414;
-  --sport-tennis:     #C8E63C;
-  --sport-mma:        #e02020;
-  --sport-cs2:        #e66414;
-  --sport-dota2:      #c0392b;
-  --sport-valorant:   #ff4655;
+  /* Sport accent colours (dark-theme defaults) — rich, subdued, materials-based */
+  --sport-football:   #2E5A3E;
+  --sport-basketball: #B36B2E;
+  --sport-tennis:     #8FA637;
+  --sport-mma:        #9A2432;
+  --sport-cs2:        #6E8299;
+  --sport-dota2:      #8B1E2E;
+  --sport-valorant:   #B63D4D;
 
   /* RGB-channel variants for use in rgb(var(...) / alpha) and Layout's --accent override */
-  --sport-football-rgb:   232 192 50;
-  --sport-basketball-rgb: 230 100 20;
-  --sport-tennis-rgb:     200 230 60;
-  --sport-mma-rgb:        224 32 32;
-  --sport-cs2-rgb:        230 100 20;
-  --sport-dota2-rgb:      192 57 43;
-  --sport-valorant-rgb:   255 70 85;
+  --sport-football-rgb:   46 90 62;
+  --sport-basketball-rgb: 179 107 46;
+  --sport-tennis-rgb:     143 166 55;
+  --sport-mma-rgb:        154 36 50;
+  --sport-cs2-rgb:        110 130 153;
+  --sport-dota2-rgb:      139 30 46;
+  --sport-valorant-rgb:   182 61 77;
 
   /* Football position accents (RGB) */
-  --player-pos-gk:  74 158 234;
-  --player-pos-def: 97 223 110;
-  --player-pos-mid: 232 192 50;
-  --player-pos-fwd: 229 94 91;
+  --player-pos-gk:  90 127 184;
+  --player-pos-def: 90 143 74;
+  --player-pos-mid: 184 146 74;
+  --player-pos-fwd: 182 61 77;
 
   /* Hero palette — dark theme defaults. Used by LiveHero to avoid hydration mismatch. */
-  --hero-surface-a:    18 19 22;
-  --hero-surface-b:    24 22 18;
-  --hero-vignette:     18 19 22;
-  --hero-text-primary: #f4f0e0;
-  --hero-text-soft:    rgba(255,255,255,0.06);
-  --hero-grid-line:    rgba(255,255,255,0.05);
+  --hero-surface-a:    14 16 24;
+  --hero-surface-b:    20 22 30;
+  --hero-vignette:     14 16 24;
+  --hero-text-primary: #f4ead6;
+  --hero-text-soft:    rgba(244,234,214,0.06);
+  --hero-grid-line:    rgba(244,234,214,0.04);
 
-  --hero-cs2-base:      #060402;
-  --hero-cs2-deep:      #120d07;
-  --hero-cs2-mid:       #0f0a05;
-  --hero-cs2-accent1:   rgba(230,100,20,0.20);
-  --hero-cs2-accent2:   rgba(230,100,20,0.10);
-  --hero-cs2-noise:     rgba(255,255,255,0.012);
-  --hero-cs2-base-text: #f5ede0;
+  --hero-cs2-base:      #050810;
+  --hero-cs2-deep:      #0a1220;
+  --hero-cs2-mid:       #0d1626;
+  --hero-cs2-accent1:   rgba(110,130,153,0.22);
+  --hero-cs2-accent2:   rgba(110,130,153,0.11);
+  --hero-cs2-noise:     rgba(200,212,224,0.012);
+  --hero-cs2-base-text: #e8eef4;
 
-  --hero-dota-base-grad: radial-gradient(ellipse 80% 120% at 70% 50%,#1a0608 0%,#120305 40%,#0a0203 100%);
+  --hero-dota-base-grad: radial-gradient(ellipse 80% 120% at 70% 50%,#1a0608 0%,#110305 40%,#080103 100%);
   --hero-dota-side-grad: linear-gradient(90deg,#050102 0%,#0d0304 30%,transparent 65%);
-  --hero-dota-text:      #d4c4a0;
+  --hero-dota-text:      #d4b878;
   --hero-dota-noise:     rgba(0,0,0,0.10);
-  --hero-dota-text-shadow: 0 0 40px rgba(192,57,43,0.5),0 0 80px rgba(192,57,43,0.2);
+  --hero-dota-text-shadow: 0 0 40px rgba(139,30,46,0.5),0 0 80px rgba(139,30,46,0.2);
 
-  --hero-football-spotlight-soft:   rgba(255,240,180,0.07);
-  --hero-football-spotlight-strong: rgba(255,230,150,0.11);
-  --hero-football-stripe-dark:      rgba(50,38,5,0.18);
-  --hero-football-stripe-light:     rgba(60,45,6,0.10);
-  --hero-football-marking:          rgba(244,240,224,0.08);
-  --hero-football-beam-strong:      rgba(255,240,180,0.05);
-  --hero-football-beam-soft:        rgba(255,240,180,0.04);
-  --hero-football-light-core:       rgba(255,245,200,0.45);
-  --hero-football-light-glow:       rgba(255,240,180,0.10);
+  --hero-football-spotlight-soft:   rgba(255,230,170,0.07);
+  --hero-football-spotlight-strong: rgba(255,220,160,0.11);
+  --hero-football-stripe-dark:      rgba(40,64,30,0.22);
+  --hero-football-stripe-light:     rgba(50,78,38,0.12);
+  --hero-football-marking:          rgba(244,234,214,0.08);
+  --hero-football-beam-strong:      rgba(255,230,170,0.05);
+  --hero-football-beam-soft:        rgba(255,230,170,0.04);
+  --hero-football-light-core:       rgba(255,238,196,0.45);
+  --hero-football-light-glow:       rgba(255,230,170,0.10);
 
   --hero-bb-mid-opacity:  0.7;
   --hero-bb-thin-opacity: 0.15;
@@ -102,90 +102,90 @@
 }
 
 [data-theme="light"] {
-  /* ── Warm Paper (refined: softer feel, sharper hierarchy) ── */
-  --bg-base:     248 245 238;
-  --bg-surface:  255 253 247;
-  --bg-elevated: 234 230 220;
-  --bg-border:   206 200 186;
+  /* ── Refined Parchment: warm cream with deep gold accent, AA-safe ── */
+  --bg-base:     246 240 228;
+  --bg-surface:  252 246 234;
+  --bg-elevated: 234 226 208;
+  --bg-border:   200 188 164;
 
-  --text-primary:   10 8 6;
-  --text-secondary: 56 52 46;
-  --text-muted:     112 106 96;
+  --text-primary:   24 22 16;
+  --text-secondary: 60 56 48;
+  --text-muted:     118 108 90;
 
-  --accent:       2 163 80;
-  --accent-hover: 0 145 68;
-  --alpha:        21 128 61;
-  --watch:        202 105 8;
-  --danger:       210 35 35;
-  --poly:         37 99 235;
-  --kalshi:       154 72 10;
-  --metaculus:    109 40 217;
+  --accent:       138 106 52;
+  --accent-hover: 114 86 38;
+  --alpha:        34 98 62;
+  --watch:        174 122 26;
+  --danger:       162 38 44;
+  --poly:         52 82 148;
+  --kalshi:       138 96 32;
+  --metaculus:    88 60 172;
 
   /* Алиасы для совместимости компонентов */
-  --border:       rgb(206 200 186);
-  --bg-card:      rgb(255 253 247);
-  --bg-base-rgb:  248, 245, 238;
-  --accent-rgb:   2, 163, 80;
-  --surface-tint-rgb: 0, 0, 0;
+  --border:       rgb(200 188 164);
+  --bg-card:      rgb(252 246 234);
+  --bg-base-rgb:  246, 240, 228;
+  --accent-rgb:   138, 106, 52;
+  --surface-tint-rgb: 24, 22, 16;
 
-  /* Sport accents — darker for AA contrast on warm-paper bg */
-  --sport-football:   #8b6914;
-  --sport-basketball: #a0420c;
-  --sport-tennis:     #5a7a18;
-  --sport-mma:        #a01010;
-  --sport-cs2:        #a0420c;
-  --sport-dota2:      #8e2820;
-  --sport-valorant:   #c8323d;
+  /* Sport accents — deeper values for AA contrast on parchment bg */
+  --sport-football:   #1E4028;
+  --sport-basketball: #8A4A18;
+  --sport-tennis:     #5E7422;
+  --sport-mma:        #7A1820;
+  --sport-cs2:        #3E5878;
+  --sport-dota2:      #6A1422;
+  --sport-valorant:   #8A2838;
 
-  --sport-football-rgb:   139 105 20;
-  --sport-basketball-rgb: 160 66 12;
-  --sport-tennis-rgb:     90 122 24;
-  --sport-mma-rgb:        160 16 16;
-  --sport-cs2-rgb:        160 66 12;
-  --sport-dota2-rgb:      142 40 32;
-  --sport-valorant-rgb:   200 50 61;
+  --sport-football-rgb:   30 64 40;
+  --sport-basketball-rgb: 138 74 24;
+  --sport-tennis-rgb:     94 116 34;
+  --sport-mma-rgb:        122 24 32;
+  --sport-cs2-rgb:        62 88 120;
+  --sport-dota2-rgb:      106 20 34;
+  --sport-valorant-rgb:   138 40 56;
 
   /* Football position accents (RGB) */
-  --player-pos-gk:  37 112 184;
-  --player-pos-def: 45 163 64;
-  --player-pos-mid: 139 105 20;
-  --player-pos-fwd: 177 58 55;
+  --player-pos-gk:  52 82 140;
+  --player-pos-def: 46 90 62;
+  --player-pos-mid: 138 106 52;
+  --player-pos-fwd: 138 40 56;
 
-  /* Hero palette — warm paper overrides */
-  --hero-surface-a:    248 245 238;
-  --hero-surface-b:    240 236 224;
-  --hero-vignette:     248 245 238;
-  --hero-text-primary: #1a1408;
-  --hero-text-soft:    rgba(0,0,0,0.05);
-  --hero-grid-line:    rgba(0,0,0,0.05);
+  /* Hero palette — parchment overrides */
+  --hero-surface-a:    246 240 228;
+  --hero-surface-b:    240 232 214;
+  --hero-vignette:     246 240 228;
+  --hero-text-primary: #1e1c16;
+  --hero-text-soft:    rgba(24,22,16,0.05);
+  --hero-grid-line:    rgba(24,22,16,0.05);
 
-  --hero-cs2-base:      #faf2e2;
-  --hero-cs2-deep:      #eedfc0;
-  --hero-cs2-mid:       #e6d5ac;
-  --hero-cs2-accent1:   rgba(160,66,12,0.18);
-  --hero-cs2-accent2:   rgba(160,66,12,0.09);
-  --hero-cs2-noise:     rgba(0,0,0,0.016);
-  --hero-cs2-base-text: #1a1408;
+  --hero-cs2-base:      #eef1f6;
+  --hero-cs2-deep:      #d8dfe8;
+  --hero-cs2-mid:       #e0e6ee;
+  --hero-cs2-accent1:   rgba(62,88,120,0.18);
+  --hero-cs2-accent2:   rgba(62,88,120,0.09);
+  --hero-cs2-noise:     rgba(24,22,16,0.016);
+  --hero-cs2-base-text: #1e1c16;
 
-  --hero-dota-base-grad: radial-gradient(ellipse 80% 120% at 70% 50%,#f6e4d2 0%,#edd4b8 40%,#e4c49e 100%);
-  --hero-dota-side-grad: linear-gradient(90deg,#f9ead8 0%,#f2dfc8 30%,transparent 65%);
-  --hero-dota-text:      #3a1a08;
-  --hero-dota-noise:     rgba(120,60,20,0.07);
-  --hero-dota-text-shadow: 0 0 30px rgba(142,40,32,0.18);
+  --hero-dota-base-grad: radial-gradient(ellipse 80% 120% at 70% 50%,#f4dcd6 0%,#e8c8bc 40%,#d8b0a0 100%);
+  --hero-dota-side-grad: linear-gradient(90deg,#f8e2d8 0%,#f0d4c8 30%,transparent 65%);
+  --hero-dota-text:      #2a0808;
+  --hero-dota-noise:     rgba(106,20,34,0.07);
+  --hero-dota-text-shadow: 0 0 30px rgba(106,20,34,0.18);
 
-  --hero-football-spotlight-soft:   rgba(139,105,20,0.10);
-  --hero-football-spotlight-strong: rgba(139,105,20,0.18);
-  --hero-football-stripe-dark:      rgba(139,105,20,0.06);
-  --hero-football-stripe-light:     rgba(139,105,20,0.03);
-  --hero-football-marking:          rgba(139,105,20,0.32);
-  --hero-football-beam-strong:      rgba(139,105,20,0.10);
-  --hero-football-beam-soft:        rgba(139,105,20,0.06);
-  --hero-football-light-core:       rgba(139,105,20,0.85);
-  --hero-football-light-glow:       rgba(139,105,20,0.20);
+  --hero-football-spotlight-soft:   rgba(138,106,52,0.10);
+  --hero-football-spotlight-strong: rgba(138,106,52,0.18);
+  --hero-football-stripe-dark:      rgba(30,64,40,0.08);
+  --hero-football-stripe-light:     rgba(30,64,40,0.04);
+  --hero-football-marking:          rgba(138,106,52,0.32);
+  --hero-football-beam-strong:      rgba(138,106,52,0.10);
+  --hero-football-beam-soft:        rgba(138,106,52,0.06);
+  --hero-football-light-core:       rgba(138,106,52,0.85);
+  --hero-football-light-glow:       rgba(138,106,52,0.20);
 
   --hero-bb-mid-opacity:  0.40;
   --hero-bb-thin-opacity: 0.05;
-  --hero-bb-solid:        rgb(238 218 190);
+  --hero-bb-solid:        rgb(234 222 198);
 
   --logo-symbol: rgb(var(--accent));
 }
@@ -310,7 +310,7 @@
 }
 @keyframes socialGlow {
   from { box-shadow: none; }
-  to   { box-shadow: 0 0 0 1px rgba(0,230,118,0.3), 0 0 12px rgba(0,230,118,0.08); }
+  to   { box-shadow: 0 0 0 1px rgba(206,165,94,0.3), 0 0 12px rgba(206,165,94,0.10); }
 }
 
 .auth-slide-left {
@@ -502,12 +502,12 @@
 [data-theme="light"] .live-content[data-discipline="tennis"] {
   position: relative;
   background:
-    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(90, 122, 24, 0.07), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(94, 116, 34, 0.07), transparent 70%),
     linear-gradient(180deg,
-      rgba(240, 238, 228, 0.92) 0%,
-      rgba(245, 242, 232, 0.94) 25%,
-      rgba(248, 245, 236, 0.96) 60%,
-      rgba(248, 245, 238, 0.98) 100%);
+      rgba(240, 234, 220, 0.92) 0%,
+      rgba(244, 238, 225, 0.94) 25%,
+      rgba(246, 240, 228, 0.96) 60%,
+      rgba(246, 240, 228, 0.98) 100%);
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
 }
@@ -541,12 +541,12 @@
 [data-theme="light"] .live-content[data-discipline="cs2"] {
   position: relative;
   background:
-    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(230, 100, 20, 0.10), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(62, 88, 120, 0.10), transparent 70%),
     linear-gradient(180deg,
-      rgba(238, 223, 192, 0.85) 0%,
-      rgba(245, 235, 215, 0.78) 25%,
-      rgba(248, 242, 230, 0.72) 60%,
-      rgba(248, 245, 238, 0.65) 100%);
+      rgba(222, 228, 238, 0.85) 0%,
+      rgba(232, 236, 242, 0.78) 25%,
+      rgba(240, 240, 238, 0.72) 60%,
+      rgba(246, 240, 228, 0.65) 100%);
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
 }
@@ -561,8 +561,8 @@
     0deg,
     transparent,
     transparent 3px,
-    rgba(120, 50, 10, 0.04) 3px,
-    rgba(120, 50, 10, 0.04) 4px
+    rgba(40, 56, 80, 0.04) 3px,
+    rgba(40, 56, 80, 0.04) 4px
   );
 }
 [data-theme="light"] .live-content[data-discipline="cs2"] > * {
@@ -572,12 +572,12 @@
 [data-theme="light"] .live-content[data-discipline="dota2"] {
   position: relative;
   background:
-    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(192, 57, 43, 0.12), transparent 70%),
+    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(106, 20, 34, 0.12), transparent 70%),
     linear-gradient(180deg,
       rgba(237, 212, 184, 0.85) 0%,
       rgba(244, 224, 198, 0.78) 25%,
       rgba(248, 234, 215, 0.72) 60%,
-      rgba(248, 240, 226, 0.65) 100%);
+      rgba(246, 240, 228, 0.65) 100%);
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
 }
@@ -882,12 +882,12 @@
 [data-theme="light"] .live-content[data-discipline="mma"] {
   position: relative;
   background:
-    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(160, 16, 16, 0.08), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(122, 24, 32, 0.08), transparent 70%),
     linear-gradient(180deg,
       rgba(240, 230, 218, 0.85) 0%,
       rgba(245, 237, 226, 0.78) 25%,
       rgba(248, 242, 232, 0.72) 60%,
-      rgba(248, 245, 238, 0.65) 100%);
+      rgba(246, 240, 228, 0.65) 100%);
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
 }
