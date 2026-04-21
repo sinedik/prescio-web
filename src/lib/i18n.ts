@@ -100,6 +100,18 @@ const translations = {
   'auth.sign_up_link':     { en: 'Sign up',           ru: 'Зарегистрироваться' },
   'auth.has_account':      { en: 'Already have an account?', ru: 'Уже есть аккаунт?' },
   'auth.sign_in_link':     { en: 'Sign in',           ru: 'Войти' },
+  'auth.pw_strength.weak':   { en: 'Weak',    ru: 'Слабый' },
+  'auth.pw_strength.fair':   { en: 'Fair',    ru: 'Средний' },
+  'auth.pw_strength.good':   { en: 'Good',    ru: 'Хороший' },
+  'auth.pw_strength.strong': { en: 'Strong',  ru: 'Сильный' },
+  'auth.pw_rule.length':     { en: 'At least 8 characters', ru: 'Минимум 8 символов' },
+  'auth.pw_rule.digit':      { en: 'One number',            ru: 'Одна цифра' },
+  'auth.pw_rule.special':    { en: 'One special character', ru: 'Один спецсимвол' },
+  'auth.pw_rule.upper':      { en: 'One uppercase letter',  ru: 'Одна заглавная буква' },
+  'auth.terms.agree':        { en: 'I agree to the',        ru: 'Я согласен с' },
+  'auth.terms.tos':          { en: 'Terms of Service',      ru: 'Условиями использования' },
+  'auth.terms.and':          { en: 'and',                   ru: 'и' },
+  'auth.terms.privacy':      { en: 'Privacy Policy',        ru: 'Политикой конфиденциальности' },
 
   // ── Profile ──────────────────────────────────────────────────────────────────
   'profile.title':         { en: 'Profile',         ru: 'Профиль' },

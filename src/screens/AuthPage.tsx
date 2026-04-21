@@ -87,6 +87,75 @@ function Field({
   )
 }
 
+// ── Password strength ─────────────────────────────────────────────────────────
+function getPasswordChecks(pw: string) {
+  return {
+    length: pw.length >= 8,
+    digit: /\d/.test(pw),
+    special: /[^A-Za-z0-9]/.test(pw),
+    upper: /[A-Z]/.test(pw),
+  }
+}
+
+function PasswordStrength({
+  password,
+  labels,
+}: {
+  password: string
+  labels: { weak: string; fair: string; good: string; strong: string; length: string; digit: string; special: string; upper: string }
+}) {
+  const checks = getPasswordChecks(password)
+  const score = Object.values(checks).filter(Boolean).length
+  const tiers = [
+    { label: '', color: 'rgb(var(--bg-border))' },
+    { label: labels.weak,   color: 'rgb(var(--danger))' },
+    { label: labels.fair,   color: '#D4954A' },
+    { label: labels.good,   color: 'rgb(var(--accent))' },
+    { label: labels.strong, color: '#7FB069' },
+  ]
+  const current = tiers[score]
+
+  return (
+    <div className="flex flex-col gap-2 mt-2">
+      <div className="flex items-center gap-1.5">
+        {[0, 1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="flex-1 h-1 rounded-full transition-colors"
+            style={{ background: i < score ? current.color : 'rgb(var(--bg-border))' }}
+          />
+        ))}
+        <span
+          className="text-[10px] font-mono font-bold tracking-wider ml-1"
+          style={{ color: score > 0 ? current.color : 'rgb(var(--text-muted))', minWidth: '48px', textAlign: 'right' }}
+        >
+          {current.label}
+        </span>
+      </div>
+      <ul className="grid grid-cols-2 gap-x-3 gap-y-1">
+        {([
+          ['length', labels.length],
+          ['digit', labels.digit],
+          ['special', labels.special],
+          ['upper', labels.upper],
+        ] as const).map(([key, text]) => {
+          const ok = checks[key]
+          return (
+            <li
+              key={key}
+              className="flex items-center gap-1.5 text-[10px] font-mono transition-colors"
+              style={{ color: ok ? 'rgb(var(--accent))' : 'rgb(var(--text-muted))' }}
+            >
+              <span style={{ fontSize: '11px' }}>{ok ? '✓' : '○'}</span>
+              <span>{text}</span>
+            </li>
+          )
+        })}
+      </ul>
+    </div>
+  )
+}
+
 // ── Social button ─────────────────────────────────────────────────────────────
 function SocialBtn({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
   return (
@@ -172,6 +241,7 @@ export default function AuthPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
+  const [termsAccepted, setTermsAccepted] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -195,7 +265,7 @@ export default function AuthPage() {
 
   function handleModeChange(m: 'signin' | 'signup') {
     if (m === mode) return
-    setError(null); setEmail(''); setPassword(''); setConfirm('')
+    setError(null); setEmail(''); setPassword(''); setConfirm(''); setTermsAccepted(false)
     setMode(m); setFormKey((k) => k + 1)
   }
 
@@ -478,6 +548,21 @@ export default function AuthPage() {
                 onFocus={(e) => { (e.currentTarget as HTMLInputElement).style.borderColor = 'rgb(var(--accent) / 0.5)' }}
                 onBlur={(e) => { (e.currentTarget as HTMLInputElement).style.borderColor = 'rgb(var(--bg-border))' }}
               />
+              {mode === 'signup' && (
+                <PasswordStrength
+                  password={password}
+                  labels={{
+                    weak: tr('auth.pw_strength.weak'),
+                    fair: tr('auth.pw_strength.fair'),
+                    good: tr('auth.pw_strength.good'),
+                    strong: tr('auth.pw_strength.strong'),
+                    length: tr('auth.pw_rule.length'),
+                    digit: tr('auth.pw_rule.digit'),
+                    special: tr('auth.pw_rule.special'),
+                    upper: tr('auth.pw_rule.upper'),
+                  }}
+                />
+              )}
             </div>
 
             {mode === 'signup' && (
@@ -489,6 +574,28 @@ export default function AuthPage() {
                 placeholder="••••••••"
                 minLength={6}
               />
+            )}
+
+            {mode === 'signup' && (
+              <label className="flex items-start gap-2.5 cursor-pointer select-none mt-1">
+                <input
+                  type="checkbox"
+                  checked={termsAccepted}
+                  onChange={(e) => setTermsAccepted(e.target.checked)}
+                  className="mt-0.5 shrink-0 cursor-pointer"
+                  style={{ accentColor: 'rgb(var(--accent))' }}
+                />
+                <span className="text-[11px] font-mono leading-relaxed" style={{ color: 'rgb(var(--text-muted))' }}>
+                  {tr('auth.terms.agree')}{' '}
+                  <Link href="/terms" target="_blank" className="underline" style={{ color: 'rgb(var(--text-secondary))' }}>
+                    {tr('auth.terms.tos')}
+                  </Link>
+                  {' '}{tr('auth.terms.and')}{' '}
+                  <Link href="/privacy" target="_blank" className="underline" style={{ color: 'rgb(var(--text-secondary))' }}>
+                    {tr('auth.terms.privacy')}
+                  </Link>
+                </span>
+              </label>
             )}
 
             {error && (
@@ -504,21 +611,26 @@ export default function AuthPage() {
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-2.5 text-sm font-mono font-bold rounded-lg transition-all duration-150 active:scale-[0.98]"
-              style={{
-                background: 'rgb(var(--accent))',
-                color: 'rgb(var(--bg-base))',
-                opacity: loading ? 0.6 : 1,
-                cursor: loading ? 'not-allowed' : 'pointer',
-              }}
-              onMouseEnter={(e) => { if (!loading) (e.currentTarget as HTMLButtonElement).style.background = 'rgb(var(--accent-hover))' }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgb(var(--accent))' }}
-            >
-              {loading ? tr('auth.btn_loading') : mode === 'signin' ? tr('auth.btn_sign_in') : tr('auth.btn_create')}
-            </button>
+            {(() => {
+              const submitDisabled = loading || (mode === 'signup' && !termsAccepted)
+              return (
+                <button
+                  type="submit"
+                  disabled={submitDisabled}
+                  className="w-full py-2.5 text-sm font-mono font-bold rounded-lg transition-all duration-150 active:scale-[0.98]"
+                  style={{
+                    background: 'rgb(var(--accent))',
+                    color: 'rgb(var(--bg-base))',
+                    opacity: submitDisabled ? 0.45 : 1,
+                    cursor: submitDisabled ? 'not-allowed' : 'pointer',
+                  }}
+                  onMouseEnter={(e) => { if (!submitDisabled) (e.currentTarget as HTMLButtonElement).style.background = 'rgb(var(--accent-hover))' }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgb(var(--accent))' }}
+                >
+                  {loading ? tr('auth.btn_loading') : mode === 'signin' ? tr('auth.btn_sign_in') : tr('auth.btn_create')}
+                </button>
+              )
+            })()}
           </form>
 
           {/* Divider */}
