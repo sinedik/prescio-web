@@ -77,6 +77,17 @@ const translations = {
   'match_detail.prx.confidence': { en: 'CONFIDENCE', ru: 'УВЕРЕННОСТЬ' },
   'match_detail.prx.fair_prob':  { en: 'FAIR PROB',  ru: 'FAIR PROB' },
 
+  // ── Match detail: context grid ───────────────────────────────────────────────
+  'match_detail.ctx.form':    { en: 'RECENT FORM',  ru: 'ФОРМА' },
+  'match_detail.ctx.h2h':     { en: 'HEAD TO HEAD', ru: 'ЛИЧНЫЕ ВСТРЕЧИ' },
+  'match_detail.ctx.metrics': { en: 'KEY METRICS',  ru: 'КЛЮЧЕВЫЕ МЕТРИКИ' },
+  'match_detail.ctx.m_form':  { en: 'FORM',    ru: 'ФОРМА' },
+  'match_detail.ctx.m_att':   { en: 'ATTACK',  ru: 'АТАКА' },
+  'match_detail.ctx.m_def':   { en: 'DEFENCE', ru: 'ЗАЩИТА' },
+  'match_detail.ctx.m_h2h':   { en: 'H2H',     ru: 'ЛИЧНЫЕ' },
+  'match_detail.ctx.m_goals': { en: 'GOALS',   ru: 'ГОЛЫ' },
+  'match_detail.ctx.m_total': { en: 'TOTAL',   ru: 'ИТОГО' },
+
   // ── Sport ────────────────────────────────────────────────────────────────────
   'sport.title':           { en: 'Sport',           ru: 'Спорт' },
   'sport.upcoming':        { en: 'Upcoming',        ru: 'Предстоящие' },
