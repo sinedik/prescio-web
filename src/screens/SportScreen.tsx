@@ -1,17 +1,15 @@
 'use client'
-import React, { useState, useEffect, useMemo, useCallback, memo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { getCached, setCached } from '../lib/clientCache'
 import { flushSync } from 'react-dom'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { useSportWs } from '../hooks/useSportWs'
-import { useLiveElapsed } from '../hooks/useLiveElapsed'
 import { sportApi } from '../lib/api'
 import { syncSportDateAction } from '../actions/sport'
 import { ErrorBoundary } from '../components/ErrorBoundary'
-import type { SportEvent, SportOdds, SubscriptionPlan } from '../types/index'
+import type { SportEvent, SubscriptionPlan } from '../types/index'
 import { useAuthContext } from '../contexts/AuthContext'
 import type { EventMeta, EventFastCache } from './SportEventPage'
 import type { SidebarLeague } from '../contexts/LiveLayoutContext'
@@ -29,6 +27,7 @@ import { mix } from '../components/disciplines'
 import { useLiveLayout } from '../contexts/LiveLayoutContext'
 import { useLang } from '../contexts/LanguageContext'
 import { t as tFn, useT } from '../lib/i18n'
+import SportMatchCard from '../components/sport/SportMatchCard'
 import type { Lang } from '../lib/i18n'
 import PrescioLoader from '../components/PrescioLoader'
 import { Pagination } from '../components/live/Pagination'
@@ -83,50 +82,6 @@ function formatDateLabel(dateStr: string, lang: Lang): { weekday: string; day: s
     weekday: d.toLocaleDateString(locale, { weekday: 'short' }),
     day:     String(d.getDate()),
     month:   d.toLocaleDateString(locale, { month: 'short' }),
-  }
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-function abbr(name: string): string {
-  const words = (name ?? '').trim().split(/\s+/).filter(Boolean)
-  if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase()
-  return (name ?? '--').slice(0, 2).toUpperCase()
-}
-
-function formatTime(iso: string, lang: Lang): string {
-  const d = new Date(iso)
-  const now = new Date()
-  const diff = d.getTime() - now.getTime()
-  const locale = lang === 'ru' ? 'ru-RU' : 'en-US'
-  if (diff > 0 && diff < 60 * 60_000) return `${Math.round(diff / 60000)}${lang === 'ru' ? 'м' : 'min'}`
-  return d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
-}
-
-// ─── Odds extraction ──────────────────────────────────────────────────────────
-interface Odds3Way { home: number; draw: number | null; away: number }
-
-function extractOdds(odds?: SportOdds[], sport?: Sport): Odds3Way | null {
-  const h2h = odds?.find(o => o.market_type === 'h2h')
-  if (!h2h || h2h.outcomes.length < 2) return null
-
-  const homeOut = h2h.outcomes.find(o => { const n = o.name.toLowerCase(); return n === 'home' || n === '1' })
-  const awayOut = h2h.outcomes.find(o => { const n = o.name.toLowerCase(); return n === 'away' || n === '2' })
-  const drawOut = h2h.outcomes.find(o => { const n = o.name.toLowerCase(); return n === 'draw' || n === 'x' })
-  const nonDraw = h2h.outcomes.filter(o => { const n = o.name.toLowerCase(); return n !== 'draw' && n !== 'x' })
-
-  const home = homeOut ?? nonDraw[0]
-  const away = awayOut ?? nonDraw[1]
-  if (!home || !away) return null
-
-  const rawHome = 100 / home.price
-  const rawAway = 100 / away.price
-  const rawDraw = drawOut && sport === 'football' ? 100 / drawOut.price : null
-  const sum = rawHome + rawAway + (rawDraw ?? 0)
-
-  return {
-    home: Math.round((rawHome / sum) * 100),
-    draw: rawDraw != null ? Math.round((rawDraw / sum) * 100) : null,
-    away: Math.round((rawAway / sum) * 100),
   }
 }
 
@@ -264,281 +219,6 @@ function groupByLeague(events: SportEvent[]): LeagueGroup[] {
       const bMin = Math.min(...b.events.map(e => new Date(e.starts_at).getTime()))
       return aMin - bMin
     })
-}
-
-// ─── Team logo ────────────────────────────────────────────────────────────────
-function TeamLogo({ logo, abbr: abbrStr, size, accent }: { logo?: string | null; abbr: string; size: number; accent: string }) {
-  const [err, setErr] = useState(false)
-  if (logo && !err) return (
-    <div className="shrink-0 flex items-center justify-center rounded overflow-hidden border border-bg-border"
-      style={{ width: size, height: size, background: mix(accent, 3) }}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={logo} alt="" loading="lazy" onError={() => setErr(true)} style={{ width: size * 0.8, height: size * 0.8, objectFit: 'contain' }} />
-    </div>
-  )
-  return (
-    <div className="shrink-0 flex items-center justify-center rounded text-[8px] font-bold bg-bg-elevated border border-bg-border text-text-muted"
-      style={{ width: size, height: size }}>
-      {abbrStr}
-    </div>
-  )
-}
-
-// ─── Odds pills ───────────────────────────────────────────────────────────────
-const SUCCESS = '#22c55e'
-function OddsPills({ odds, sport }: { odds: Odds3Way; sport: Sport }) {
-  const showDraw = sport === 'football' && odds.draw != null
-  const max = Math.max(odds.home, odds.away, odds.draw ?? 0)
-
-  const Pill = ({ label, value }: { label: string; value: number }) => {
-    const isFav = value === max
-    return (
-      <div className="flex flex-col items-center text-center"
-        style={{
-          minWidth: 34,
-          padding: '3px 6px',
-          borderRadius: 3,
-          border: isFav ? `1px solid ${SUCCESS}55` : '0.5px solid rgba(var(--surface-tint-rgb),0.1)',
-          background: isFav ? `${SUCCESS}08` : 'rgba(var(--surface-tint-rgb),0.03)',
-        }}>
-        <span className="text-[7px] font-mono uppercase tracking-wide leading-none mb-0.5"
-          style={{ color: isFav ? SUCCESS : 'rgba(var(--surface-tint-rgb),0.3)' }}>
-          {label}
-        </span>
-        <span className="text-[10px] font-mono leading-none tabular-nums"
-          style={{ color: isFav ? SUCCESS : 'rgba(var(--surface-tint-rgb),0.55)' }}>
-          {value}%
-        </span>
-      </div>
-    )
-  }
-
-  return (
-    <div className="hidden sm:flex gap-0.5 items-stretch">
-      <Pill label="1" value={odds.home} />
-      {showDraw && <Pill label="X" value={odds.draw!} />}
-      <Pill label="2" value={odds.away} />
-    </div>
-  )
-}
-
-// ─── Match Row ────────────────────────────────────────────────────────────────
-const SportRow = memo(function SportRow({ event, sport, accent }: {
-  event: SportEvent; sport: Sport; accent: string
-}) {
-  const [expanded, setExpanded] = useState(false)
-  const router = useRouter()
-  const { lang } = useLang()
-  const t = useT(lang)
-  const isLive     = event.status === 'live'
-  const isFinished = event.status === 'finished'
-  const hasScore   = event.home_score != null && event.away_score != null
-  const elapsedAnchor = (event.raw_data as Record<string, unknown> | null)?.elapsed as number | null | undefined
-  const statusShort   = (event.raw_data as Record<string, unknown> | null)?.status_short as string | null | undefined
-  const elapsed    = useLiveElapsed(elapsedAnchor, event.status, statusShort)
-  const odds       = extractOdds(event.sport_odds, sport)
-  const raw        = event.raw_data as Record<string, unknown> | null
-  const homeLogo   = raw?.home_logo as string | null | undefined
-  const awayLogo   = raw?.away_logo as string | null | undefined
-  const homeLeads  = (event.home_score ?? 0) > (event.away_score ?? 0)
-  const awayLeads  = (event.away_score ?? 0) > (event.home_score ?? 0)
-
-  const href = `/sport/${sport}/${event.id}`
-
-  // Per-state team name color
-  const homeNameStyle: React.CSSProperties = isFinished
-    ? homeLeads
-      ? { color: 'rgb(var(--text-primary))', fontWeight: 500 }
-      : { color: 'rgba(var(--surface-tint-rgb),0.32)', fontWeight: 400 }
-    : isLive
-      ? { color: 'rgb(var(--text-primary))', fontWeight: 400 }
-      : { color: 'rgb(var(--text-secondary))', fontWeight: 400 }
-
-  const awayNameStyle: React.CSSProperties = isFinished
-    ? awayLeads
-      ? { color: 'rgb(var(--text-primary))', fontWeight: 500 }
-      : { color: 'rgba(var(--surface-tint-rgb),0.32)', fontWeight: 400 }
-    : isLive
-      ? { color: 'rgb(var(--text-primary))', fontWeight: 400 }
-      : { color: 'rgb(var(--text-secondary))', fontWeight: 400 }
-
-  return (
-    <div style={{
-      opacity: isFinished ? 0.55 : 1,
-      borderLeft: isLive ? '2px solid #ff5252' : '2px solid transparent',
-      borderBottom: '0.5px solid rgba(var(--surface-tint-rgb),0.07)',
-    }}>
-      <Link
-        href={href}
-        prefetch={false}
-        onMouseEnter={() => router.prefetch(href)}
-        className="grid items-center gap-2 transition-colors hover:bg-text-primary/[0.015]"
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '36px 1fr 28px auto 20px',
-          padding: '10px 14px',
-          background: isLive ? 'rgba(255,50,50,0.025)' : undefined,
-        }}
-      >
-        {/* Zone 1: Status / Time */}
-        <div className="flex flex-col items-center justify-center gap-0.5 shrink-0">
-          {isLive ? (
-            <>
-              <span className="text-[9px] font-mono font-bold tracking-wider" style={{ color: '#ff5252' }}>LIVE</span>
-              {elapsed != null && (
-                <div className="flex items-center gap-0.5">
-                  <span className="w-1 h-1 rounded-full bg-red-500 animate-pulse shrink-0" />
-                  <span className="text-[11px] font-mono leading-none" style={{ color: '#D4A017' }}>{elapsed}&apos;</span>
-                </div>
-              )}
-            </>
-          ) : isFinished ? (
-            <span className="text-[9px] font-mono uppercase tracking-[0.08em] text-center"
-              style={{ color: 'rgba(var(--surface-tint-rgb),0.3)' }}>
-              {t('sport.ft_abbr')}
-            </span>
-          ) : (
-            <span className="text-[11px] font-mono text-center leading-tight"
-              style={{ color: 'rgb(var(--text-secondary))' }}>
-              {formatTime(event.starts_at, lang)}
-            </span>
-          )}
-        </div>
-
-        {/* Zone 2: Teams */}
-        <div className="flex flex-col gap-[5px] min-w-0">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <TeamLogo logo={homeLogo} abbr={abbr(event.home_team)} size={14} accent={accent} />
-            <span className="text-[12px] truncate leading-tight" style={homeNameStyle}>{event.home_team}</span>
-          </div>
-          <div className="flex items-center gap-1.5 min-w-0">
-            <TeamLogo logo={awayLogo} abbr={abbr(event.away_team)} size={14} accent={accent} />
-            <span className="text-[12px] truncate leading-tight" style={awayNameStyle}>{event.away_team}</span>
-          </div>
-        </div>
-
-        {/* Zone 3: Score */}
-        <div className="flex flex-col items-center justify-center gap-[5px] shrink-0">
-          {hasScore ? (
-            <>
-              <span className="text-[13px] font-mono leading-none tabular-nums"
-                style={isLive
-                  ? { color: '#ff5252', fontWeight: 500 }
-                  : isFinished
-                    ? { color: homeLeads ? 'rgb(var(--text-primary))' : 'rgba(var(--surface-tint-rgb),0.28)', fontWeight: homeLeads ? 500 : 400 }
-                    : { color: 'rgba(var(--surface-tint-rgb),0.3)', fontWeight: 400 }
-                }>
-                {event.home_score}
-              </span>
-              <span className="text-[13px] font-mono leading-none tabular-nums"
-                style={isLive
-                  ? { color: '#ff5252', fontWeight: 500 }
-                  : isFinished
-                    ? { color: awayLeads ? 'rgb(var(--text-primary))' : 'rgba(var(--surface-tint-rgb),0.28)', fontWeight: awayLeads ? 500 : 400 }
-                    : { color: 'rgba(var(--surface-tint-rgb),0.3)', fontWeight: 400 }
-                }>
-                {event.away_score}
-              </span>
-            </>
-          ) : (
-            <>
-              <span className="text-[11px] font-mono leading-none" style={{ color: 'rgba(var(--surface-tint-rgb),0.22)' }}>—</span>
-              <span className="text-[11px] font-mono leading-none" style={{ color: 'rgba(var(--surface-tint-rgb),0.22)' }}>—</span>
-            </>
-          )}
-        </div>
-
-        {/* Zone 4: Odds pills (hidden for finished) */}
-        <div className="flex items-center shrink-0" onClick={e => e.preventDefault()}>
-          {!isFinished && odds && <OddsPills odds={odds} sport={sport} />}
-        </div>
-
-        {/* Zone 5: Expand arrow */}
-        <button
-          className="flex items-center justify-center shrink-0 h-full"
-          onClick={e => { e.preventDefault(); setExpanded(v => !v) }}
-          style={{ color: 'rgba(var(--surface-tint-rgb),0.22)' }}
-        >
-          <span className="text-[16px] leading-none" style={{ transform: expanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s', display: 'inline-block' }}>›</span>
-        </button>
-      </Link>
-
-      {expanded && (
-        <div className="px-[14px] py-3 border-t border-bg-border/30 bg-bg-elevated/20">
-          <MatchDetail event={event} sport={sport} accent={accent} />
-        </div>
-      )}
-    </div>
-  )
-})
-
-// ─── Match detail (expanded) ──────────────────────────────────────────────────
-function MatchDetail({ event, sport, accent }: { event: SportEvent; sport: Sport; accent: string }) {
-  const { lang } = useLang()
-  const t = useT(lang)
-  const allOdds = event.sport_odds ?? []
-  if (allOdds.length === 0) return (
-    <div className="flex items-center justify-center py-3">
-      <span className="text-[10px] font-mono text-text-muted/40">{t('sport.odds_unavailable')}</span>
-    </div>
-  )
-
-  const MARKET_LABELS: Record<string, string> = {
-    h2h: sport === 'football' ? '1X2' : t('sport.winner'),
-    spreads: t('sport.market.spreads'), totals: t('sport.market.totals'), btts: t('sport.market.btts'),
-  }
-
-  const byMarket = new Map<string, SportOdds[]>()
-  for (const o of allOdds) {
-    if (!byMarket.has(o.market_type)) byMarket.set(o.market_type, [])
-    byMarket.get(o.market_type)!.push(o)
-  }
-
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-3 text-[10px] font-mono text-text-muted">
-        {event.league && <span>{event.league}</span>}
-        {(event.raw_data as Record<string, unknown> | null)?.season != null && (
-          <><span className="text-text-muted/35">·</span>
-          <span>{t('sport.season_label')} {String((event.raw_data as Record<string, unknown>).season)}</span></>
-        )}
-        <span className="text-text-muted/35">·</span>
-        <span>{new Date(event.starts_at).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        {Array.from(byMarket.entries()).map(([marketType, marketOdds]) => {
-          const bestByName = new Map<string, { price: number; bookmaker: string }>()
-          for (const book of marketOdds)
-            for (const outcome of book.outcomes) {
-              const existing = bestByName.get(outcome.name)
-              if (!existing || outcome.price > existing.price)
-                bestByName.set(outcome.name, { price: outcome.price, bookmaker: book.bookmaker })
-            }
-          return (
-            <div key={marketType}>
-              <div className="flex items-center gap-2 mb-1.5">
-                <p className="text-[8px] font-mono font-bold tracking-[0.1em] uppercase text-text-muted">
-                  {MARKET_LABELS[marketType] ?? marketType}
-                </p>
-                <span className="text-[8px] font-mono text-text-muted">{marketOdds.length} {t('sport.bk_abbr')}</span>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {Array.from(bestByName.entries()).map(([name, { price, bookmaker }]) => (
-                  <div key={name} className="flex flex-col items-center px-2.5 py-1.5 rounded border min-w-[56px]"
-                    style={{ borderColor: 'rgba(var(--surface-tint-rgb),0.08)', background: 'rgba(var(--surface-tint-rgb),0.03)' }}>
-                    <span className="text-[9px] font-mono text-text-muted truncate max-w-[80px] text-center leading-tight mb-0.5">{name}</span>
-                    <span className="text-[14px] font-mono font-bold leading-none" style={{ color: accent }}>{price.toFixed(2)}</span>
-                    <span className="text-[7px] font-mono text-text-muted/40 mt-0.5 truncate max-w-[64px] text-center">{bookmaker}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
 }
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
@@ -842,14 +522,12 @@ export function SportScreen({ initialSport, eventId, initialEvents, initialEvent
                           liveCount={leagueLiveCount}
                           first={idx === 0}
                         />
-                        <div className="flex flex-col rounded-b-lg overflow-hidden"
-                          style={{ border: '0.5px solid rgba(var(--surface-tint-rgb),0.07)', borderTop: 'none' }}>
+                        <div className="flex flex-col gap-2 pt-2">
                           {group.map(e => (
-                            <SportRow
+                            <SportMatchCard
                               key={e.id}
                               event={e}
-                              sport={sport}
-                              accent={accent}
+                              href={`/sport/${sport}/${e.id}`}
                             />
                           ))}
                         </div>
