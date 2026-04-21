@@ -42,9 +42,10 @@ export default function AppFooter() {
       { label: tr('footer.pricing'),   to: '/pricing' },
     ],
     [tr('footer.company')]: [
-      { label: tr('footer.about'),     to: '/' },
-      { label: tr('footer.privacy'),   to: '/privacy' },
-      { label: tr('footer.terms'),     to: '/terms' },
+      { label: tr('footer.about'),         to: '/' },
+      { label: tr('footer.how_it_works'),  to: '/how-it-works' },
+      { label: tr('footer.privacy'),       to: '/privacy' },
+      { label: tr('footer.terms'),         to: '/terms' },
     ],
     [tr('footer.intelligence')]: [
       { label: 'Polymarket', href: 'https://polymarket.com' },

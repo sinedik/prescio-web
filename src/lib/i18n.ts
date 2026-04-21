@@ -735,6 +735,7 @@ const translations = {
   'footer.watchlist':           { en: 'Watchlist',                 ru: 'Вотчлист' },
   'footer.pricing':             { en: 'Pricing',                   ru: 'Цены' },
   'footer.about':               { en: 'About',                     ru: 'О нас' },
+  'footer.how_it_works':        { en: 'How it works',              ru: 'Как это работает' },
   'footer.privacy':             { en: 'Privacy Policy',            ru: 'Политика конфиденциальности' },
   'footer.terms':               { en: 'Terms of Service',          ru: 'Условия использования' },
   'footer.min':                 { en: 'min',                       ru: 'мин' },
@@ -809,6 +810,41 @@ const translations = {
   'privacy.intro':              { en: 'This policy explains what personal data Prescio collects, why, and how we protect it. By using Prescio you agree to the practices described here.', ru: 'Эта политика объясняет, какие персональные данные собирает Prescio, зачем и как мы их защищаем. Используя Prescio, вы соглашаетесь с описанными здесь практиками.' },
   'terms.title':                { en: 'Terms of Service',          ru: 'Условия использования' },
   'terms.intro':                { en: 'Please read these Terms carefully before using Prescio. They govern your access to and use of the service.', ru: 'Пожалуйста, внимательно прочитайте эти Условия перед использованием Prescio. Они регулируют ваш доступ к сервису и его использование.' },
+
+  // ── How it works page ────────────────────────────────────────────────────────
+  'how_it_works.nav':           { en: 'How it works',              ru: 'Как это работает' },
+  'how_it_works.hero.h1':       { en: 'How Prescio finds the edge', ru: 'Как Prescio находит edge' },
+  'how_it_works.hero.sub':      { en: 'AI cross-references primary sources against crowd probability — across prediction markets, sports, and esports.', ru: 'AI сопоставляет первоисточники с вероятностями толпы — в предсказательных рынках, спорте и киберспорте.' },
+  'how_it_works.hero.cta':      { en: 'Start for free →',          ru: 'Начать бесплатно →' },
+
+  'how_it_works.s1.title':      { en: 'We read what the crowd misses', ru: 'Мы читаем то, что упускает толпа' },
+  'how_it_works.s1.c1.title':   { en: 'Primary sources',            ru: 'Первоисточники' },
+  'how_it_works.s1.c1.desc':    { en: 'ISW situation reports, AP and Reuters wires, official briefings and regulatory filings.', ru: 'Отчёты ISW, ленты AP и Reuters, официальные брифинги и регуляторные публикации.' },
+  'how_it_works.s1.c2.title':   { en: 'Market data',                ru: 'Рыночные данные' },
+  'how_it_works.s1.c2.desc':    { en: 'Live order books from Polymarket, Kalshi and Metaculus — volume, spread, movement.', ru: 'Живые стаканы Polymarket, Kalshi и Metaculus — объём, спред, движение.' },
+  'how_it_works.s1.c3.title':   { en: 'Sports & esports feeds',     ru: 'Ленты спорта и киберспорта' },
+  'how_it_works.s1.c3.desc':    { en: 'GRID API for Dota 2 and CS2, football stats providers — lineups, form, head-to-head.', ru: 'GRID API для Dota 2 и CS2, футбольные провайдеры статистики — составы, форма, очные встречи.' },
+
+  'how_it_works.s2.title':      { en: 'AI models find mispriced probability', ru: 'AI находит ошибки в вероятности' },
+  'how_it_works.s2.p1.title':   { en: 'Cross-reference',            ru: 'Сопоставление' },
+  'how_it_works.s2.p1.desc':    { en: 'AI compares primary source signals against the market price in real time.', ru: 'AI сравнивает сигналы первоисточников с ценой рынка в реальном времени.' },
+  'how_it_works.s2.p2.title':   { en: 'Probability model',          ru: 'Модель вероятности' },
+  'how_it_works.s2.p2.desc':    { en: 'Our model outputs a fair value for every outcome — independent of market consensus.', ru: 'Модель выдаёт справедливую цену для каждого исхода — независимо от консенсуса рынка.' },
+  'how_it_works.s2.p3.title':   { en: 'Edge detection',             ru: 'Детекция edge' },
+  'how_it_works.s2.p3.desc':    { en: 'Surfaces markets where the crowd price diverges from fair value by ≥ threshold.', ru: 'Показывает рынки, где цена толпы расходится со справедливой ≥ порога.' },
+
+  'how_it_works.s3.title':      { en: 'From signal to position in minutes', ru: 'От сигнала к позиции за минуты' },
+  'how_it_works.s3.step1.title':{ en: 'Scan the feed',              ru: 'Сканируй ленту' },
+  'how_it_works.s3.step1.desc': { en: 'All markets — prediction, sports, esports — in one stream.', ru: 'Все рынки — предсказательные, спорт, киберспорт — в одном потоке.' },
+  'how_it_works.s3.step2.title':{ en: 'Spot edge alerts',           ru: 'Лови edge-алерты' },
+  'how_it_works.s3.step2.desc': { en: 'Pro and Alpha get filtered high-edge opportunities surfaced the moment they appear.', ru: 'Pro и Alpha получают отфильтрованные high-edge возможности в момент появления.' },
+  'how_it_works.s3.step3.title':{ en: 'Analyze the market',         ru: 'Разбирай рынок' },
+  'how_it_works.s3.step3.desc': { en: 'Sources, historical patterns, AI rationale — everything in one view.', ru: 'Источники, исторические паттерны, логика AI — всё в одном окне.' },
+  'how_it_works.s3.step4.title':{ en: 'Act',                        ru: 'Действуй' },
+  'how_it_works.s3.step4.desc': { en: 'We link you to the originating market to execute on your own terms.', ru: 'Мы отправляем тебя к исходному рынку — ты исполняешь на своих условиях.' },
+
+  'how_it_works.footer.title':  { en: 'Ready to find your edge?',   ru: 'Готов найти свой edge?' },
+  'how_it_works.footer.cta':    { en: 'Start for free →',           ru: 'Начать бесплатно →' },
 } as const
 
 export type TranslationKey = keyof typeof translations

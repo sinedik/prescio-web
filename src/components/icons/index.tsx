@@ -13,4 +13,7 @@ export {
   FileText   as IconFileText,
   Globe      as IconGlobe,
   MapPin     as IconMapPin,
+  GitCompare as IconGitCompare,
+  LineChart  as IconLineChart,
+  Radar      as IconRadar,
 } from 'lucide-react'
