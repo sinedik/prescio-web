@@ -4,11 +4,13 @@ import { usePageTitle } from '../hooks/usePageTitle'
 import { useParams, useRouter } from 'next/navigation'
 import type { Market, Analysis, MarketOpportunity, NewsItem, MetaculusMatch } from '../types'
 import {
-  formatProb, formatEdge, formatVolume, daysUntil,
+  formatProb, formatEdge, formatVolume,
 } from '../utils'
 import dynamic from 'next/dynamic'
 const PaywallModal = dynamic(() => import('../components/PaywallModal'), { ssr: false })
 import { api } from '../lib/api'
+import { normalizeBinary } from '../lib/probabilities'
+import { MarketStatusBadge } from '../components/markets/MarketStatusBadge'
 import { analyzeMarketAction } from '../actions/analyze'
 import { useAuthContext } from '../contexts/AuthContext'
 import AnalysisLoader from '../AnalysisLoader'
@@ -37,16 +39,6 @@ function catLabel(cat?: string | null): string | null {
   if (!cat) return null
   const k = cat.toUpperCase()
   return CATEGORY_LABELS[k] ?? k.replace(/_/g, ' ').toLowerCase()
-}
-
-function resolutionLabel(date: string | undefined, days: number | null): { text: string; tone: 'danger' | 'warning' | 'muted' } | null {
-  if (!date || days === null) return null
-  if (days <= 0) return { text: 'Резолв сегодня', tone: 'danger' }
-  if (days <= 3) return { text: `Резолв через ${days}д`, tone: 'danger' }
-  if (days <= 7) return { text: `Резолв через ${days}д`, tone: 'warning' }
-  const d = new Date(date)
-  const fmt = d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }).replace('.', '')
-  return { text: `Резолв ${fmt} · ${days}д`, tone: 'muted' }
 }
 
 // ---- Interactive SVG Price Chart ----
@@ -536,13 +528,9 @@ export default function MarketDetailPage() {
     )
   }
 
-  const days = daysUntil(market.resolutionDate)
-  const prob = market.yesPrice != null
-    ? (market.yesPrice > 1 ? market.yesPrice : market.yesPrice * 100)
-    : (analysis?.marketProb ?? null)
-  const noProb = market.noPrice != null
-    ? (market.noPrice > 1 ? market.noPrice : market.noPrice * 100)
-    : prob != null ? (100 - prob) : null
+  const normalizedBinary = normalizeBinary(market.yesPrice, market.noPrice, `market-detail:${market.platform}:${market.id ?? market.question}`)
+  const prob = normalizedBinary?.yes ?? (analysis?.marketProb ?? null)
+  const noProb = normalizedBinary?.no ?? (prob != null ? (100 - prob) : null)
   const confScore = analysis
     ? (typeof analysis.confidenceScore === 'number' ? analysis.confidenceScore
       : analysis.confidence === 'high' ? 75
@@ -558,12 +546,6 @@ export default function MarketDetailPage() {
     : liq.tone === 'watch'
     ? 'text-watch border-watch/30 bg-watch/5'
     : 'text-danger border-danger/30 bg-danger/5'
-
-  const resInfo = resolutionLabel(market.resolutionDate, days)
-  const resInfoCls = !resInfo ? '' :
-    resInfo.tone === 'danger' ? 'text-danger'
-    : resInfo.tone === 'warning' ? 'text-watch'
-    : 'text-text-muted'
 
   const categoryText = catLabel(analysis?.category ?? market.category)
 
@@ -611,11 +593,7 @@ export default function MarketDetailPage() {
         {/* Meta bar */}
         <div className="flex items-center gap-2 mb-3 flex-wrap">
           <SourceBadge source={market.platform.toLowerCase()} size="md" />
-          {resInfo && (
-            <span className={`text-[11px] font-mono font-bold uppercase tracking-wider ${resInfoCls}`}>
-              {resInfo.text}
-            </span>
-          )}
+          <MarketStatusBadge market={market} size="md" />
           {market.url && (
             <a href={market.url} target="_blank" rel="noopener noreferrer"
               className="ml-auto text-[10px] font-mono text-text-muted hover:text-accent transition-colors uppercase tracking-wider">

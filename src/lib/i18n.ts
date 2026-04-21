@@ -866,6 +866,13 @@ const translations = {
 
   'how_it_works.footer.title':  { en: 'Ready to find your edge?',   ru: 'Готов найти свой edge?' },
   'how_it_works.footer.cta':    { en: 'Start for free →',           ru: 'Начать бесплатно →' },
+
+  // ── Market status ───────────────────────────────────────────────────────────
+  'market.status.upcoming':  { en: 'UPCOMING',  ru: 'СКОРО' },
+  'market.status.live':      { en: 'LIVE',      ru: 'LIVE' },
+  'market.status.resolving': { en: 'RESOLVING', ru: 'РЕЗОЛВ' },
+  'market.status.resolved':  { en: 'RESOLVED',  ru: 'ЗАВЕРШЁН' },
+  'market.status.cancelled': { en: 'CANCELLED', ru: 'ОТМЕНЁН' },
 } as const
 
 export type TranslationKey = keyof typeof translations

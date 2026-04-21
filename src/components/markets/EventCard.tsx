@@ -1,23 +1,13 @@
 import type { Market } from '../../types'
-import { formatVolume, daysUntil } from '../../utils'
+import { formatVolume } from '../../utils'
 import { SourceBadge } from '../feed/SourceBadge'
+import { MarketStatusBadge } from './MarketStatusBadge'
 
 interface Props {
   markets: Market[]
   rank: number
   href: string
   onClick?: () => void
-}
-
-function resolutionBadge(date: string | undefined, days: number | null) {
-  if (!date || days === null) return null
-  if (days <= 0) return { label: 'СЕГОДНЯ', tone: 'danger' as const }
-  if (days <= 7) return { label: `${days}Д`, tone: 'warning' as const }
-  const d = new Date(date)
-  return {
-    label: d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }).replace('.', '').toUpperCase(),
-    tone: 'muted' as const,
-  }
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -56,10 +46,6 @@ export default function EventCard({ markets, rank, href, onClick }: Props) {
     : null
   const leaderLabel = leader?.outcome_label ?? null
 
-  const nearestResolve = markets.map(m => m.resolutionDate).filter(Boolean).sort()[0]
-  const days = nearestResolve ? daysUntil(nearestResolve) : null
-  const resBadge = resolutionBadge(nearestResolve, days)
-
   const catKey = category?.toUpperCase()
   const catLabel = catKey ? (CATEGORY_LABELS[catKey] ?? catKey.replace(/_/g, ' ').toLowerCase()) : null
 
@@ -83,9 +69,12 @@ export default function EventCard({ markets, rank, href, onClick }: Props) {
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-[14px] font-medium text-text-primary leading-snug line-clamp-2 mb-1.5">
-          {ev.title}
-        </p>
+        <div className="flex items-start gap-2 mb-1.5">
+          <p className="text-[14px] font-medium text-text-primary leading-snug line-clamp-2 flex-1">
+            {ev.title}
+          </p>
+          {leader && <MarketStatusBadge market={leader} size="xs" />}
+        </div>
 
         <div className="flex items-center gap-1.5 flex-wrap">
           {catLabel && (
@@ -109,18 +98,6 @@ export default function EventCard({ markets, rank, href, onClick }: Props) {
           <span className="text-[10px] font-mono text-text-muted">
             VOL <span className="text-text-secondary">{formatVolume(totalVolume)}</span>
           </span>
-          {resBadge && (
-            <>
-              <span className="text-text-muted/40 text-[10px]">·</span>
-              <span className={`text-[10px] font-mono font-bold uppercase tracking-wider ${
-                resBadge.tone === 'danger' ? 'text-danger'
-                : resBadge.tone === 'warning' ? 'text-watch'
-                : 'text-text-muted'
-              }`}>
-                {resBadge.tone !== 'muted' ? 'РЕЗОЛВ ' : ''}{resBadge.label}
-              </span>
-            </>
-          )}
         </div>
       </div>
 

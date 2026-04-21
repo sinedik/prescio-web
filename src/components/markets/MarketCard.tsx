@@ -1,6 +1,9 @@
 import type { Market } from '../../types'
-import { formatVolume, daysUntil } from '../../utils'
+import { formatVolume } from '../../utils'
+import { normalizeBinary } from '../../lib/probabilities'
+import { getMarketStatus } from '../../lib/marketStatus'
 import { SourceBadge } from '../feed/SourceBadge'
+import { MarketStatusBadge } from './MarketStatusBadge'
 
 interface Props {
   market: Market
@@ -11,21 +14,6 @@ interface Props {
   onAnalyze?: () => void
   analyzing?: boolean
   analyzed?: boolean
-}
-
-function resolutionBadge(date: string | undefined, days: number | null) {
-  if (!date || days === null) return null
-  if (days <= 0) {
-    return { label: 'СЕГОДНЯ', tone: 'danger' as const }
-  }
-  if (days <= 7) {
-    return { label: `${days}Д`, tone: 'warning' as const }
-  }
-  const d = new Date(date)
-  return {
-    label: d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }).replace('.', '').toUpperCase(),
-    tone: 'muted' as const,
-  }
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -44,15 +32,9 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 export default function MarketCard({ market, rank, href, isPro: _isPro, onClick, onAnalyze: _onAnalyze, analyzing, analyzed }: Props) {
   void _isPro; void _onAnalyze
-  const prob = market.yesPrice != null
-    ? (market.yesPrice > 1 ? market.yesPrice : market.yesPrice * 100)
-    : null
-  const noProb = market.noPrice != null
-    ? (market.noPrice > 1 ? market.noPrice : market.noPrice * 100)
-    : prob != null ? (100 - prob) : null
-
-  const days = market.resolutionDate ? daysUntil(market.resolutionDate) : null
-  const resBadge = resolutionBadge(market.resolutionDate, days)
+  const normalized = normalizeBinary(market.yesPrice, market.noPrice, `market:${market.platform}:${market.id ?? market.question}`)
+  const prob = normalized?.yes ?? null
+  const noProb = normalized?.no ?? null
 
   const edge = market.ai?.edge
   const hasSignal = edge != null && Math.abs(edge) >= 2
@@ -60,12 +42,7 @@ export default function MarketCard({ market, rank, href, isPro: _isPro, onClick,
   const catKey = market.category?.toUpperCase()
   const catLabel = catKey ? (CATEGORY_LABELS[catKey] ?? catKey.replace(/_/g, ' ').toLowerCase()) : null
 
-  const resolvedPast = market.resolutionDate ? new Date(market.resolutionDate).getTime() < Date.now() : false
-  const yesNormalized = market.yesPrice != null
-    ? (market.yesPrice > 1 ? market.yesPrice / 100 : market.yesPrice)
-    : null
-  const priceResolved = yesNormalized != null && (yesNormalized === 0 || yesNormalized === 1)
-  const isResolved = resolvedPast && priceResolved
+  const isResolved = getMarketStatus(market).status === 'resolved'
 
   return (
     <a
@@ -88,9 +65,12 @@ export default function MarketCard({ market, rank, href, isPro: _isPro, onClick,
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-[14px] font-medium text-text-primary leading-snug line-clamp-2 mb-1.5">
-          {market.question}
-        </p>
+        <div className="flex items-start gap-2 mb-1.5">
+          <p className="text-[14px] font-medium text-text-primary leading-snug line-clamp-2 flex-1">
+            {market.question}
+          </p>
+          <MarketStatusBadge market={market} size="xs" />
+        </div>
 
         <div className="flex items-center gap-1.5 flex-wrap">
           {catLabel && (
@@ -118,18 +98,6 @@ export default function MarketCard({ market, rank, href, isPro: _isPro, onClick,
           <span className="text-[10px] font-mono text-text-muted">
             VOL <span className="text-text-secondary">{formatVolume(market.volume)}</span>
           </span>
-          {resBadge && (
-            <>
-              <span className="text-text-muted/40 text-[10px]">·</span>
-              <span className={`text-[10px] font-mono font-bold uppercase tracking-wider ${
-                resBadge.tone === 'danger' ? 'text-danger'
-                : resBadge.tone === 'warning' ? 'text-watch'
-                : 'text-text-muted'
-              }`}>
-                {resBadge.tone !== 'muted' ? 'РЕЗОЛВ ' : ''}{resBadge.label}
-              </span>
-            </>
-          )}
         </div>
       </div>
 
@@ -137,11 +105,11 @@ export default function MarketCard({ market, rank, href, isPro: _isPro, onClick,
         {prob != null ? (
           <>
             <span className="text-[18px] font-mono font-bold text-accent leading-none">
-              {Math.round(prob)}%
+              {prob}%
             </span>
             {noProb != null && (
               <span className="text-[10px] font-mono text-text-muted mt-0.5">
-                NO {Math.round(noProb)}%
+                NO {noProb}%
               </span>
             )}
           </>

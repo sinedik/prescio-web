@@ -15,6 +15,7 @@ import { useLang } from '../contexts/LanguageContext'
 import { useT } from '../lib/i18n'
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { SourceBadge } from '../components/feed/SourceBadge'
+import { MarketStatusBadge } from '../components/markets/MarketStatusBadge'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -683,13 +684,13 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
               const hasEdge = isAlpha && a?.fair_prob != null && a?.edge_score != null
               const edgePos = (a?.edge_score ?? 0) >= 0
               const prob = m.price != null ? Math.round(m.price) : null
-              const isClosed = prob == null
+              const statusInput = { yesPrice: m.price != null ? m.price / 100 : null, resolutionDate: m.resolves_at }
               return (
                 <div
                   key={m.id}
                   onClick={() => router.push(`/markets/${m.id}`)}
-                  className={`bg-bg-surface border border-bg-border rounded-lg px-4 py-3 cursor-pointer
-                    hover:bg-bg-elevated/60 hover:border-text-muted/30 transition-colors${isClosed ? ' opacity-50' : ''}`}
+                  className="bg-bg-surface border border-bg-border rounded-lg px-4 py-3 cursor-pointer
+                    hover:bg-bg-elevated/60 hover:border-text-muted/30 transition-colors"
                 >
                   <div className="flex items-start gap-3">
                     <div className="flex-1 min-w-0">
@@ -699,7 +700,8 @@ export default function EventDetailPage({ initialData }: { initialData?: EventDe
                             {m.outcome_label}
                           </span>
                         )}
-                        <p className="text-[13px] font-medium text-text-primary leading-snug line-clamp-2">{m.question}</p>
+                        <p className="text-[13px] font-medium text-text-primary leading-snug line-clamp-2 flex-1">{m.question}</p>
+                        <MarketStatusBadge market={statusInput} size="xs" />
                       </div>
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-[10px] font-mono uppercase tracking-wider text-text-muted">
