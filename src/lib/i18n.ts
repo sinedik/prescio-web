@@ -95,6 +95,19 @@ const translations = {
   'match_detail.odds.high':  { en: 'HIGH', ru: 'МАКС' },
   'match_detail.odds.now':   { en: 'NOW',  ru: 'СЕЙЧАС' },
 
+  // ── Match detail: live stats ─────────────────────────────────────────────────
+  'match_detail.stats.title':            { en: 'LIVE STATS',       ru: 'LIVE СТАТИСТИКА' },
+  'match_detail.stats.possession':       { en: 'POSSESSION',       ru: 'ВЛАДЕНИЕ' },
+  'match_detail.stats.shots':            { en: 'SHOTS',            ru: 'УДАРЫ' },
+  'match_detail.stats.shots_on_target':  { en: 'SHOTS ON TARGET',  ru: 'В СТВОР' },
+  'match_detail.stats.corners':          { en: 'CORNERS',          ru: 'УГЛОВЫЕ' },
+  'match_detail.stats.fouls':            { en: 'FOULS',            ru: 'ФОЛЫ' },
+  'match_detail.stats.yellow':           { en: 'YELLOW',           ru: 'ЖК' },
+  'match_detail.stats.red':              { en: 'RED',              ru: 'КК' },
+
+  // ── Match detail: match events timeline ──────────────────────────────────────
+  'match_detail.events.title': { en: 'KEY EVENTS', ru: 'КЛЮЧЕВЫЕ СОБЫТИЯ' },
+
   // ── Sport ────────────────────────────────────────────────────────────────────
   'sport.title':           { en: 'Sport',           ru: 'Спорт' },
   'sport.upcoming':        { en: 'Upcoming',        ru: 'Предстоящие' },
