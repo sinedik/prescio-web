@@ -24,6 +24,16 @@ const translations = {
   // ── Markets ──────────────────────────────────────────────────────────────────
   'markets.title':         { en: 'Markets',         ru: 'Маркеты' },
 
+  // ── Market card ──────────────────────────────────────────────────────────────
+  'market_card.yes':          { en: 'YES',               ru: 'ДА' },
+  'market_card.no':           { en: 'NO',                ru: 'НЕТ' },
+  'market_card.ai_fair':      { en: 'AI FAIR',           ru: 'AI ПРОГНОЗ' },
+  'market_card.edge':         { en: 'EDGE',              ru: 'EDGE' },
+  'market_card.volume':       { en: 'VOLUME',            ru: 'ОБЪЁМ' },
+  'market_card.resolved_yes': { en: 'RESOLVED · YES',    ru: 'РЕЗОЛВ · ДА' },
+  'market_card.resolved_no':  { en: 'RESOLVED · NO',     ru: 'РЕЗОЛВ · НЕТ' },
+  'market_card.analyzing':    { en: 'ANALYZING…',        ru: 'АНАЛИЗ…' },
+
   // ── Sport ────────────────────────────────────────────────────────────────────
   'sport.title':           { en: 'Sport',           ru: 'Спорт' },
   'sport.upcoming':        { en: 'Upcoming',        ru: 'Предстоящие' },
