@@ -566,7 +566,7 @@ export function SportScreen({ initialSport, eventId, initialEvents, initialEvent
   const [syncingDate, setSyncingDate]   = useState<string | null>(null)
   const [syncVersion, setSyncVersion]   = useState(0)
 
-  const { selectedLeague, setSelectedLeague, setLeagues, setLiveCount, setTotalCount } = useLiveLayout()
+  const { selectedLeague, setSelectedLeague, setLeagues, setLiveCount, setTotalCount, setTodayCount } = useLiveLayout()
 
   // Fetch 30-day window from server (today → +30 days), plus live events
   const fetchParams = useMemo(() => {
@@ -672,11 +672,16 @@ export function SportScreen({ initialSport, eventId, initialEvents, initialEvent
       .map(([name, { flag, leagueId }]) => ({ name, flag, leagueId }))
       .sort((a, b) => a.name.localeCompare(b.name))
   }, [events])
+  const todayCount = useMemo(() => {
+    const today = toLocalDateStr(new Date())
+    return events.filter(e => eventLocalDate(e.starts_at) === today).length
+  }, [events])
   useEffect(() => {
     setLeagues(leagues)
     setLiveCount(liveCount)
     setTotalCount(events.length)
-  }, [leagues, liveCount, events.length]) // eslint-disable-line react-hooks/exhaustive-deps
+    setTodayCount(todayCount)
+  }, [leagues, liveCount, events.length, todayCount]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const filteredEvents = useMemo(() => {
     let result = selectedLeague

@@ -21,7 +21,7 @@ const TEXT_SOFT    = 'var(--hero-text-soft)'
 const GRID_LINE    = 'var(--hero-grid-line)'
 
 // ─── Sport heroes ─────────────────────────────────────────────────────────────
-function FootballHero({ liveCount, totalCount, today }: { liveCount: number; totalCount: number; today: string }) {
+function FootballHero({ liveCount, todayCount, today }: { liveCount: number; todayCount: number; today: string }) {
   const accent = 'rgb(var(--sport-football-rgb))'
   const a = (x: number) => `rgb(var(--sport-football-rgb) / ${x})`
   const SPOT_SOFT   = 'var(--hero-football-spotlight-soft)'
@@ -76,7 +76,7 @@ function FootballHero({ liveCount, totalCount, today }: { liveCount: number; tot
           </div>
           <div style={{ width:1, height:32, background:a(0.18) }} />
           <div style={{ textAlign:'center' }}>
-            <div style={{ fontFamily:'"Inter",sans-serif', fontSize:22, fontWeight:700, color:TEXT_PRIMARY, lineHeight:1 }}>{totalCount}</div>
+            <div style={{ fontFamily:'"Inter",sans-serif', fontSize:22, fontWeight:700, color:TEXT_PRIMARY, lineHeight:1 }}>{todayCount}</div>
             <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'var(--font-jetbrains-mono),monospace' }}>{today}</div>
           </div>
         </div>
@@ -89,7 +89,7 @@ function FootballHero({ liveCount, totalCount, today }: { liveCount: number; tot
   )
 }
 
-function BasketballHero({ liveCount, totalCount, today }: { liveCount: number; totalCount: number; today: string }) {
+function BasketballHero({ liveCount, todayCount, today }: { liveCount: number; todayCount: number; today: string }) {
   const accent = 'rgb(var(--sport-basketball-rgb))'
   const a = (x: number) => `rgb(var(--sport-basketball-rgb) / ${x})`
   return (
@@ -117,7 +117,7 @@ function BasketballHero({ liveCount, totalCount, today }: { liveCount: number; t
           </div>
           <div style={{ width:1, height:32, background:a(0.18) }} />
           <div style={{ textAlign:'center' }}>
-            <div style={{ fontFamily:'"Inter",sans-serif', fontSize:22, fontWeight:700, color:TEXT_PRIMARY, lineHeight:1 }}>{totalCount}</div>
+            <div style={{ fontFamily:'"Inter",sans-serif', fontSize:22, fontWeight:700, color:TEXT_PRIMARY, lineHeight:1 }}>{todayCount}</div>
             <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'var(--font-jetbrains-mono),monospace' }}>{today}</div>
           </div>
         </div>
@@ -130,7 +130,7 @@ function BasketballHero({ liveCount, totalCount, today }: { liveCount: number; t
   )
 }
 
-function TennisHero({ liveCount, totalCount, today }: { liveCount: number; totalCount: number; today: string }) {
+function TennisHero({ liveCount, todayCount, today }: { liveCount: number; todayCount: number; today: string }) {
   const accent = 'rgb(var(--sport-tennis-rgb))'
   const a = (x: number) => `rgb(var(--sport-tennis-rgb) / ${x})`
   return (
@@ -173,7 +173,7 @@ function TennisHero({ liveCount, totalCount, today }: { liveCount: number; total
           </div>
           <div style={{ width:1, height:32, background:a(0.18) }} />
           <div style={{ textAlign:'center' }}>
-            <div style={{ fontFamily:'"Inter",sans-serif', fontSize:22, fontWeight:700, color:TEXT_PRIMARY, lineHeight:1 }}>{totalCount}</div>
+            <div style={{ fontFamily:'"Inter",sans-serif', fontSize:22, fontWeight:700, color:TEXT_PRIMARY, lineHeight:1 }}>{todayCount}</div>
             <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'var(--font-jetbrains-mono),monospace' }}>{today}</div>
           </div>
         </div>
@@ -186,7 +186,7 @@ function TennisHero({ liveCount, totalCount, today }: { liveCount: number; total
   )
 }
 
-function MMAHero({ liveCount, totalCount, today }: { liveCount: number; totalCount: number; today: string }) {
+function MMAHero({ liveCount, todayCount, today }: { liveCount: number; todayCount: number; today: string }) {
   const accent = 'rgb(var(--sport-mma-rgb))'
   const a = (x: number) => `rgb(var(--sport-mma-rgb) / ${x})`
   return (
@@ -229,7 +229,7 @@ function MMAHero({ liveCount, totalCount, today }: { liveCount: number; totalCou
           </div>
           <div style={{ width:1, height:32, background:a(0.18) }} />
           <div style={{ textAlign:'center' }}>
-            <div style={{ fontFamily:'"Inter",sans-serif', fontSize:22, fontWeight:700, color:TEXT_PRIMARY, lineHeight:1 }}>{totalCount}</div>
+            <div style={{ fontFamily:'"Inter",sans-serif', fontSize:22, fontWeight:700, color:TEXT_PRIMARY, lineHeight:1 }}>{todayCount}</div>
             <div style={{ fontSize:8, color:a(0.95), letterSpacing:'0.12em', textTransform:'uppercase', marginTop:4, fontFamily:'var(--font-jetbrains-mono),monospace' }}>{today}</div>
           </div>
         </div>
@@ -371,16 +371,16 @@ function Dota2Hero({ liveCount, totalCount }: { liveCount: number; totalCount: n
 
 // ─── Export ───────────────────────────────────────────────────────────────────
 export function LiveHero({ discipline }: { discipline: Discipline }) {
-  const { liveCount, totalCount } = useLiveLayout()
+  const { liveCount, totalCount, todayCount } = useLiveLayout()
   const { lang } = useLang()
   const t = useT(lang)
   const today = t('common.today')
 
   let hero: React.ReactNode = null
-  if (discipline === 'football')   hero = <FootballHero   liveCount={liveCount} totalCount={totalCount} today={today} />
-  else if (discipline === 'basketball') hero = <BasketballHero liveCount={liveCount} totalCount={totalCount} today={today} />
-  else if (discipline === 'tennis')     hero = <TennisHero     liveCount={liveCount} totalCount={totalCount} today={today} />
-  else if (discipline === 'mma')        hero = <MMAHero        liveCount={liveCount} totalCount={totalCount} today={today} />
+  if (discipline === 'football')   hero = <FootballHero   liveCount={liveCount} todayCount={todayCount} today={today} />
+  else if (discipline === 'basketball') hero = <BasketballHero liveCount={liveCount} todayCount={todayCount} today={today} />
+  else if (discipline === 'tennis')     hero = <TennisHero     liveCount={liveCount} todayCount={todayCount} today={today} />
+  else if (discipline === 'mma')        hero = <MMAHero        liveCount={liveCount} todayCount={todayCount} today={today} />
   else if (discipline === 'cs2')        hero = <CS2Hero        liveCount={liveCount} totalCount={totalCount} />
   else if (discipline === 'dota2')      hero = <Dota2Hero      liveCount={liveCount} totalCount={totalCount} />
   if (!hero) return null

@@ -704,7 +704,7 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId, initial
   const [timeWin, setTimeWin]       = useState<TimeWin>(initialTw)
   const [currentPage, setCurrentPage] = useState(1)
 
-  const { selectedLeague: activeTournament, setSelectedLeague: setActiveTournament, setLeagues, setLiveCount, setTotalCount } = useLiveLayout()
+  const { selectedLeague: activeTournament, setSelectedLeague: setActiveTournament, setLeagues, setLiveCount, setTotalCount, setTodayCount } = useLiveLayout()
 
   const { data, loading } = usePolling<EsportsMatch[]>(
     async () => {
@@ -770,6 +770,7 @@ export default function CybersportScreen({ initialGame = 'cs2', matchId, initial
   useEffect(() => { setLeagues(tournaments) }, [tournaments]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { setLiveCount(liveCount) }, [liveCount]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { setTotalCount(matches.length) }, [matches.length]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setTodayCount(0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Filtering
   const filteredGroups = useMemo(() => {

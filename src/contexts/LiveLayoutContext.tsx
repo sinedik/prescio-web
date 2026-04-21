@@ -12,6 +12,8 @@ interface LiveLayoutCtx {
   setLiveCount: (n: number) => void
   totalCount: number
   setTotalCount: (n: number) => void
+  todayCount: number
+  setTodayCount: (n: number) => void
   hideHero: boolean
   setHideHero: (b: boolean) => void
 }
@@ -23,9 +25,10 @@ export function LiveLayoutProvider({ children }: { children: ReactNode }) {
   const [selectedLeague, setSelectedLeague] = useState<string | null>(null)
   const [liveCount, setLiveCount] = useState(0)
   const [totalCount, setTotalCount] = useState(0)
+  const [todayCount, setTodayCount] = useState(0)
   const [hideHero, setHideHero] = useState(false)
   return (
-    <Ctx.Provider value={{ leagues, setLeagues, selectedLeague, setSelectedLeague, liveCount, setLiveCount, totalCount, setTotalCount, hideHero, setHideHero }}>
+    <Ctx.Provider value={{ leagues, setLeagues, selectedLeague, setSelectedLeague, liveCount, setLiveCount, totalCount, setTotalCount, todayCount, setTodayCount, hideHero, setHideHero }}>
       {children}
     </Ctx.Provider>
   )
