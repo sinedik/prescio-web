@@ -72,6 +72,11 @@ const translations = {
   'esports_card.towers':           { en: 'TOWERS',            ru: 'БАШНИ' },
   'esports_card.h2h':              { en: 'H2H {a}–{b} {team}', ru: 'H2H {a}–{b} {team}' },
 
+  // ── Match detail: PRX signal ─────────────────────────────────────────────────
+  'match_detail.prx.edge':       { en: 'EDGE',       ru: 'ЭДЖ' },
+  'match_detail.prx.confidence': { en: 'CONFIDENCE', ru: 'УВЕРЕННОСТЬ' },
+  'match_detail.prx.fair_prob':  { en: 'FAIR PROB',  ru: 'FAIR PROB' },
+
   // ── Sport ────────────────────────────────────────────────────────────────────
   'sport.title':           { en: 'Sport',           ru: 'Спорт' },
   'sport.upcoming':        { en: 'Upcoming',        ru: 'Предстоящие' },
